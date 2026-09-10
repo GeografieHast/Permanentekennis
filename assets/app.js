@@ -206,18 +206,24 @@
 
   /* ---------- HOME ---------------------------------------------------------- */
 
+  const MODULE_ICONS = {
+    "hasselt": pinIconOutlineSVG,
+    "belgie": shieldIconSVG,
+    "eu": starsRingIconSVG,
+    "europa": compassSVG,
+    "europa-water": waveIconSVG,
+    "wereld-continenten": globeIconSVG,
+    "wereld-landen-steden": skylineIconSVG,
+    "wereld-relief": mountainIconSVG
+  };
+  const MODULE_ACCENTS = ["accent-ink", "accent-red", "accent-teal", "accent-amber"];
+
   function renderHome() {
     const wrap = el("div", { class: "view view-home" });
 
     wrap.appendChild(
       el("section", { class: "hero" }, [
-        el("div", { class: "hero-media" }, [
-          el("img", {
-            src: "assets/img/hast-campus.jpg",
-            alt: "Campus Hast, Kleine Breemstraat 7, Hasselt"
-          })
-        ]),
-        el("div", { class: "hero-compass", "aria-hidden": "true" }, [compassSVG()]),
+        el("div", { class: "hero-media" }, [heroIllustrationSVG()]),
         el("div", { class: "hero-content" }, [
           el("h1", null, ["Permanente Kennis"]),
           el("p", { class: "hero-sub" }, [
@@ -228,10 +234,13 @@
     );
 
     const grid = el("div", { class: "sheet-grid" });
-    PK_DATA.modules.forEach((mod) => {
+    PK_DATA.modules.forEach((mod, i) => {
       const count = mod.topics.length + mapGroupsFor(mod.id).length;
+      const iconFn = MODULE_ICONS[mod.id] || compassSVG;
+      const accent = MODULE_ACCENTS[i % MODULE_ACCENTS.length];
       grid.appendChild(
-        el("a", { class: "sheet-card", href: "#/module/" + mod.id }, [
+        el("a", { class: "sheet-card " + accent, href: "#/module/" + mod.id }, [
+          el("div", { class: "sheet-icon", "aria-hidden": "true" }, [iconFn()]),
           el("span", { class: "sheet-label" }, [mod.label]),
           el("h2", null, [mod.title]),
           el("p", { class: "sheet-subtitle" }, [mod.subtitle]),
@@ -868,6 +877,118 @@
       '<path d="M60 12 L68 56 L60 60 L52 56 Z" fill="currentColor"/>' +
       '<path d="M60 108 L68 64 L60 60 L52 64 Z" fill="currentColor" opacity="0.35"/>' +
       '<text x="60" y="26" text-anchor="middle" font-size="10" fill="currentColor" font-family="inherit">N</text>';
+    return s;
+  }
+  function pinIconOutlineSVG() {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 120 120");
+    s.innerHTML =
+      '<path d="M60 108S22 66 22 42a38 38 0 1176 0c0 24-38 66-38 66z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/>' +
+      '<circle cx="60" cy="42" r="15" fill="currentColor"/>';
+    return s;
+  }
+  function shieldIconSVG() {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 120 120");
+    s.innerHTML =
+      '<path d="M60 10 L100 24 V56 C100 84 84 100 60 112 C36 100 20 84 20 56 V24 Z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/>' +
+      '<path d="M60 30 V92 M38 45 H82" stroke="currentColor" stroke-width="4" opacity="0.55"/>';
+    return s;
+  }
+  function starsRingIconSVG() {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 120 120");
+    let dots = "";
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+      const cx = 60 + Math.cos(a) * 40;
+      const cy = 60 + Math.sin(a) * 40;
+      dots += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="5.5" fill="currentColor"/>';
+    }
+    s.innerHTML = dots + '<circle cx="60" cy="60" r="4" fill="currentColor" opacity="0.5"/>';
+    return s;
+  }
+  function waveIconSVG() {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 120 120");
+    s.innerHTML =
+      '<path d="M14 46c10-12 22-12 32 0s22 12 32 0 22-12 32 0" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>' +
+      '<path d="M14 70c10-12 22-12 32 0s22 12 32 0 22-12 32 0" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" opacity="0.5"/>' +
+      '<path d="M14 94c10-12 22-12 32 0s22 12 32 0 22-12 32 0" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" opacity="0.25"/>';
+    return s;
+  }
+  function globeIconSVG() {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 120 120");
+    s.innerHTML =
+      '<circle cx="60" cy="60" r="48" fill="none" stroke="currentColor" stroke-width="6"/>' +
+      '<ellipse cx="60" cy="60" rx="48" ry="20" fill="none" stroke="currentColor" stroke-width="4" opacity="0.6"/>' +
+      '<ellipse cx="60" cy="60" rx="20" ry="48" fill="none" stroke="currentColor" stroke-width="4" opacity="0.6"/>' +
+      '<line x1="12" y1="60" x2="108" y2="60" stroke="currentColor" stroke-width="4" opacity="0.6"/>';
+    return s;
+  }
+  function skylineIconSVG() {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 120 120");
+    s.innerHTML =
+      '<rect x="14" y="58" width="20" height="46" fill="currentColor"/>' +
+      '<rect x="40" y="38" width="22" height="66" fill="currentColor" opacity="0.75"/>' +
+      '<rect x="68" y="50" width="18" height="54" fill="currentColor"/>' +
+      '<rect x="92" y="66" width="16" height="38" fill="currentColor" opacity="0.75"/>' +
+      '<path d="M46 38 L51 22 L56 38" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>';
+    return s;
+  }
+  function mountainIconSVG() {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 120 120");
+    s.innerHTML =
+      '<path d="M10 96 L42 44 L60 70 L74 50 L110 96 Z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/>' +
+      '<path d="M35 58 L42 44 L49 58 Z" fill="currentColor" opacity="0.5"/>';
+    return s;
+  }
+  function heroIllustrationSVG() {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 900 280");
+    s.setAttribute("preserveAspectRatio", "xMidYMid slice");
+    s.setAttribute("class", "hero-svg");
+    s.innerHTML =
+      '<defs>' +
+      '<linearGradient id="oceanGrad" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#0C4A63"/><stop offset="1" stop-color="#022E3E"/>' +
+      '</linearGradient>' +
+      '</defs>' +
+      '<rect width="900" height="280" fill="url(#oceanGrad)"/>' +
+      '<g stroke="#ffffff" stroke-opacity="0.08" stroke-width="1">' +
+      '<line x1="0" y1="40" x2="900" y2="40"/><line x1="0" y1="90" x2="900" y2="90"/>' +
+      '<line x1="0" y1="140" x2="900" y2="140"/><line x1="0" y1="190" x2="900" y2="190"/>' +
+      '<line x1="0" y1="240" x2="900" y2="240"/>' +
+      '<line x1="90" y1="0" x2="90" y2="280"/><line x1="230" y1="0" x2="230" y2="280"/>' +
+      '<line x1="370" y1="0" x2="370" y2="280"/><line x1="510" y1="0" x2="510" y2="280"/>' +
+      '<line x1="650" y1="0" x2="650" y2="280"/><line x1="790" y1="0" x2="790" y2="280"/>' +
+      '</g>' +
+      '<g fill="#F4E4C1" opacity="0.92">' +
+      '<path d="M-20 210 Q60 160 140 195 T300 190 Q360 175 420 205 L420 300 L-20 300 Z"/>' +
+      '<path d="M520 230 Q600 190 700 215 T900 205 L900 300 L520 300 Z"/>' +
+      '<ellipse cx="170" cy="70" rx="60" ry="26" opacity="0.85"/>' +
+      '<ellipse cx="640" cy="55" rx="80" ry="30" opacity="0.85"/>' +
+      '</g>' +
+      '<g fill="none" stroke="#E5343C" stroke-width="2.5" stroke-dasharray="1 9" stroke-linecap="round">' +
+      '<path d="M150 210 Q400 60 620 130"/>' +
+      '<path d="M620 130 Q760 170 830 90"/>' +
+      '<path d="M150 210 Q280 260 470 235"/>' +
+      '</g>' +
+      '<g>' +
+      '<circle cx="150" cy="210" r="7" fill="#E5343C" stroke="#fff" stroke-width="2"/>' +
+      '<circle cx="620" cy="130" r="7" fill="#E5343C" stroke="#fff" stroke-width="2"/>' +
+      '<circle cx="830" cy="90" r="7" fill="#E5343C" stroke="#fff" stroke-width="2"/>' +
+      '<circle cx="470" cy="235" r="7" fill="#E5343C" stroke="#fff" stroke-width="2"/>' +
+      '</g>' +
+      '<g transform="translate(798,54)" opacity="0.9">' +
+      '<circle r="34" fill="none" stroke="#fff" stroke-width="1.6" opacity="0.7"/>' +
+      '<path d="M0 -26 L7 -2 L0 4 L-7 -2 Z" fill="#fff"/>' +
+      '<path d="M0 26 L7 4 L0 -4 L-7 4 Z" fill="#fff" opacity="0.4"/>' +
+      '<text x="0" y="-38" text-anchor="middle" font-size="13" fill="#fff" font-family="Verdana">N</text>' +
+      '</g>';
     return s;
   }
   function svgIcon(paths) {

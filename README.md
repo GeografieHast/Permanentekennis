@@ -141,8 +141,11 @@ gestuurd en er worden geen gegevens over leerlingen verzameld.
 ## Huisstijl Hast
 
 De site gebruikt het echte Hast-logo (`assets/img/hast-logo.png`) in de
-header en een foto van Campus Hast (`assets/img/hast-campus.jpg`) als
-banner op de startpagina, met de Hast-kleuren (donkerblauw #022E3E en
-rood #E5343C) als basis voor knoppen, accenten en actieve status. Wil je
-een andere foto als banner? Vervang gewoon `assets/img/hast-campus.jpg`
-door een andere afbeelding met dezelfde bestandsnaam.
+header. De banner op de startpagina is geen foto, maar een zelfgemaakte
+illustratie (kompas, reisroutes, kaartvormen) in SVG-code, rechtstreeks in
+`assets/app.js` (functie `heroIllustrationSVG`) — geen extra bestand
+nodig, en dus ook geen toestemmings- of auteursrechtvraag. De kleuren
+(donkerblauw #022E3E, rood #E5343C, plus teal #1F7A6C en oker #C9932E
+voor wat meer variatie) sturen ook de kaartbladen, knoppen en iconen.
+Wil je de illustratie aanpassen? Pas gewoon de SVG-code in die functie
+aan.
