@@ -1,43 +1,16 @@
 /* ==========================================================================
    Permanente Kennis — mapquiz.js
-   Echte kaartoefeningen op een OpenStreetMap-kaart (via Leaflet):
-   - "leer": studeer — alle plaatsen staan gelabeld op de kaart
-   - "wijs": klik-op-de-kaart — leerling klikt de juiste plaats aan
-   - "mc": een plaats is gemarkeerd — leerling kiest de juiste naam
+   Kaartoefeningen op de echte kaarten uit je bundel (afbeelding + pixel-
+   coördinaten), zonder externe kaartendienst. Werkt responsief via
+   procentuele positionering t.o.v. de natuurlijke afbeeldingsgrootte.
+   Modi: "leer" (studeren), "wijs" (klik-op-de-kaart), "mc" (meerkeuze),
+   "nummer" (genummerde kaarttoets zoals op papier).
    ========================================================================== */
 
 (function () {
   "use strict";
 
   const PROGRESS_KEY = "pk-progress-v1";
-  let currentMap = null; // actieve Leaflet-instantie, opgeruimd bij elke navigatie
-
-  function cleanup() {
-    if (currentMap) {
-      currentMap.remove();
-      currentMap = null;
-    }
-  }
-
-  function loadProgress() {
-    try { return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}; }
-    catch (e) { return {}; }
-  }
-  function saveProgress(p) {
-    try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(p)); }
-    catch (e) { /* geen opslag beschikbaar: app blijft werken */ }
-  }
-  function recordScore(id, correct, total) {
-    const p = loadProgress();
-    const prev = p[id] || { best: 0, attempts: 0 };
-    const pct = total ? Math.round((correct / total) * 100) : 0;
-    p[id] = { best: Math.max(prev.best, pct), attempts: prev.attempts + 1, last: pct };
-    saveProgress(p);
-  }
-  function mastery(id) {
-    const p = loadProgress();
-    return p[id] ? p[id].best : null;
-  }
 
   function norm(str) {
     return String(str || "")
@@ -47,7 +20,6 @@
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/\s+/g, " ");
   }
-
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -59,52 +31,6 @@
   function sample(arr, n, exclude) {
     return shuffle(arr.filter((x) => x !== exclude)).slice(0, n);
   }
-
-  /* ---------- afstand: haversine (km) --------------------------------- */
-  function distKm(lat1, lng1, lat2, lng2) {
-    const R = 6371;
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLng = ((lng2 - lng1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  }
-
-  /* dichtste afstand (km) van een punt tot een lijnstuk (platte benadering,
-     nauwkeurig genoeg op de schaal van België) */
-  function distToSegmentKm(p, a, b) {
-    const toXY = (pt) => ({
-      x: pt.lng * 111.32 * Math.cos((p.lat * Math.PI) / 180),
-      y: pt.lat * 110.57
-    });
-    const P = toXY(p), A = toXY(a), B = toXY(b);
-    const dx = B.x - A.x, dy = B.y - A.y;
-    const len2 = dx * dx + dy * dy;
-    let t = len2 === 0 ? 0 : ((P.x - A.x) * dx + (P.y - A.y) * dy) / len2;
-    t = Math.max(0, Math.min(1, t));
-    const cx = A.x + t * dx, cy = A.y + t * dy;
-    return Math.hypot(P.x - cx, P.y - cy);
-  }
-  function distToPolylineKm(p, path) {
-    let min = Infinity;
-    for (let i = 0; i < path.length - 1; i++) {
-      const a = { lat: path[i][0], lng: path[i][1] };
-      const b = { lat: path[i + 1][0], lng: path[i + 1][1] };
-      min = Math.min(min, distToSegmentKm(p, a, b));
-    }
-    return min;
-  }
-
-  function allEntries(group) {
-    const pts = (group.items || []).map((it) => ({ term: it.term, kind: "point", lat: it.lat, lng: it.lng, tolerance: it.tolerance || group.tolerance, capital: it.capital }));
-    const lines = (group.lines || []).map((it) => ({ term: it.term, kind: "line", path: it.path, tolerance: it.tolerance || group.tolerance, capital: it.capital }));
-    return pts.concat(lines);
-  }
-
   function el(tag, attrs, children) {
     const node = document.createElement(tag);
     if (attrs) {
@@ -120,80 +46,143 @@
     return node;
   }
 
-  function makeMap(container, view) {
-    const map = L.map(container, { scrollWheelZoom: false });
-    map.setView(view.center, view.zoom);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 18,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-bijdragers'
-    }).addTo(map);
-    currentMap = map;
-    setTimeout(() => map.invalidateSize(), 60);
-    return map;
+  function loadProgress() {
+    try { return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}; }
+    catch (e) { return {}; }
+  }
+  function saveProgress(p) {
+    try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(p)); }
+    catch (e) { /* geen opslag beschikbaar */ }
+  }
+  function recordScore(id, correct, total) {
+    const p = loadProgress();
+    const prev = p[id] || { best: 0, attempts: 0 };
+    const pct = total ? Math.round((correct / total) * 100) : 0;
+    p[id] = { best: Math.max(prev.best, pct), attempts: prev.attempts + 1, last: pct };
+    saveProgress(p);
+  }
+  function mastery(id) {
+    const p = loadProgress();
+    return p[id] ? p[id].best : null;
   }
 
-  function pinIcon(color) {
-    return L.divIcon({
-      className: "",
-      html: '<span class="map-pin" style="--pin-color:' + color + '"></span>',
-      iconSize: [18, 18],
-      iconAnchor: [9, 9]
-    });
+  function allEntries(group) {
+    const pts = (group.items || []).map((it) => ({
+      term: it.term, kind: "point", x: it.x, y: it.y,
+      tolerance: it.tolerance || group.tolerance, capital: it.capital
+    }));
+    const lines = (group.lines || []).map((it) => ({
+      term: it.term, kind: "line", path: it.path,
+      tolerance: it.tolerance || group.tolerance, capital: it.capital
+    }));
+    return pts.concat(lines);
   }
 
-  function numberIcon(n, color) {
-    return L.divIcon({
-      className: "",
-      html: '<span class="map-num-pin" style="--pin-color:' + (color || "var(--red)") + '">' + n + "</span>",
-      iconSize: [26, 26],
-      iconAnchor: [13, 13]
-    });
+  function distToSegment(p, a, b) {
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const len2 = dx * dx + dy * dy;
+    let t = len2 === 0 ? 0 : ((p.x - a[0]) * dx + (p.y - a[1]) * dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const cx = a[0] + t * dx, cy = a[1] + t * dy;
+    return Math.hypot(p.x - cx, p.y - cy);
+  }
+  function distToPolyline(p, path) {
+    let min = Infinity;
+    for (let i = 0; i < path.length - 1; i++) min = Math.min(min, distToSegment(p, path[i], path[i + 1]));
+    return min;
+  }
+  function midOfPath(path) {
+    return path[Math.floor(path.length / 2)];
   }
 
-  /* ---------- studeermodus: alle plaatsen gelabeld --------------------- */
+  /* ---------- de kaart-basis: afbeelding + overlay-laag ------------------- */
+  function buildMapBase(group, extraClass) {
+    const [natW, natH] = group.imageSize;
+    const wrap = el("div", { class: "mapimg-wrap" + (extraClass ? " " + extraClass : "") });
+    const img = el("img", { src: group.image, alt: group.title, draggable: "false", class: "mapimg" });
+    const overlay = el("div", { class: "mapimg-overlay" });
+    wrap.style.aspectRatio = natW + " / " + natH;
+    wrap.appendChild(img);
+    wrap.appendChild(overlay);
+
+    function toPercent(x, y) {
+      return { left: (x / natW) * 100 + "%", top: (y / natH) * 100 + "%" };
+    }
+    function clickToNatural(evt) {
+      const rect = wrap.getBoundingClientRect();
+      const px = ((evt.clientX - rect.left) / rect.width) * natW;
+      const py = ((evt.clientY - rect.top) / rect.height) * natH;
+      return { x: px, y: py };
+    }
+    return { wrap, overlay, toPercent, clickToNatural, natW, natH };
+  }
+
+  function placeMarker(overlay, toPercent, x, y, cls, content) {
+    const pos = toPercent(x, y);
+    const m = el("div", { class: "map-marker " + (cls || ""), style: "left:" + pos.left + ";top:" + pos.top + ";" }, content != null ? [String(content)] : []);
+    overlay.appendChild(m);
+    return m;
+  }
+  function placeLabel(overlay, toPercent, x, y, text, cls) {
+    const pos = toPercent(x, y);
+    const l = el("div", { class: "map-tag " + (cls || ""), style: "left:" + pos.left + ";top:" + pos.top + ";" }, [text]);
+    overlay.appendChild(l);
+    return l;
+  }
+  function placeLine(overlay, natW, natH, path, cls) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 " + natW + " " + natH);
+    svg.setAttribute("class", "map-line-svg");
+    svg.setAttribute("preserveAspectRatio", "none");
+    const pts = path.map((p) => p[0] + "," + p[1]).join(" ");
+    const poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    poly.setAttribute("points", pts);
+    poly.setAttribute("class", cls || "map-line");
+    svg.appendChild(poly);
+    overlay.appendChild(svg);
+    return svg;
+  }
+
+  /* ---------- studeermodus: alles gelabeld -------------------------------- */
   function renderStudy(root, group) {
     root.innerHTML = "";
     root.appendChild(el("h1", null, [group.title]));
     root.appendChild(el("p", { class: "module-intro" }, [group.instructions]));
-    const mapEl = el("div", { class: "leaflet-box" });
-    root.appendChild(mapEl);
 
-    const map = makeMap(mapEl, group.view);
+    const base = buildMapBase(group);
+    root.appendChild(base.wrap);
+
     (group.items || []).forEach((it) => {
-      L.marker([it.lat, it.lng], { icon: pinIcon("var(--ink)") })
-        .addTo(map)
-        .bindTooltip(it.term, { permanent: true, direction: "top", offset: [0, -6], className: "map-label" });
+      placeMarker(base.overlay, base.toPercent, it.x, it.y, "marker-dot");
+      placeLabel(base.overlay, base.toPercent, it.x, it.y, it.term, "tag-study");
     });
     (group.lines || []).forEach((it) => {
-      const line = L.polyline(it.path, { color: "#022e3e", weight: 4, opacity: 0.85 }).addTo(map);
-      const mid = it.path[Math.floor(it.path.length / 2)];
-      L.marker(mid, {
-        icon: L.divIcon({ className: "", html: '<span class="map-line-label">' + it.term + "</span>", iconSize: [1, 1] })
-      }).addTo(map);
+      placeLine(base.overlay, base.natW, base.natH, it.path, "map-line map-line-study");
+      const mid = midOfPath(it.path);
+      placeLabel(base.overlay, base.toPercent, mid[0], mid[1], it.term, "tag-study tag-line");
     });
   }
 
-  /* ---------- klik-op-de-kaart modus ------------------------------------ */
+  /* ---------- klik-op-de-kaart --------------------------------------------- */
   function renderClick(root, group, onFinish) {
     root.innerHTML = "";
     root.appendChild(el("h1", null, [group.title]));
     const scoreEl = el("p", { class: "quiz-score" });
     const promptEl = el("p", { class: "quiz-prompt map-prompt" });
     const progress = el("div", { class: "progress-dots" });
-    const mapEl = el("div", { class: "leaflet-box" });
     const feedback = el("p", { class: "quiz-feedback", "aria-live": "polite" });
     const nextHolder = el("div", { class: "quiz-next-holder" });
 
     root.appendChild(scoreEl);
     root.appendChild(promptEl);
     root.appendChild(progress);
-    root.appendChild(mapEl);
+    const mapHolder = el("div");
+    root.appendChild(mapHolder);
     root.appendChild(feedback);
     root.appendChild(nextHolder);
 
-    const map = makeMap(mapEl, group.view);
     const order = shuffle(allEntries(group));
-    let pos = 0, correct = 0, answered = false, marker = null, clickHandler = null;
+    let pos = 0, correct = 0, answered = false;
 
     function updateHeader() {
       scoreEl.textContent = "Score: " + correct + " / " + Math.min(pos, order.length);
@@ -211,14 +200,12 @@
       feedback.textContent = "";
       feedback.className = "quiz-feedback";
       nextHolder.innerHTML = "";
-      if (marker) { map.removeLayer(marker); marker = null; }
-      if (clickHandler) { map.off("click", clickHandler); clickHandler = null; }
+      mapHolder.innerHTML = "";
 
       if (pos >= order.length) {
-        promptEl.textContent = "";
         const pct = order.length ? Math.round((correct / order.length) * 100) : 0;
         onFinish(correct, order.length);
-        mapEl.style.display = "none";
+        promptEl.textContent = "";
         root.appendChild(
           el("div", { class: "quiz-result" }, [
             el("p", { class: "result-big" }, [pct + "%"]),
@@ -235,27 +222,33 @@
       const entry = order[pos];
       promptEl.textContent = "Waar ligt: " + entry.term + " ?";
 
-      clickHandler = function (e) {
+      const base = buildMapBase(group);
+      mapHolder.appendChild(base.wrap);
+      (group.lines || []).forEach((it) => {
+        if (it !== entry) placeLine(base.overlay, base.natW, base.natH, it.path, "map-line map-line-faint");
+      });
+
+      base.wrap.addEventListener("click", function handler(evt) {
         if (answered) return;
         answered = true;
-        map.off("click", clickHandler);
-        const click = { lat: e.latlng.lat, lng: e.latlng.lng };
-        let d, targetLatLng;
+        base.wrap.removeEventListener("click", handler);
+        const click = base.clickToNatural(evt);
+        let d, targetX, targetY;
         if (entry.kind === "point") {
-          d = distKm(click.lat, click.lng, entry.lat, entry.lng);
-          targetLatLng = [entry.lat, entry.lng];
+          d = Math.hypot(click.x - entry.x, click.y - entry.y);
+          targetX = entry.x; targetY = entry.y;
         } else {
-          d = distToPolylineKm(click, entry.path);
-          targetLatLng = entry.path[Math.floor(entry.path.length / 2)];
+          d = distToPolyline(click, entry.path);
+          const mid = midOfPath(entry.path);
+          targetX = mid[0]; targetY = mid[1];
         }
         const isRight = d <= entry.tolerance;
         if (isRight) correct++;
 
-        L.marker(e.latlng, { icon: pinIcon(isRight ? "var(--correct)" : "var(--red)") }).addTo(map);
+        placeMarker(base.overlay, base.toPercent, click.x, click.y, isRight ? "marker-click-good" : "marker-click-bad");
         if (!isRight) {
-          marker = entry.kind === "point"
-            ? L.marker(targetLatLng, { icon: pinIcon("var(--ink)") }).addTo(map)
-            : L.polyline(entry.path, { color: "#022e3e", weight: 4, dashArray: "6 6" }).addTo(map);
+          if (entry.kind === "point") placeMarker(base.overlay, base.toPercent, targetX, targetY, "marker-answer");
+          else placeLine(base.overlay, base.natW, base.natH, entry.path, "map-line map-line-answer");
         }
         feedback.textContent = isRight ? "Juist!" : "Niet helemaal — het juiste antwoord staat nu op de kaart.";
         feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
@@ -266,32 +259,29 @@
           [isLast ? "Resultaat bekijken →" : "Volgende →"]);
         nextHolder.appendChild(btn);
         btn.focus();
-      };
-      map.on("click", clickHandler);
+      });
     }
 
     draw();
   }
 
-  /* ---------- meerkeuze op de kaart -------------------------------------- */
+  /* ---------- meerkeuze op de kaart ---------------------------------------- */
   function renderMC(root, group, onFinish) {
     root.innerHTML = "";
     root.appendChild(el("h1", null, [group.title]));
     const scoreEl = el("p", { class: "quiz-score" });
     const progress = el("div", { class: "progress-dots" });
-    const mapEl = el("div", { class: "leaflet-box leaflet-box-small" });
+    const mapHolder = el("div");
     const stage = el("div", { class: "quiz-card map-mc-card" });
 
     root.appendChild(scoreEl);
     root.appendChild(progress);
-    root.appendChild(mapEl);
+    root.appendChild(mapHolder);
     root.appendChild(stage);
 
-    const map = makeMap(mapEl, group.view);
-    map.dragging.disable();
     const order = shuffle(allEntries(group));
     const allTerms = order.map((e) => e.term);
-    let pos = 0, correct = 0, answered = false, marker = null, line = null;
+    let pos = 0, correct = 0, answered = false;
 
     function updateHeader() {
       scoreEl.textContent = "Score: " + correct + " / " + Math.min(pos, order.length);
@@ -307,13 +297,11 @@
     function draw() {
       updateHeader();
       stage.innerHTML = "";
-      if (marker) { map.removeLayer(marker); marker = null; }
-      if (line) { map.removeLayer(line); line = null; }
+      mapHolder.innerHTML = "";
 
       if (pos >= order.length) {
         const pct = order.length ? Math.round((correct / order.length) * 100) : 0;
         onFinish(correct, order.length);
-        mapEl.style.display = "none";
         stage.className = "quiz-result";
         stage.appendChild(el("p", { class: "result-big" }, [pct + "%"]));
         stage.appendChild(el("p", { class: "result-msg" }, [correct + " van de " + order.length + " juist"]));
@@ -325,12 +313,12 @@
 
       answered = false;
       const entry = order[pos];
+      const base = buildMapBase(group, "mapimg-wrap-small");
+      mapHolder.appendChild(base.wrap);
       if (entry.kind === "point") {
-        marker = L.marker([entry.lat, entry.lng], { icon: pinIcon("var(--red)") }).addTo(map);
-        map.panTo([entry.lat, entry.lng]);
+        placeMarker(base.overlay, base.toPercent, entry.x, entry.y, "marker-highlight");
       } else {
-        line = L.polyline(entry.path, { color: "#e5343c", weight: 5 }).addTo(map);
-        map.fitBounds(line.getBounds(), { padding: [24, 24] });
+        placeLine(base.overlay, base.natW, base.natH, entry.path, "map-line map-line-highlight");
       }
 
       stage.appendChild(el("span", { class: "flashcard-label" }, ["Wat is dit op de kaart?"]));
@@ -364,30 +352,30 @@
     draw();
   }
 
-  /* ---------- genummerde kaarttoets (zoals op je eigen toetsen) --------- */
+  /* ---------- genummerde kaarttoets (zoals op je eigen toetsen) ------------ */
   function renderNumbered(root, group, onFinish) {
     root.innerHTML = "";
     root.appendChild(el("h1", null, [group.title]));
     root.appendChild(
       el("p", { class: "module-intro" }, [
-        "Op de kaart staat bij elk nummer een plaats gemarkeerd. Vul de tabel eronder in en klik dan op \u201cVerbeteren\u201d."
+        "Op de kaart staat bij elk nummer een plaats gemarkeerd. Vul de tabel in en klik dan op \u201cVerbeteren\u201d."
       ])
     );
-    const mapEl = el("div", { class: "leaflet-box leaflet-box-tall" });
-    root.appendChild(mapEl);
 
-    const map = makeMap(mapEl, group.view);
+    const base = buildMapBase(group, "mapimg-wrap-tall");
+    root.appendChild(base.wrap);
+
     const order = shuffle(allEntries(group));
     const hasSecondary = !!group.secondaryLabel && order.some((e) => e.capital);
 
     order.forEach((entry, i) => {
       const n = i + 1;
       if (entry.kind === "point") {
-        L.marker([entry.lat, entry.lng], { icon: numberIcon(n) }).addTo(map);
+        placeMarker(base.overlay, base.toPercent, entry.x, entry.y, "marker-num", n);
       } else {
-        L.polyline(entry.path, { color: "#e5343c", weight: 4, opacity: 0.85 }).addTo(map);
-        const mid = entry.path[Math.floor(entry.path.length / 2)];
-        L.marker(mid, { icon: numberIcon(n) }).addTo(map);
+        placeLine(base.overlay, base.natW, base.natH, entry.path, "map-line map-line-study");
+        const mid = midOfPath(entry.path);
+        placeMarker(base.overlay, base.toPercent, mid[0], mid[1], "marker-num", n);
       }
     });
 
@@ -430,18 +418,14 @@
         totalFields++;
         if (nameOk) correctFields++;
         row.nameInput.classList.add(nameOk ? "input-correct" : "input-wrong");
-        if (!nameOk) {
-          tr.appendChild(el("td", { class: "table-correction" }, ["Land/plaats: " + row.entry.term]));
-        }
+        if (!nameOk) tr.appendChild(el("td", { class: "table-correction" }, ["Naam: " + row.entry.term]));
         if (row.capInput) {
           const capOk = norm(row.capInput.value) === norm(row.entry.capital || "");
           row.capInput.disabled = true;
           totalFields++;
           if (capOk) correctFields++;
           row.capInput.classList.add(capOk ? "input-correct" : "input-wrong");
-          if (!capOk) {
-            tr.appendChild(el("td", { class: "table-correction" }, [(group.secondaryLabel || "") + ": " + row.entry.capital]));
-          }
+          if (!capOk) tr.appendChild(el("td", { class: "table-correction" }, [(group.secondaryLabel || "") + ": " + row.entry.capital]));
         }
         tr.classList.add(nameOk && (!row.capInput || norm(row.capInput.value) === norm(row.entry.capital || "")) ? "row-correct" : "row-wrong");
       });
@@ -457,10 +441,9 @@
   }
 
   window.PKMapExercise = {
-    cleanup: cleanup,
+    cleanup: function () {}, // geen externe kaartinstantie meer op te ruimen
     mastery: mastery,
     render: function (root, group, mode) {
-      cleanup();
       if (mode === "leer") renderStudy(root, group);
       else if (mode === "mc") renderMC(root, group, (c, t) => recordScore("map-" + group.id + "-mc", c, t));
       else if (mode === "nummer") renderNumbered(root, group, (c, t) => recordScore("map-" + group.id + "-nummer", c, t));

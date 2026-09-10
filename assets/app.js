@@ -229,7 +229,7 @@
 
     const grid = el("div", { class: "sheet-grid" });
     PK_DATA.modules.forEach((mod) => {
-      const count = mod.topics.length;
+      const count = mod.topics.length + mapGroupsFor(mod.id).length;
       grid.appendChild(
         el("a", { class: "sheet-card", href: "#/module/" + mod.id }, [
           el("span", { class: "sheet-label" }, [mod.label]),

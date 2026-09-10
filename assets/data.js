@@ -1,28 +1,146 @@
 /* ==========================================================================
    Permanente Kennis — data.js
    Alle leerinhoud uit de twee referentiebundels van Meneer Schaeken:
-   - Permanente Kennis (2025): België & de Europese Unie
-   - Permanente Kennis (eerste graad): Wereld & Europa
+   - Permanente Kennis (2025): Wereld & Europa
+   - Permanente Kennis (eerste graad): België & de Europese Unie
 
-   Bewust weggelaten, in overleg met de leerkracht: inwonersaantallen en
-   vlaggen. Leerlingen moeten die niet kennen — dus staan ze hier niet in.
+   Ingedeeld in 8 kaartbladen, van eigen leefomgeving naar wereld — net als
+   in de bundels. Bewust weggelaten: inwonersaantallen en vlaggen. Die
+   hoeven leerlingen niet te kennen, dus staan ze hier niet in.
    ========================================================================== */
 
 window.PK_DATA = {
   modules: [
-    /* ======================================================================
-       MODULE 1 — Wereld & Europa (eerste graad)
-       ====================================================================== */
+    /* ============================= 1. HASSELT ============================= */
     {
-      id: "wereld-europa",
+      id: "hasselt",
       label: "Kaartblad 1",
-      title: "Wereld & Europa",
-      subtitle: "eerste graad",
-      intro: "De basiskennis over de werelddelen, oceanen en de landen van Europa.",
+      title: "Hasselt",
+      subtitle: "de eigen leefruimte",
+      intro: "Je eigen streek: Hasselt en de gemeenten, rivieren en wegen eromheen.",
+      topics: [
+        {
+          id: "hasselt-referentie",
+          title: "Referentiekaart Hasselt en omgeving",
+          kind: "category",
+          categoryLabel: "Soort",
+          categories: ["Rivier", "Snelweg", "Kanaal", "Gemeente"],
+          note: "De omliggende gemeenten (Genk, Bilzen, Diepenbeek, Kortessem, Zonhoven, Alken, Lummen, Herk-de-Stad) oefen je het best op de kaartoefening hierboven — daar zie je meteen waar ze liggen.",
+          items: [
+            { term: "Demer", category: "Rivier" },
+            { term: "Herk", category: "Rivier" },
+            { term: "E313", category: "Snelweg" },
+            { term: "E314", category: "Snelweg" },
+            { term: "A2", category: "Snelweg" },
+            { term: "Albertkanaal", category: "Kanaal" }
+          ]
+        }
+      ]
+    },
+
+    /* ============================= 2. BELGIË =============================== */
+    {
+      id: "belgie",
+      label: "Kaartblad 2",
+      title: "België",
+      subtitle: "provincies, gewesten, rivieren, autowegen",
+      intro: "Provincies en hun hoofdsteden, gewesten, gemeenschappen, buurlanden, rivieren en autowegen van België.",
+      topics: [
+        {
+          id: "provincies",
+          title: "De 10 provincies en hun hoofdstad",
+          kind: "pair",
+          promptLabel: "Provincie",
+          answerLabel: "Provinciehoofdstad",
+          allowTyping: true,
+          items: [
+            { term: "West-Vlaanderen", answer: "Brugge" },
+            { term: "Oost-Vlaanderen", answer: "Gent" },
+            { term: "Antwerpen", answer: "Antwerpen" },
+            { term: "Limburg", answer: "Hasselt" },
+            { term: "Vlaams-Brabant", answer: "Leuven" },
+            { term: "Waals-Brabant", answer: "Waver" },
+            { term: "Henegouwen", answer: "Bergen" },
+            { term: "Namen", answer: "Namen" },
+            { term: "Luik", answer: "Luik" },
+            { term: "Luxemburg (provincie)", answer: "Aarlen" }
+          ]
+        },
+        {
+          id: "gewesten-gemeenschappen",
+          title: "Gewesten en gemeenschappen van België",
+          kind: "category",
+          categoryLabel: "Gewest of gemeenschap?",
+          categories: ["Gewest", "Gemeenschap"],
+          items: [
+            { term: "Vlaams Gewest", category: "Gewest" },
+            { term: "Waals Gewest", category: "Gewest" },
+            { term: "Brussels Hoofdstedelijk Gewest", category: "Gewest" },
+            { term: "Vlaamse Gemeenschap", category: "Gemeenschap" },
+            { term: "Franse Gemeenschap", category: "Gemeenschap" },
+            { term: "Duitstalige Gemeenschap (Oostkantons, rond Eupen)", category: "Gemeenschap" }
+          ]
+        },
+        {
+          id: "buurlanden",
+          title: "De buurlanden van België",
+          kind: "pair",
+          promptLabel: "Buurland",
+          answerLabel: "Ligt ten ...",
+          allowTyping: true,
+          items: [
+            { term: "Nederland", answer: "Noorden van België" },
+            { term: "Duitsland", answer: "Oosten van België" },
+            { term: "Luxemburg (land)", answer: "Zuidoosten van België" },
+            { term: "Frankrijk", answer: "Zuiden/Zuidwesten van België" }
+          ]
+        },
+        {
+          id: "rivieren-belgie",
+          title: "Belangrijke rivieren in België",
+          kind: "pair",
+          promptLabel: "Rivier",
+          answerLabel: "Waar?",
+          allowTyping: false,
+          items: [
+            { term: "IJzer", answer: "West-Vlaanderen, mondt uit in Nieuwpoort" },
+            { term: "Leie", answer: "West- en Oost-Vlaanderen, komt samen met de Schelde in Gent" },
+            { term: "Schelde (België)", answer: "Van Henegouwen tot Antwerpen, mondt uit in Nederland" },
+            { term: "Demer", answer: "Stroomt onder andere door Diest, Aarschot en Hasselt en mondt uit in de Dijle" },
+            { term: "Samber", answer: "Henegouwen, mondt uit in de Maas in Namen" },
+            { term: "Maas (België)", answer: "Van Namen over Luik naar Limburg/Nederland" },
+            { term: "Ourthe", answer: "Provincie Luxemburg en Luik, mondt uit in de Maas in Luik" }
+          ]
+        },
+        {
+          id: "autowegen-belgie",
+          title: "Belangrijkste autowegen in België",
+          kind: "pair",
+          promptLabel: "Autoweg",
+          answerLabel: "Verbindt ...",
+          allowTyping: false,
+          items: [
+            { term: "E17", answer: "Loopt vanaf de Nederlandse grens bij Antwerpen via Gent en Kortrijk naar de Franse grens." },
+            { term: "E40", answer: "De langste snelweg van het land (280 km). Loopt van de kust (Oostende/De Panne) via Brugge, Gent, Brussel en Leuven naar Luik en de Duitse grens." },
+            { term: "E19", answer: "Verbindt de Nederlandse grens (Breda) via Antwerpen en Brussel met Bergen (Mons) en de Franse grens." },
+            { term: "E411", answer: "Vormt de verbinding tussen Brussel, Namen en Aarlen (Luxemburg)." },
+            { term: "E313", answer: "Verbindt Antwerpen met Hasselt en Luik." }
+          ]
+        }
+      ]
+    },
+
+    /* ========================= 3. EUROPESE UNIE ============================ */
+    {
+      id: "eu",
+      label: "Kaartblad 3",
+      title: "Europese Unie",
+      subtitle: "de 27 lidstaten",
+      intro: "De 27 EU-lidstaten en hun hoofdsteden, en enkele belangrijke rivieren en gebergtes van de EU.",
       topics: [
         {
           id: "eu-lidstaten",
-          title: "EU-lidstaten en hoofdsteden",
+          title: "De 27 EU-lidstaten en hoofdsteden",
           kind: "pair",
           promptLabel: "Lidstaat",
           answerLabel: "Hoofdstad",
@@ -57,6 +175,46 @@ window.PK_DATA = {
             { term: "Kroatië", answer: "Zagreb" }
           ]
         },
+        {
+          id: "eu-rivieren",
+          title: "Enkele belangrijke rivieren van de EU",
+          kind: "pair",
+          promptLabel: "Rivier",
+          answerLabel: "Waar?",
+          allowTyping: false,
+          items: [
+            { term: "Rijn", answer: "Zwitserland, Duitsland, Nederland" },
+            { term: "Donau", answer: "Duitsland, Oostenrijk, Slowakije, Hongarije, Kroatië, Roemenië, Bulgarije" },
+            { term: "Seine", answer: "Frankrijk (door Parijs)" },
+            { term: "Schelde (EU)", answer: "Frankrijk, België, Nederland" },
+            { term: "Maas (EU)", answer: "Frankrijk, België, Nederland" }
+          ]
+        },
+        {
+          id: "eu-gebergtes",
+          title: "Enkele belangrijke gebergtes van de EU",
+          kind: "pair",
+          promptLabel: "Gebergte",
+          answerLabel: "Waar?",
+          allowTyping: false,
+          items: [
+            { term: "Pyreneeën (EU)", answer: "Grens tussen Frankrijk en Spanje" },
+            { term: "Alpen (EU)", answer: "Frankrijk, Italië, Zwitserland, Oostenrijk, Slovenië" },
+            { term: "Oeral (EU)", answer: "Natuurlijke grens tussen werelddeel Europa en werelddeel Azië" },
+            { term: "Scandinavisch hoogland (EU)", answer: "Noorden van Europa, in Scandinavië" }
+          ]
+        }
+      ]
+    },
+
+    /* ============================= 4. EUROPA ================================ */
+    {
+      id: "europa",
+      label: "Kaartblad 4",
+      title: "Europa",
+      subtitle: "alle landen en hoofdsteden",
+      intro: "Naast de EU: de kandidaat-lidstaten en de andere landen van Europa — en alle 50 landen samen.",
+      topics: [
         {
           id: "kandidaat-lidstaten",
           title: "Kandidaat-lidstaten en hoofdsteden",
@@ -159,7 +317,18 @@ window.PK_DATA = {
             { term: "Wit-Rusland (Belarus)", answer: "Minsk" },
             { term: "Zwitserland", answer: "Bern" }
           ]
-        },
+        }
+      ]
+    },
+
+    /* ================ 5. EUROPA: RIVIEREN, ZEEËN, GEBERGTE ================== */
+    {
+      id: "europa-water",
+      label: "Kaartblad 5",
+      title: "Europa: water en reliëf",
+      subtitle: "rivieren, zeeën, oceanen en gebergte",
+      intro: "De zeeën, oceanen, rivieren en gebergtes van Europa.",
+      topics: [
         {
           id: "europa-water-relief",
           title: "Europa: zeeën, oceanen, rivieren en gebergtes",
@@ -190,7 +359,18 @@ window.PK_DATA = {
             { term: "Scandinavisch hoogland", category: "Gebergte" },
             { term: "Alpen", category: "Gebergte" }
           ]
-        },
+        }
+      ]
+    },
+
+    /* ============ 6. WERELD: CONTINENTEN, WERELDDELEN, ZEEËN =============== */
+    {
+      id: "wereld-continenten",
+      label: "Kaartblad 6",
+      title: "Continenten & werelddelen",
+      subtitle: "en de oceanen en zeeën van de wereld",
+      intro: "Kernbegrippen en de indeling van de wereld in continenten, werelddelen, oceanen en zeeën.",
+      topics: [
         {
           id: "wereld-definities",
           title: "Kernbegrippen: continent, werelddeel, oceaan, zee",
@@ -231,7 +411,18 @@ window.PK_DATA = {
             { term: "Zuidelijke Oceaan", category: "Oceaan of zee" },
             { term: "Noordelijke IJszee (wereld)", category: "Oceaan of zee" }
           ]
-        },
+        }
+      ]
+    },
+
+    /* ================= 7. WERELD: LANDEN EN STEDEN ========================== */
+    {
+      id: "wereld-landen-steden",
+      label: "Kaartblad 7",
+      title: "Landen & steden",
+      subtitle: "in de wereld",
+      intro: "De 21 landen en steden uit je wereldbundel.",
+      topics: [
         {
           id: "wereld-landen-steden",
           title: "De wereld: landen en steden om te kennen",
@@ -284,7 +475,18 @@ window.PK_DATA = {
             { term: "Riyad", category: "Stad" },
             { term: "Tripoli", category: "Stad" }
           ]
-        },
+        }
+      ]
+    },
+
+    /* ==================== 8. WERELD: RELIËF EN RIVIEREN ====================== */
+    {
+      id: "wereld-relief",
+      label: "Kaartblad 8",
+      title: "Reliëf, rivieren & zeeën",
+      subtitle: "in de wereld",
+      intro: "De reliëfgebieden, rivieren en zeeën uit je wereldbundel.",
+      topics: [
         {
           id: "wereld-relief",
           title: "De wereld: reliëf, rivieren en zeeën",
@@ -312,182 +514,6 @@ window.PK_DATA = {
             { term: "Noordzee (wereldkaart)", category: "Zee" },
             { term: "Zwarte Zee (wereldkaart)", category: "Zee" },
             { term: "Kaspische Zee (wereldkaart)", category: "Zee" }
-          ]
-        }
-      ]
-    },
-
-    /* ======================================================================
-       MODULE 2 — België & de Europese Unie (2025)
-       ====================================================================== */
-    {
-      id: "belgie-eu",
-      label: "Kaartblad 2",
-      title: "België & de Europese Unie",
-      subtitle: "2025",
-      intro: "Provincies, gewesten, buurlanden, rivieren en autowegen van België, en de 27 EU-lidstaten.",
-      topics: [
-        {
-          id: "provincies",
-          title: "De 10 provincies en hun hoofdstad",
-          kind: "pair",
-          promptLabel: "Provincie",
-          answerLabel: "Provinciehoofdstad",
-          allowTyping: true,
-          items: [
-            { term: "West-Vlaanderen", answer: "Brugge" },
-            { term: "Oost-Vlaanderen", answer: "Gent" },
-            { term: "Antwerpen", answer: "Antwerpen" },
-            { term: "Limburg", answer: "Hasselt" },
-            { term: "Vlaams-Brabant", answer: "Leuven" },
-            { term: "Waals-Brabant", answer: "Waver" },
-            { term: "Henegouwen", answer: "Bergen" },
-            { term: "Namen", answer: "Namen" },
-            { term: "Luik", answer: "Luik" },
-            { term: "Luxemburg (provincie)", answer: "Aarlen" }
-          ]
-        },
-        {
-          id: "gewesten-gemeenschappen",
-          title: "Gewesten en gemeenschappen van België",
-          kind: "category",
-          categoryLabel: "Gewest of gemeenschap?",
-          categories: ["Gewest", "Gemeenschap"],
-          items: [
-            { term: "Vlaams Gewest", category: "Gewest" },
-            { term: "Waals Gewest", category: "Gewest" },
-            { term: "Brussels Hoofdstedelijk Gewest", category: "Gewest" },
-            { term: "Vlaamse Gemeenschap", category: "Gemeenschap" },
-            { term: "Franse Gemeenschap", category: "Gemeenschap" },
-            { term: "Duitstalige Gemeenschap (Oostkantons, rond Eupen)", category: "Gemeenschap" }
-          ]
-        },
-        {
-          id: "buurlanden",
-          title: "De buurlanden van België",
-          kind: "pair",
-          promptLabel: "Buurland",
-          answerLabel: "Ligt ten ...",
-          allowTyping: true,
-          items: [
-            { term: "Nederland", answer: "Noorden van België" },
-            { term: "Duitsland", answer: "Oosten van België" },
-            { term: "Luxemburg (land)", answer: "Zuidoosten van België" },
-            { term: "Frankrijk", answer: "Zuiden/Zuidwesten van België" }
-          ]
-        },
-        {
-          id: "rivieren-belgie",
-          title: "Belangrijke rivieren in België",
-          kind: "pair",
-          promptLabel: "Rivier",
-          answerLabel: "Waar?",
-          allowTyping: false,
-          items: [
-            { term: "IJzer", answer: "West-Vlaanderen, mondt uit in Nieuwpoort" },
-            { term: "Leie", answer: "West- en Oost-Vlaanderen, komt samen met de Schelde in Gent" },
-            { term: "Schelde (België)", answer: "Van Henegouwen tot Antwerpen, mondt uit in Nederland" },
-            { term: "Demer", answer: "Stroomt onder andere door Diest, Aarschot en Hasselt en mondt uit in de Dijle" },
-            { term: "Samber", answer: "Henegouwen, mondt uit in de Maas in Namen" },
-            { term: "Maas (België)", answer: "Van Namen over Luik naar Limburg/Nederland" },
-            { term: "Ourthe", answer: "Provincie Luxemburg en Luik, mondt uit in de Maas in Luik" }
-          ]
-        },
-        {
-          id: "autowegen-belgie",
-          title: "Belangrijkste autowegen in België",
-          kind: "pair",
-          promptLabel: "Autoweg",
-          answerLabel: "Verbindt ...",
-          allowTyping: false,
-          items: [
-            { term: "E17", answer: "Loopt vanaf de Nederlandse grens bij Antwerpen via Gent en Kortrijk naar de Franse grens." },
-            { term: "E40", answer: "De langste snelweg van het land (280 km). Loopt van de kust (Oostende/De Panne) via Brugge, Gent, Brussel en Leuven naar Luik en de Duitse grens." },
-            { term: "E19", answer: "Verbindt de Nederlandse grens (Breda) via Antwerpen en Brussel met Bergen (Mons) en de Franse grens." },
-            { term: "E411", answer: "Vormt de verbinding tussen Brussel, Namen en Aarlen (Luxemburg)." },
-            { term: "E313", answer: "Verbindt Antwerpen met Hasselt en Luik." }
-          ]
-        },
-        {
-          id: "eu-lidstaten-2",
-          title: "De 27 EU-lidstaten en hoofdsteden",
-          kind: "pair",
-          promptLabel: "Lidstaat",
-          answerLabel: "Hoofdstad",
-          allowTyping: true,
-          items: [
-            { term: "België (EU)", answer: "Brussel" },
-            { term: "Bulgarije (EU)", answer: "Sofia" },
-            { term: "Cyprus (EU)", answer: "Nicosia" },
-            { term: "Denemarken (EU)", answer: "Kopenhagen" },
-            { term: "Duitsland (EU)", answer: "Berlijn" },
-            { term: "Estland (EU)", answer: "Tallinn" },
-            { term: "Finland (EU)", answer: "Helsinki" },
-            { term: "Frankrijk (EU)", answer: "Parijs" },
-            { term: "Griekenland (EU)", answer: "Athene" },
-            { term: "Hongarije (EU)", answer: "Boedapest" },
-            { term: "Ierland (EU)", answer: "Dublin" },
-            { term: "Italië (EU)", answer: "Rome" },
-            { term: "Letland (EU)", answer: "Riga" },
-            { term: "Litouwen (EU)", answer: "Vilnius" },
-            { term: "Luxemburg (EU)", answer: "Luxemburg" },
-            { term: "Malta (EU)", answer: "Valletta" },
-            { term: "Nederland (EU)", answer: "Amsterdam" },
-            { term: "Oostenrijk (EU)", answer: "Wenen" },
-            { term: "Polen (EU)", answer: "Warschau" },
-            { term: "Portugal (EU)", answer: "Lissabon" },
-            { term: "Roemenië (EU)", answer: "Boekarest" },
-            { term: "Slovenië (EU)", answer: "Ljubljana" },
-            { term: "Slowakije (EU)", answer: "Bratislava" },
-            { term: "Spanje (EU)", answer: "Madrid" },
-            { term: "Tsjechië (EU)", answer: "Praag" },
-            { term: "Zweden (EU)", answer: "Stockholm" },
-            { term: "Kroatië (EU)", answer: "Zagreb" }
-          ]
-        },
-        {
-          id: "eu-rivieren",
-          title: "Enkele belangrijke rivieren van de EU",
-          kind: "pair",
-          promptLabel: "Rivier",
-          answerLabel: "Waar?",
-          allowTyping: false,
-          items: [
-            { term: "Rijn", answer: "Zwitserland, Duitsland, Nederland" },
-            { term: "Donau", answer: "Duitsland, Oostenrijk, Slowakije, Hongarije, Kroatië, Roemenië, Bulgarije" },
-            { term: "Seine", answer: "Frankrijk (door Parijs)" },
-            { term: "Schelde (EU)", answer: "Frankrijk, België, Nederland" },
-            { term: "Maas (EU)", answer: "Frankrijk, België, Nederland" }
-          ]
-        },
-        {
-          id: "eu-gebergtes",
-          title: "Enkele belangrijke gebergtes van de EU",
-          kind: "pair",
-          promptLabel: "Gebergte",
-          answerLabel: "Waar?",
-          allowTyping: false,
-          items: [
-            { term: "Pyreneeën (EU)", answer: "Grens tussen Frankrijk en Spanje" },
-            { term: "Alpen (EU)", answer: "Frankrijk, Italië, Zwitserland, Oostenrijk, Slovenië" },
-            { term: "Oeral (EU)", answer: "Natuurlijke grens tussen werelddeel Europa en werelddeel Azië" },
-            { term: "Scandinavisch hoogland (EU)", answer: "Noorden van Europa, in Scandinavië" }
-          ]
-        },
-        {
-          id: "hasselt-referentie",
-          title: "Referentiekaart Hasselt en omgeving",
-          kind: "category",
-          categoryLabel: "Soort",
-          categories: ["Rivier", "Snelweg", "Kanaal"],
-          note: "Dit onderdeel is nog onvolledig: de omliggende gemeenten op de referentiekaart (de stippen bij Al, Bi, Di, Ge, Hc, Ko, Lu en Zo) staan er nog niet bij.",
-          items: [
-            { term: "Demer", category: "Rivier" },
-            { term: "Herk", category: "Rivier" },
-            { term: "E313", category: "Snelweg" },
-            { term: "E314", category: "Snelweg" },
-            { term: "A2", category: "Snelweg" },
-            { term: "Albertkanaal", category: "Kanaal" }
           ]
         }
       ]
