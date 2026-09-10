@@ -168,16 +168,16 @@
     root.appendChild(wrap);
     if (mode === "start") {
       wrap.appendChild(el("h1", null, [group.title]));
-      wrap.appendChild(el("p", { class: "module-intro" }, [group.instructions]));
+      wrap.appendChild(el("p", { class: "module-intro" }, ["Zoek het symbool op de echte kaart uit je bundel op."]));
+      if (group.note) wrap.appendChild(el("p", { class: "topic-note" }, [group.note]));
       const base = "#/kaart/" + moduleId + "/" + group.id + "/";
       const modes = el("div", { class: "mode-grid" });
-      modes.appendChild(modeCard(base + "leer", cardsIconSVG(), "Kaart bekijken", "Alle plaatsen gelabeld — rustig instuderen."));
-      modes.appendChild(modeCard(base + "wijs", pencilIconSVG(), "Wijs aan", "Klik zelf op de juiste plaats op de kaart."));
-      modes.appendChild(modeCard(base + "mc", checkIconSVG(), "Meerkeuze op de kaart", "Een plaats is gemarkeerd — kies de juiste naam."));
-      modes.appendChild(modeCard(base + "nummer", tableIconSVG(), "Genummerde kaart (zoals op je toets)", "Elk nummer op de kaart is een plaats — vul de naam" + (group.secondaryLabel ? " én " + group.secondaryLabel.toLowerCase() : "") + " in."));
+      modes.appendChild(modeCard(base + "leer", cardsIconSVG(), "Kaart bekijken", "Kaart met de volledige legende ernaast — rustig instuderen."));
+      modes.appendChild(modeCard(base + "mc", checkIconSVG(), "Meerkeuze", "Bij elk symbool: kies de juiste naam uit vier opties."));
+      modes.appendChild(modeCard(base + "typ", pencilIconSVG(), "Zelf typen", "Bij elk symbool: typ zelf de naam" + (group.secondaryLabel ? " en " + group.secondaryLabel.toLowerCase() : "") + "."));
       wrap.appendChild(modes);
-      const m = window.PKMapExercise ? window.PKMapExercise.mastery("map-" + group.id + "-wijs") : null;
-      if (m != null) wrap.appendChild(el("p", { class: "score-note" }, ["Je beste score bij 'Wijs aan': " + m + "%."]));
+      const m = window.PKMapExercise ? window.PKMapExercise.mastery("map-" + group.id + "-mc") : null;
+      if (m != null) wrap.appendChild(el("p", { class: "score-note" }, ["Je beste score bij meerkeuze: " + m + "%."]));
       return;
     }
     window.PKMapExercise.render(wrap, group, mode);
@@ -246,7 +246,7 @@
       el("section", { class: "legend-block" }, [
         el("h3", null, ["Hoe werkt het?"]),
         el("div", { class: "legend-row" }, [
-          legendItem(mapPinIconSVG(), "Kaartoefening", "Klik zelf de juiste plaats aan op een echte kaart."),
+          legendItem(mapPinIconSVG(), "Kaartoefening", "De echte, genummerde kaart uit je bundel — zeg wat elk symbool is."),
           legendItem(cardsIconSVG(), "Leerkaarten", "Klik een kaart om en toont het antwoord."),
           legendItem(checkIconSVG(), "Meerkeuze", "Kies het juiste antwoord uit vier opties."),
           legendItem(tfIconSVG(), "Juist of fout", "Beoordeel een voorgesteld antwoord, net als bij juist/fout-vragen."),
@@ -283,8 +283,8 @@
       wrap.appendChild(el("h2", { class: "section-heading" }, ["Kaartoefeningen"]));
       const mapList = el("div", { class: "topic-list" });
       mapGroups.forEach((g) => {
-        const m = window.PKMapExercise ? window.PKMapExercise.mastery("map-" + g.id + "-wijs") : null;
-        const count = (g.items ? g.items.length : 0) + (g.lines ? g.lines.length : 0);
+        const m = window.PKMapExercise ? window.PKMapExercise.mastery("map-" + g.id + "-mc") : null;
+        const count = g.legend ? g.legend.length : 0;
         mapList.appendChild(
           el("a", { class: "topic-row", href: "#/kaart/" + moduleId + "/" + g.id + "/start" }, [
             el("div", { class: "topic-kind-dot kind-map", "aria-hidden": "true" }, []),

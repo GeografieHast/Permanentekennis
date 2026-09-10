@@ -545,10 +545,9 @@ tr.row-wrong .table-input { border-color: var(--red); background: #fbeaea; }
 .topic-list + .section-heading { margin-top: 30px; }
 .topic-kind-dot.kind-map { background: var(--red); }
 
-/* ---------- kaartoefeningen (echte bundelkaarten) --------------------------------------- */
+/* ---------- kaartoefeningen (echte bundelkaarten, zonder coördinaten) ------------------- */
 
 .mapimg-wrap {
-  position: relative;
   width: 100%;
   max-width: 900px;
   margin: 12px auto 18px;
@@ -556,102 +555,21 @@ tr.row-wrong .table-input { border-color: var(--red); background: #fbeaea; }
   border: 1px solid var(--line-strong);
   overflow: hidden;
   background: #eef1ee;
-  cursor: crosshair;
-  user-select: none;
   box-shadow: 0 4px 14px rgba(2,46,62,0.08);
 }
-.mapimg-wrap-small { max-width: 640px; }
-.mapimg-wrap-tall { max-width: 760px; }
-.mapimg {
+.mapimg-wrap-quiz { max-width: 720px; }
+.mapimg-plain {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: contain;
-  pointer-events: none;
-}
-.mapimg-overlay {
-  position: absolute;
-  inset: 0;
-}
-.map-line-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-.map-line { fill: none; stroke: var(--red); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; opacity: 0.9; }
-.map-line-study { stroke: var(--ink); opacity: 0.65; }
-.map-line-faint { stroke: var(--line-strong); stroke-width: 4; opacity: 0.5; }
-.map-line-answer { stroke: var(--correct); stroke-width: 7; }
-.map-line-highlight { stroke: var(--red); stroke-width: 8; }
-
-.map-marker {
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  margin: -7px 0 0 -7px;
-  border-radius: 50%;
-  background: var(--ink);
-  border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(2,46,62,0.5);
-}
-.marker-dot { background: var(--ink); }
-.marker-highlight {
-  width: 22px; height: 22px; margin: -11px 0 0 -11px;
-  background: var(--red);
-  box-shadow: 0 0 0 6px rgba(229,52,60,0.28), 0 1px 4px rgba(2,46,62,0.5);
-}
-.marker-click-good { background: var(--correct); width: 18px; height: 18px; margin: -9px 0 0 -9px; }
-.marker-click-bad { background: var(--red); width: 18px; height: 18px; margin: -9px 0 0 -9px; }
-.marker-answer {
-  background: transparent;
-  border: 3px solid var(--correct);
-  width: 22px; height: 22px; margin: -11px 0 0 -11px;
-  box-shadow: none;
-}
-.marker-num {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px; height: 24px; margin: -12px 0 0 -12px;
-  border-radius: 50%;
-  background: var(--red);
-  color: #fff;
-  font-family: Verdana, sans-serif;
-  font-size: 0.76rem;
-  font-weight: bold;
-  border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(2,46,62,0.5);
+  height: auto;
 }
 
-.map-tag {
-  position: absolute;
-  transform: translate(8px, -6px);
-  font-family: Verdana, sans-serif;
-  font-size: 0.72rem;
-  font-weight: bold;
-  color: var(--ink);
-  background: rgba(255,255,255,0.92);
-  border: 1px solid var(--line-strong);
-  border-radius: 4px;
-  padding: 1px 5px;
-  white-space: nowrap;
-  pointer-events: none;
-}
-.tag-line {
-  transform: translate(-50%, -50%);
-  background: var(--ink);
-  color: #fff;
-  border-color: var(--ink);
-}
-
-.map-mc-card { width: min(100%, 520px); margin: 0 auto; }
-.map-prompt { font-weight: bold; font-size: 1.15rem; margin: 4px 0 12px; }
+.map-legend-card { width: min(100%, 560px); margin: 0 auto; }
+.map-prompt { font-weight: bold; font-size: 1.2rem; margin: 4px 0 14px; text-align: center; }
+.map-capital-block { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--line-strong); }
 
 @media (max-width: 480px) {
-  .map-tag { font-size: 0.62rem; }
-  .marker-num { width: 20px; height: 20px; margin: -10px 0 0 -10px; font-size: 0.66rem; }
+  .map-prompt { font-size: 1.05rem; }
 }
 
 /* ---------- footer -------------------------------------------------------------- */

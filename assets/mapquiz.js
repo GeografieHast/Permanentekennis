@@ -1,10 +1,13 @@
 /* ==========================================================================
    Permanente Kennis — mapquiz.js
-   Kaartoefeningen op de echte kaarten uit je bundel (afbeelding + pixel-
-   coördinaten), zonder externe kaartendienst. Werkt responsief via
-   procentuele positionering t.o.v. de natuurlijke afbeeldingsgrootte.
-   Modi: "leer" (studeren), "wijs" (klik-op-de-kaart), "mc" (meerkeuze),
-   "nummer" (genummerde kaarttoets zoals op papier).
+   Kaartoefeningen op de echte, genummerde kaart uit de bundel: de leerling
+   zoekt het nummer/de letter/het Romeins cijfer zelf op de kaart (zoals op
+   papier) en zegt wat het is. Geen klikcoördinaten — dus geen risico dat
+   de kaart een verkeerde plaats "aanwijst". De legende komt rechtstreeks
+   uit de antwoordtabellen van de bundel.
+   Modi: "bekijk" (kaart + volledige legende, om te studeren),
+   "meerkeuze" (per symbool kiezen uit 4 opties),
+   "typ" (per symbool zelf typen).
    ========================================================================== */
 
 (function () {
@@ -66,225 +69,59 @@
     return p[id] ? p[id].best : null;
   }
 
-  function allEntries(group) {
-    const pts = (group.items || []).map((it) => ({
-      term: it.term, kind: "point", x: it.x, y: it.y,
-      tolerance: it.tolerance || group.tolerance, capital: it.capital
-    }));
-    const lines = (group.lines || []).map((it) => ({
-      term: it.term, kind: "line", path: it.path,
-      tolerance: it.tolerance || group.tolerance, capital: it.capital
-    }));
-    return pts.concat(lines);
+  function mapImage(group, cls) {
+    return el("div", { class: "mapimg-wrap " + (cls || "") }, [
+      el("img", { src: group.image, alt: group.title, class: "mapimg-plain" })
+    ]);
   }
 
-  function distToSegment(p, a, b) {
-    const dx = b[0] - a[0], dy = b[1] - a[1];
-    const len2 = dx * dx + dy * dy;
-    let t = len2 === 0 ? 0 : ((p.x - a[0]) * dx + (p.y - a[1]) * dy) / len2;
-    t = Math.max(0, Math.min(1, t));
-    const cx = a[0] + t * dx, cy = a[1] + t * dy;
-    return Math.hypot(p.x - cx, p.y - cy);
-  }
-  function distToPolyline(p, path) {
-    let min = Infinity;
-    for (let i = 0; i < path.length - 1; i++) min = Math.min(min, distToSegment(p, path[i], path[i + 1]));
-    return min;
-  }
-  function midOfPath(path) {
-    return path[Math.floor(path.length / 2)];
-  }
-
-  /* ---------- de kaart-basis: afbeelding + overlay-laag ------------------- */
-  function buildMapBase(group, extraClass) {
-    const [natW, natH] = group.imageSize;
-    const wrap = el("div", { class: "mapimg-wrap" + (extraClass ? " " + extraClass : "") });
-    const img = el("img", { src: group.image, alt: group.title, draggable: "false", class: "mapimg" });
-    const overlay = el("div", { class: "mapimg-overlay" });
-    wrap.style.aspectRatio = natW + " / " + natH;
-    wrap.appendChild(img);
-    wrap.appendChild(overlay);
-
-    function toPercent(x, y) {
-      return { left: (x / natW) * 100 + "%", top: (y / natH) * 100 + "%" };
-    }
-    function clickToNatural(evt) {
-      const rect = wrap.getBoundingClientRect();
-      const px = ((evt.clientX - rect.left) / rect.width) * natW;
-      const py = ((evt.clientY - rect.top) / rect.height) * natH;
-      return { x: px, y: py };
-    }
-    return { wrap, overlay, toPercent, clickToNatural, natW, natH };
-  }
-
-  function placeMarker(overlay, toPercent, x, y, cls, content) {
-    const pos = toPercent(x, y);
-    const m = el("div", { class: "map-marker " + (cls || ""), style: "left:" + pos.left + ";top:" + pos.top + ";" }, content != null ? [String(content)] : []);
-    overlay.appendChild(m);
-    return m;
-  }
-  function placeLabel(overlay, toPercent, x, y, text, cls) {
-    const pos = toPercent(x, y);
-    const l = el("div", { class: "map-tag " + (cls || ""), style: "left:" + pos.left + ";top:" + pos.top + ";" }, [text]);
-    overlay.appendChild(l);
-    return l;
-  }
-  function placeLine(overlay, natW, natH, path, cls) {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("viewBox", "0 0 " + natW + " " + natH);
-    svg.setAttribute("class", "map-line-svg");
-    svg.setAttribute("preserveAspectRatio", "none");
-    const pts = path.map((p) => p[0] + "," + p[1]).join(" ");
-    const poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
-    poly.setAttribute("points", pts);
-    poly.setAttribute("class", cls || "map-line");
-    svg.appendChild(poly);
-    overlay.appendChild(svg);
-    return svg;
-  }
-
-  /* ---------- studeermodus: alles gelabeld -------------------------------- */
+  /* ---------- bekijk-modus: kaart + volledige legende ---------------------- */
   function renderStudy(root, group) {
     root.innerHTML = "";
     root.appendChild(el("h1", null, [group.title]));
-    root.appendChild(el("p", { class: "module-intro" }, [group.instructions]));
+    root.appendChild(
+      el("p", { class: "module-intro" }, [
+        "Zoek elk symbool op de kaart op en overloop de legende hieronder."
+      ])
+    );
+    if (group.note) root.appendChild(el("p", { class: "topic-note" }, [group.note]));
+    root.appendChild(mapImage(group));
 
-    const base = buildMapBase(group);
-    root.appendChild(base.wrap);
-
-    (group.items || []).forEach((it) => {
-      placeMarker(base.overlay, base.toPercent, it.x, it.y, "marker-dot");
-      placeLabel(base.overlay, base.toPercent, it.x, it.y, it.term, "tag-study");
+    const hasSecondary = !!group.secondaryLabel && group.legend.some((e) => e.capital);
+    const table = el("table", { class: "quiz-table" });
+    const headCells = [el("th", null, ["Symbool"]), el("th", null, ["Naam"])];
+    if (hasSecondary) headCells.push(el("th", null, [group.secondaryLabel]));
+    table.appendChild(el("thead", null, [el("tr", null, headCells)]));
+    const tbody = el("tbody");
+    group.legend.forEach((e) => {
+      const cells = [el("td", { class: "table-term" }, [e.key]), el("td", null, [e.term])];
+      if (hasSecondary) cells.push(el("td", null, [e.capital || "\u2014"]));
+      tbody.appendChild(el("tr", null, cells));
     });
-    (group.lines || []).forEach((it) => {
-      placeLine(base.overlay, base.natW, base.natH, it.path, "map-line map-line-study");
-      const mid = midOfPath(it.path);
-      placeLabel(base.overlay, base.toPercent, mid[0], mid[1], it.term, "tag-study tag-line");
-    });
+    table.appendChild(tbody);
+    root.appendChild(el("div", { class: "table-wrap" }, [table]));
   }
 
-  /* ---------- klik-op-de-kaart --------------------------------------------- */
-  function renderClick(root, group, onFinish) {
+  /* ---------- meerkeuze / typ ------------------------------------------------ */
+  function runQuiz(root, group, kind, onFinish) {
     root.innerHTML = "";
     root.appendChild(el("h1", null, [group.title]));
-    const scoreEl = el("p", { class: "quiz-score" });
-    const promptEl = el("p", { class: "quiz-prompt map-prompt" });
-    const progress = el("div", { class: "progress-dots" });
-    const feedback = el("p", { class: "quiz-feedback", "aria-live": "polite" });
-    const nextHolder = el("div", { class: "quiz-next-holder" });
+    if (group.note) root.appendChild(el("p", { class: "topic-note" }, [group.note]));
 
-    root.appendChild(scoreEl);
-    root.appendChild(promptEl);
-    root.appendChild(progress);
-    const mapHolder = el("div");
-    root.appendChild(mapHolder);
-    root.appendChild(feedback);
-    root.appendChild(nextHolder);
-
-    const order = shuffle(allEntries(group));
-    let pos = 0, correct = 0, answered = false;
-
-    function updateHeader() {
-      scoreEl.textContent = "Score: " + correct + " / " + Math.min(pos, order.length);
-      progress.innerHTML = "";
-      order.forEach((_, i) => {
-        let cls = "dot";
-        if (i < pos) cls += " dot-done";
-        if (i === pos) cls += " dot-active";
-        progress.appendChild(el("span", { class: cls }));
-      });
-    }
-
-    function draw() {
-      updateHeader();
-      feedback.textContent = "";
-      feedback.className = "quiz-feedback";
-      nextHolder.innerHTML = "";
-      mapHolder.innerHTML = "";
-
-      if (pos >= order.length) {
-        const pct = order.length ? Math.round((correct / order.length) * 100) : 0;
-        onFinish(correct, order.length);
-        promptEl.textContent = "";
-        root.appendChild(
-          el("div", { class: "quiz-result" }, [
-            el("p", { class: "result-big" }, [pct + "%"]),
-            el("p", { class: "result-msg" }, [correct + " van de " + order.length + " juist aangeklikt."]),
-            el("div", { class: "quiz-actions" }, [
-              el("button", { class: "btn btn-primary", type: "button", onclick: () => renderClick(root, group, onFinish) }, ["Nog een keer"])
-            ])
-          ])
-        );
-        return;
-      }
-
-      answered = false;
-      const entry = order[pos];
-      promptEl.textContent = "Waar ligt: " + entry.term + " ?";
-
-      const base = buildMapBase(group);
-      mapHolder.appendChild(base.wrap);
-      (group.lines || []).forEach((it) => {
-        if (it !== entry) placeLine(base.overlay, base.natW, base.natH, it.path, "map-line map-line-faint");
-      });
-
-      base.wrap.addEventListener("click", function handler(evt) {
-        if (answered) return;
-        answered = true;
-        base.wrap.removeEventListener("click", handler);
-        const click = base.clickToNatural(evt);
-        let d, targetX, targetY;
-        if (entry.kind === "point") {
-          d = Math.hypot(click.x - entry.x, click.y - entry.y);
-          targetX = entry.x; targetY = entry.y;
-        } else {
-          d = distToPolyline(click, entry.path);
-          const mid = midOfPath(entry.path);
-          targetX = mid[0]; targetY = mid[1];
-        }
-        const isRight = d <= entry.tolerance;
-        if (isRight) correct++;
-
-        placeMarker(base.overlay, base.toPercent, click.x, click.y, isRight ? "marker-click-good" : "marker-click-bad");
-        if (!isRight) {
-          if (entry.kind === "point") placeMarker(base.overlay, base.toPercent, targetX, targetY, "marker-answer");
-          else placeLine(base.overlay, base.natW, base.natH, entry.path, "map-line map-line-answer");
-        }
-        feedback.textContent = isRight ? "Juist!" : "Niet helemaal — het juiste antwoord staat nu op de kaart.";
-        feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
-        updateHeader();
-
-        const isLast = pos === order.length - 1;
-        const btn = el("button", { class: "btn btn-primary", type: "button", onclick: () => { pos++; draw(); } },
-          [isLast ? "Resultaat bekijken →" : "Volgende →"]);
-        nextHolder.appendChild(btn);
-        btn.focus();
-      });
-    }
-
-    draw();
-  }
-
-  /* ---------- meerkeuze op de kaart ---------------------------------------- */
-  function renderMC(root, group, onFinish) {
-    root.innerHTML = "";
-    root.appendChild(el("h1", null, [group.title]));
     const scoreEl = el("p", { class: "quiz-score" });
     const progress = el("div", { class: "progress-dots" });
-    const mapHolder = el("div");
-    const stage = el("div", { class: "quiz-card map-mc-card" });
-
     root.appendChild(scoreEl);
     root.appendChild(progress);
-    root.appendChild(mapHolder);
+    root.appendChild(mapImage(group, "mapimg-wrap-quiz"));
+    const stage = el("div", { class: "quiz-card map-legend-card" });
     root.appendChild(stage);
 
-    const order = shuffle(allEntries(group));
-    const allTerms = order.map((e) => e.term);
-    let pos = 0, correct = 0, answered = false;
+    const order = shuffle(group.legend);
+    const hasSecondary = !!group.secondaryLabel && order.some((e) => e.capital);
+    let pos = 0, correctFields = 0, totalFields = 0, answered = false;
 
     function updateHeader() {
-      scoreEl.textContent = "Score: " + correct + " / " + Math.min(pos, order.length);
+      scoreEl.textContent = "Score: " + correctFields + " / " + totalFields;
       progress.innerHTML = "";
       order.forEach((_, i) => {
         let cls = "dot";
@@ -297,157 +134,138 @@
     function draw() {
       updateHeader();
       stage.innerHTML = "";
-      mapHolder.innerHTML = "";
 
       if (pos >= order.length) {
-        const pct = order.length ? Math.round((correct / order.length) * 100) : 0;
-        onFinish(correct, order.length);
+        const pct = totalFields ? Math.round((correctFields / totalFields) * 100) : 0;
+        onFinish(correctFields, totalFields);
         stage.className = "quiz-result";
         stage.appendChild(el("p", { class: "result-big" }, [pct + "%"]));
-        stage.appendChild(el("p", { class: "result-msg" }, [correct + " van de " + order.length + " juist"]));
+        stage.appendChild(el("p", { class: "result-msg" }, [correctFields + " van de " + totalFields + " juist"]));
         stage.appendChild(el("div", { class: "quiz-actions" }, [
-          el("button", { class: "btn btn-primary", type: "button", onclick: () => renderMC(root, group, onFinish) }, ["Nog een keer"])
+          el("button", { class: "btn btn-primary", type: "button", onclick: () => runQuiz(root, group, kind, onFinish) }, ["Nog een keer"])
         ]));
         return;
       }
 
       answered = false;
       const entry = order[pos];
-      const base = buildMapBase(group, "mapimg-wrap-small");
-      mapHolder.appendChild(base.wrap);
-      if (entry.kind === "point") {
-        placeMarker(base.overlay, base.toPercent, entry.x, entry.y, "marker-highlight");
-      } else {
-        placeLine(base.overlay, base.natW, base.natH, entry.path, "map-line map-line-highlight");
-      }
+      stage.appendChild(el("p", { class: "quiz-prompt map-prompt" }, ["Wat hoort bij symbool \u201c" + entry.key + "\u201d op de kaart?"]));
 
-      stage.appendChild(el("span", { class: "flashcard-label" }, ["Wat is dit op de kaart?"]));
-      const distractors = sample(allTerms, 3, entry.term);
-      const options = shuffle([entry.term, ...distractors]);
-      const optWrap = el("div", { class: "quiz-options" });
-      const feedback = el("p", { class: "quiz-feedback", "aria-live": "polite" });
-      options.forEach((opt) => {
-        const btn = el("button", { class: "option-btn", type: "button", onclick: () => {
+      if (kind === "mc") {
+        const allTerms = group.legend.map((e) => e.term);
+        const distractors = sample(allTerms, 3, entry.term);
+        const options = shuffle([entry.term, ...distractors]);
+        const optWrap = el("div", { class: "quiz-options" });
+        const feedback = el("p", { class: "quiz-feedback", "aria-live": "polite" });
+        let nameOk = null;
+
+        options.forEach((opt) => {
+          const btn = el("button", { class: "option-btn", type: "button", onclick: () => {
+            if (nameOk !== null) return;
+            nameOk = opt === entry.term;
+            totalFields++;
+            if (nameOk) correctFields++;
+            Array.from(optWrap.children).forEach((b) => { b.disabled = true; if (b.textContent === entry.term) b.classList.add("option-correct"); });
+            if (!nameOk) btn.classList.add("option-wrong");
+            feedback.textContent = nameOk ? "Juist!" : "Niet juist. Juiste antwoord: " + entry.term;
+            feedback.className = "quiz-feedback " + (nameOk ? "feedback-good" : "feedback-bad");
+            updateHeader();
+            maybeAskCapital();
+          } }, [opt]);
+          optWrap.appendChild(btn);
+        });
+        stage.appendChild(optWrap);
+        stage.appendChild(feedback);
+
+        function maybeAskCapital() {
+          if (!hasSecondary || !entry.capital) { showNext(); return; }
+          const capBlock = el("div", { class: "map-capital-block" });
+          capBlock.appendChild(el("p", { class: "quiz-prompt map-prompt" }, ["En de hoofdstad van " + entry.term + "?"]));
+          const capTerms = group.legend.filter((e) => e.capital).map((e) => e.capital);
+          const capDistractors = sample(capTerms, 3, entry.capital);
+          const capOptions = shuffle([entry.capital, ...capDistractors]);
+          const capWrap = el("div", { class: "quiz-options" });
+          const capFeedback = el("p", { class: "quiz-feedback", "aria-live": "polite" });
+          capOptions.forEach((opt) => {
+            const b2 = el("button", { class: "option-btn", type: "button", onclick: () => {
+              const capOk = opt === entry.capital;
+              totalFields++;
+              if (capOk) correctFields++;
+              Array.from(capWrap.children).forEach((b) => { b.disabled = true; if (b.textContent === entry.capital) b.classList.add("option-correct"); });
+              if (!capOk) b2.classList.add("option-wrong");
+              capFeedback.textContent = capOk ? "Juist!" : "Juiste antwoord: " + entry.capital;
+              capFeedback.className = "quiz-feedback " + (capOk ? "feedback-good" : "feedback-bad");
+              updateHeader();
+              showNext();
+            } }, [opt]);
+            capWrap.appendChild(b2);
+          });
+          capBlock.appendChild(capWrap);
+          capBlock.appendChild(capFeedback);
+          stage.appendChild(capBlock);
+        }
+      } else {
+        const input = el("input", { class: "quiz-input", type: "text", autocomplete: "off", autocapitalize: "off", spellcheck: "false", placeholder: "Naam..." });
+        const capInput = hasSecondary && entry.capital
+          ? el("input", { class: "quiz-input", type: "text", autocomplete: "off", autocapitalize: "off", spellcheck: "false", placeholder: "Hoofdstad..." })
+          : null;
+        const row = el("div", { class: "quiz-input-row" }, [input]);
+        if (capInput) row.appendChild(capInput);
+        const submit = el("button", { class: "btn btn-primary", type: "button" }, ["Controleer"]);
+        const feedback = el("p", { class: "quiz-feedback", "aria-live": "polite" });
+
+        function check() {
           if (answered) return;
           answered = true;
-          const isRight = opt === entry.term;
-          if (isRight) correct++;
-          Array.from(optWrap.children).forEach((b) => { b.disabled = true; if (b.textContent === entry.term) b.classList.add("option-correct"); });
-          if (!isRight) btn.classList.add("option-wrong");
-          feedback.textContent = isRight ? "Juist!" : "Niet juist. Juiste antwoord: " + entry.term;
-          feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
+          const nameOk = norm(input.value) === norm(entry.term);
+          input.disabled = true;
+          totalFields++;
+          if (nameOk) correctFields++;
+          input.classList.add(nameOk ? "input-correct" : "input-wrong");
+          let msg = nameOk ? "Juist!" : "Juiste antwoord: " + entry.term;
+          if (capInput) {
+            const capOk = norm(capInput.value) === norm(entry.capital);
+            capInput.disabled = true;
+            totalFields++;
+            if (capOk) correctFields++;
+            capInput.classList.add(capOk ? "input-correct" : "input-wrong");
+            if (!capOk) msg += " \u2014 Hoofdstad: " + entry.capital;
+          }
+          submit.disabled = true;
+          feedback.textContent = msg;
+          feedback.className = "quiz-feedback " + (nameOk ? "feedback-good" : "feedback-bad");
           updateHeader();
-          const isLast = pos === order.length - 1;
-          const nb = el("button", { class: "btn btn-primary", type: "button", onclick: () => { pos++; draw(); } },
-            [isLast ? "Resultaat bekijken →" : "Volgende →"]);
-          stage.appendChild(nb);
-          nb.focus();
-        } }, [opt]);
-        optWrap.appendChild(btn);
-      });
-      stage.appendChild(optWrap);
-      stage.appendChild(feedback);
+          showNext();
+        }
+        submit.addEventListener("click", check);
+        input.addEventListener("keydown", (e) => { if (e.key === "Enter") (capInput ? capInput.focus() : check()); });
+        if (capInput) capInput.addEventListener("keydown", (e) => { if (e.key === "Enter") check(); });
+
+        stage.appendChild(row);
+        stage.appendChild(submit);
+        stage.appendChild(feedback);
+        setTimeout(() => input.focus(), 0);
+      }
+
+      function showNext() {
+        const isLast = pos === order.length - 1;
+        const btn = el("button", { class: "btn btn-primary", type: "button", onclick: () => { pos++; draw(); } },
+          [isLast ? "Resultaat bekijken \u2192" : "Volgende \u2192"]);
+        stage.appendChild(btn);
+        btn.focus();
+      }
     }
 
     draw();
   }
 
-  /* ---------- genummerde kaarttoets (zoals op je eigen toetsen) ------------ */
-  function renderNumbered(root, group, onFinish) {
-    root.innerHTML = "";
-    root.appendChild(el("h1", null, [group.title]));
-    root.appendChild(
-      el("p", { class: "module-intro" }, [
-        "Op de kaart staat bij elk nummer een plaats gemarkeerd. Vul de tabel in en klik dan op \u201cVerbeteren\u201d."
-      ])
-    );
-
-    const base = buildMapBase(group, "mapimg-wrap-tall");
-    root.appendChild(base.wrap);
-
-    const order = shuffle(allEntries(group));
-    const hasSecondary = !!group.secondaryLabel && order.some((e) => e.capital);
-
-    order.forEach((entry, i) => {
-      const n = i + 1;
-      if (entry.kind === "point") {
-        placeMarker(base.overlay, base.toPercent, entry.x, entry.y, "marker-num", n);
-      } else {
-        placeLine(base.overlay, base.natW, base.natH, entry.path, "map-line map-line-study");
-        const mid = midOfPath(entry.path);
-        placeMarker(base.overlay, base.toPercent, mid[0], mid[1], "marker-num", n);
-      }
-    });
-
-    const tableWrap = el("div", { class: "table-wrap" });
-    const table = el("table", { class: "quiz-table" });
-    const headCells = [el("th", null, ["Nr."]), el("th", null, ["Naam"])];
-    if (hasSecondary) headCells.push(el("th", null, [group.secondaryLabel]));
-    table.appendChild(el("thead", null, [el("tr", null, headCells)]));
-    const tbody = el("tbody");
-    const rows = [];
-    order.forEach((entry, i) => {
-      const n = i + 1;
-      const nameInput = el("input", { class: "quiz-input table-input", type: "text", autocomplete: "off", autocapitalize: "off", spellcheck: "false" });
-      const capInput = hasSecondary
-        ? el("input", { class: "quiz-input table-input", type: "text", autocomplete: "off", autocapitalize: "off", spellcheck: "false" })
-        : null;
-      const cells = [el("td", { class: "table-term" }, [String(n)]), el("td", null, [nameInput])];
-      if (hasSecondary) cells.push(el("td", null, [capInput]));
-      const tr = el("tr", { id: "num-row-" + i }, cells);
-      tbody.appendChild(tr);
-      rows.push({ entry, nameInput, capInput });
-    });
-    table.appendChild(tbody);
-    tableWrap.appendChild(table);
-    root.appendChild(tableWrap);
-
-    const feedback = el("p", { class: "quiz-feedback", "aria-live": "polite" });
-    const actions = el("div", { class: "quiz-actions" });
-    const checkBtn = el("button", { class: "btn btn-primary", type: "button" }, ["Verbeteren"]);
-    actions.appendChild(checkBtn);
-    root.appendChild(feedback);
-    root.appendChild(actions);
-
-    checkBtn.addEventListener("click", () => {
-      let correctFields = 0, totalFields = 0;
-      rows.forEach((row, i) => {
-        const tr = document.getElementById("num-row-" + i);
-        const nameOk = norm(row.nameInput.value) === norm(row.entry.term);
-        row.nameInput.disabled = true;
-        totalFields++;
-        if (nameOk) correctFields++;
-        row.nameInput.classList.add(nameOk ? "input-correct" : "input-wrong");
-        if (!nameOk) tr.appendChild(el("td", { class: "table-correction" }, ["Naam: " + row.entry.term]));
-        if (row.capInput) {
-          const capOk = norm(row.capInput.value) === norm(row.entry.capital || "");
-          row.capInput.disabled = true;
-          totalFields++;
-          if (capOk) correctFields++;
-          row.capInput.classList.add(capOk ? "input-correct" : "input-wrong");
-          if (!capOk) tr.appendChild(el("td", { class: "table-correction" }, [(group.secondaryLabel || "") + ": " + row.entry.capital]));
-        }
-        tr.classList.add(nameOk && (!row.capInput || norm(row.capInput.value) === norm(row.entry.capital || "")) ? "row-correct" : "row-wrong");
-      });
-      checkBtn.disabled = true;
-      const pct = totalFields ? Math.round((correctFields / totalFields) * 100) : 0;
-      feedback.textContent = correctFields + " van de " + totalFields + " juist (" + pct + "%).";
-      feedback.className = "quiz-feedback " + (pct >= 70 ? "feedback-good" : "feedback-bad");
-      onFinish(correctFields, totalFields);
-      actions.appendChild(
-        el("button", { class: "btn", type: "button", onclick: () => renderNumbered(root, group, onFinish) }, ["Nog een keer"])
-      );
-    });
-  }
-
   window.PKMapExercise = {
-    cleanup: function () {}, // geen externe kaartinstantie meer op te ruimen
+    cleanup: function () {},
     mastery: mastery,
     render: function (root, group, mode) {
       if (mode === "leer") renderStudy(root, group);
-      else if (mode === "mc") renderMC(root, group, (c, t) => recordScore("map-" + group.id + "-mc", c, t));
-      else if (mode === "nummer") renderNumbered(root, group, (c, t) => recordScore("map-" + group.id + "-nummer", c, t));
-      else renderClick(root, group, (c, t) => recordScore("map-" + group.id + "-wijs", c, t));
+      else if (mode === "mc") runQuiz(root, group, "mc", (c, t) => recordScore("map-" + group.id + "-mc", c, t));
+      else runQuiz(root, group, "typ", (c, t) => recordScore("map-" + group.id + "-typ", c, t));
     }
   };
 })();

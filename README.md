@@ -35,17 +35,21 @@ Voor elk tekst-onderdeel (hoofdsteden, rivieren, provincies, ...) kan je
 kiezen tussen leerkaarten, meerkeuze, juist/fout, een invultoets en een
 tabeltoets — meestal ook omgekeerd (bv. hoofdstad → land).
 
-Daarnaast staan er bovenaan elk kaartblad **echte kaartoefeningen**, op
-de originele kaarten uit de bundel zelf (uit de PDF gehaald — dezelfde
-kaarten die leerlingen al kennen, geen vreemde kaartendienst met extra
-info erop):
+Daarnaast staat er bovenaan elk kaartblad een **kaartoefening op de
+echte, genummerde kaart uit de bundel** — exact dezelfde kaart als op
+papier, met dezelfde cijfers, letters en Romeinse cijfers. Er wordt
+nergens een eigen positie op de kaart "aangewezen" — de leerling zoekt
+het symbool zelf op de kaart op, precies zoals op een schriftelijke
+toets:
 
-- **Kaart bekijken** — alles gelabeld, om rustig in te studeren
-- **Wijs aan** — leerling klikt zelf de juiste plaats aan op de kaart
-- **Meerkeuze op de kaart** — een plaats is gemarkeerd, kies de juiste naam
-- **Genummerde kaart (zoals op je toets)** — elk nummer op de kaart is
-  een plaats; leerlingen vullen in een tabel de naam in, en bij landen
-  ook de hoofdstad — precies zoals bij een schriftelijke overhoring.
+- **Kaart bekijken** — de kaart met de volledige legende ernaast, om
+  rustig in te studeren
+- **Meerkeuze** — bij elk symbool: kies de juiste naam (en bij landen
+  ook de hoofdstad) uit vier opties
+- **Zelf typen** — hetzelfde, maar dan zelf typen in plaats van kiezen
+
+De legende komt rechtstreeks uit de antwoordtabellen van de bundel
+zelf, dus die klopt gegarandeerd met de kaart.
 
 ## Gratis hosten op GitHub Pages — stap voor stap
 
@@ -114,22 +118,23 @@ pas de titel en de `items` aan — de rest (leerkaarten, meerkeuze,
 voortgangsbalkjes, ...) werkt er automatisch mee.
 
 **Kaartoefeningen** staan in `assets/mapdata.js`. Elk blokje verwijst
-naar een afbeelding in `assets/img/maps/` en een lijst `items` met
-pixelposities (`x`,`y`, geteld vanaf linksboven op die afbeelding — te
-vinden door de afbeelding te openen in een tekenprogramma en de
-muisaanwijzer op de juiste plek te zetten). Voor een lijnvormig element
-zoals een autoweg gebruik je `lines` met een reeks `path`-coördinaten in
-plaats van één punt. Wil je een heel nieuwe kaart toevoegen (bv. een
-andere pagina uit een volgende bundel)? Zet de afbeelding in
-`assets/img/maps/`, en maak een nieuw blokje naar het voorbeeld van de
-bestaande — vermeld de echte afmetingen van de afbeelding in pixels bij
-`imageSize`.
+naar een afbeelding in `assets/img/maps/` (de genummerde kaart, met de
+cijfers/letters gewoon zichtbaar op de afbeelding zelf) en een lijst
+`legend` met `{ key: "3", term: "Frankrijk", capital: "Parijs" }` voor
+elk symbool op die kaart. Er komen **geen pixelposities** aan te pas —
+dat is precies waarom deze opzet niet meer fout kan gaan staan zoals een
+eerdere versie met klikcoördinaten. Wil je een nieuwe kaart toevoegen
+(bv. een pagina uit een volgende bundel)? Zet een afbeelding van die
+kaart — mét de nummers/letters erop, zoals in de bundel — in
+`assets/img/maps/`, en maak een nieuw blokje met de bijhorende
+`legend`, overgenomen uit de antwoordtabel van de bundel.
 
 ## Techniek
 
-Geen frameworks, geen build-stap, geen externe kaartendienst: gewone
-HTML, CSS en JavaScript, met de kaartafbeeldingen gewoon als bestand
-meegeleverd. De voortgang (beste score per onderdeel) wordt per toestel
+Geen frameworks, geen build-stap, geen externe kaartendienst, geen
+klikcoördinaten: gewone HTML, CSS en JavaScript, met de kaartafbeeldingen
+gewoon als bestand meegeleverd — inclusief hun eigen ingedrukte cijfers
+en letters. De voortgang (beste score per onderdeel) wordt per toestel
 bewaard in de browser (`localStorage`) — er wordt niets naar een server
 gestuurd en er worden geen gegevens over leerlingen verzameld.
 
