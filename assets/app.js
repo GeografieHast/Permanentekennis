@@ -174,6 +174,7 @@
       modes.appendChild(modeCard(base + "leer", cardsIconSVG(), "Kaart bekijken", "Alle plaatsen gelabeld — rustig instuderen."));
       modes.appendChild(modeCard(base + "wijs", pencilIconSVG(), "Wijs aan", "Klik zelf op de juiste plaats op de kaart."));
       modes.appendChild(modeCard(base + "mc", checkIconSVG(), "Meerkeuze op de kaart", "Een plaats is gemarkeerd — kies de juiste naam."));
+      modes.appendChild(modeCard(base + "nummer", tableIconSVG(), "Genummerde kaart (zoals op je toets)", "Elk nummer op de kaart is een plaats — vul de naam" + (group.secondaryLabel ? " én " + group.secondaryLabel.toLowerCase() : "") + " in."));
       wrap.appendChild(modes);
       const m = window.PKMapExercise ? window.PKMapExercise.mastery("map-" + group.id + "-wijs") : null;
       if (m != null) wrap.appendChild(el("p", { class: "score-note" }, ["Je beste score bij 'Wijs aan': " + m + "%."]));

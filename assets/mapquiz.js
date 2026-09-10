@@ -39,6 +39,15 @@
     return p[id] ? p[id].best : null;
   }
 
+  function norm(str) {
+    return String(str || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ");
+  }
+
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -91,8 +100,8 @@
   }
 
   function allEntries(group) {
-    const pts = (group.items || []).map((it) => ({ term: it.term, kind: "point", lat: it.lat, lng: it.lng, tolerance: it.tolerance || group.tolerance }));
-    const lines = (group.lines || []).map((it) => ({ term: it.term, kind: "line", path: it.path, tolerance: it.tolerance || group.tolerance }));
+    const pts = (group.items || []).map((it) => ({ term: it.term, kind: "point", lat: it.lat, lng: it.lng, tolerance: it.tolerance || group.tolerance, capital: it.capital }));
+    const lines = (group.lines || []).map((it) => ({ term: it.term, kind: "line", path: it.path, tolerance: it.tolerance || group.tolerance, capital: it.capital }));
     return pts.concat(lines);
   }
 
@@ -129,6 +138,15 @@
       html: '<span class="map-pin" style="--pin-color:' + color + '"></span>',
       iconSize: [18, 18],
       iconAnchor: [9, 9]
+    });
+  }
+
+  function numberIcon(n, color) {
+    return L.divIcon({
+      className: "",
+      html: '<span class="map-num-pin" style="--pin-color:' + (color || "var(--red)") + '">' + n + "</span>",
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
     });
   }
 
@@ -346,6 +364,98 @@
     draw();
   }
 
+  /* ---------- genummerde kaarttoets (zoals op je eigen toetsen) --------- */
+  function renderNumbered(root, group, onFinish) {
+    root.innerHTML = "";
+    root.appendChild(el("h1", null, [group.title]));
+    root.appendChild(
+      el("p", { class: "module-intro" }, [
+        "Op de kaart staat bij elk nummer een plaats gemarkeerd. Vul de tabel eronder in en klik dan op \u201cVerbeteren\u201d."
+      ])
+    );
+    const mapEl = el("div", { class: "leaflet-box leaflet-box-tall" });
+    root.appendChild(mapEl);
+
+    const map = makeMap(mapEl, group.view);
+    const order = shuffle(allEntries(group));
+    const hasSecondary = !!group.secondaryLabel && order.some((e) => e.capital);
+
+    order.forEach((entry, i) => {
+      const n = i + 1;
+      if (entry.kind === "point") {
+        L.marker([entry.lat, entry.lng], { icon: numberIcon(n) }).addTo(map);
+      } else {
+        L.polyline(entry.path, { color: "#e5343c", weight: 4, opacity: 0.85 }).addTo(map);
+        const mid = entry.path[Math.floor(entry.path.length / 2)];
+        L.marker(mid, { icon: numberIcon(n) }).addTo(map);
+      }
+    });
+
+    const tableWrap = el("div", { class: "table-wrap" });
+    const table = el("table", { class: "quiz-table" });
+    const headCells = [el("th", null, ["Nr."]), el("th", null, ["Naam"])];
+    if (hasSecondary) headCells.push(el("th", null, [group.secondaryLabel]));
+    table.appendChild(el("thead", null, [el("tr", null, headCells)]));
+    const tbody = el("tbody");
+    const rows = [];
+    order.forEach((entry, i) => {
+      const n = i + 1;
+      const nameInput = el("input", { class: "quiz-input table-input", type: "text", autocomplete: "off", autocapitalize: "off", spellcheck: "false" });
+      const capInput = hasSecondary
+        ? el("input", { class: "quiz-input table-input", type: "text", autocomplete: "off", autocapitalize: "off", spellcheck: "false" })
+        : null;
+      const cells = [el("td", { class: "table-term" }, [String(n)]), el("td", null, [nameInput])];
+      if (hasSecondary) cells.push(el("td", null, [capInput]));
+      const tr = el("tr", { id: "num-row-" + i }, cells);
+      tbody.appendChild(tr);
+      rows.push({ entry, nameInput, capInput });
+    });
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    root.appendChild(tableWrap);
+
+    const feedback = el("p", { class: "quiz-feedback", "aria-live": "polite" });
+    const actions = el("div", { class: "quiz-actions" });
+    const checkBtn = el("button", { class: "btn btn-primary", type: "button" }, ["Verbeteren"]);
+    actions.appendChild(checkBtn);
+    root.appendChild(feedback);
+    root.appendChild(actions);
+
+    checkBtn.addEventListener("click", () => {
+      let correctFields = 0, totalFields = 0;
+      rows.forEach((row, i) => {
+        const tr = document.getElementById("num-row-" + i);
+        const nameOk = norm(row.nameInput.value) === norm(row.entry.term);
+        row.nameInput.disabled = true;
+        totalFields++;
+        if (nameOk) correctFields++;
+        row.nameInput.classList.add(nameOk ? "input-correct" : "input-wrong");
+        if (!nameOk) {
+          tr.appendChild(el("td", { class: "table-correction" }, ["Land/plaats: " + row.entry.term]));
+        }
+        if (row.capInput) {
+          const capOk = norm(row.capInput.value) === norm(row.entry.capital || "");
+          row.capInput.disabled = true;
+          totalFields++;
+          if (capOk) correctFields++;
+          row.capInput.classList.add(capOk ? "input-correct" : "input-wrong");
+          if (!capOk) {
+            tr.appendChild(el("td", { class: "table-correction" }, [(group.secondaryLabel || "") + ": " + row.entry.capital]));
+          }
+        }
+        tr.classList.add(nameOk && (!row.capInput || norm(row.capInput.value) === norm(row.entry.capital || "")) ? "row-correct" : "row-wrong");
+      });
+      checkBtn.disabled = true;
+      const pct = totalFields ? Math.round((correctFields / totalFields) * 100) : 0;
+      feedback.textContent = correctFields + " van de " + totalFields + " juist (" + pct + "%).";
+      feedback.className = "quiz-feedback " + (pct >= 70 ? "feedback-good" : "feedback-bad");
+      onFinish(correctFields, totalFields);
+      actions.appendChild(
+        el("button", { class: "btn", type: "button", onclick: () => renderNumbered(root, group, onFinish) }, ["Nog een keer"])
+      );
+    });
+  }
+
   window.PKMapExercise = {
     cleanup: cleanup,
     mastery: mastery,
@@ -353,6 +463,7 @@
       cleanup();
       if (mode === "leer") renderStudy(root, group);
       else if (mode === "mc") renderMC(root, group, (c, t) => recordScore("map-" + group.id + "-mc", c, t));
+      else if (mode === "nummer") renderNumbered(root, group, (c, t) => recordScore("map-" + group.id + "-nummer", c, t));
       else renderClick(root, group, (c, t) => recordScore("map-" + group.id + "-wijs", c, t));
     }
   };

@@ -556,6 +556,7 @@ tr.row-wrong .table-input { border-color: var(--red); background: #fbeaea; }
   background: #eef1ee;
 }
 .leaflet-box-small { height: 260px; margin-bottom: 16px; }
+.leaflet-box-tall { height: 440px; }
 .map-mc-card { width: min(100%, 520px); margin: 0 auto; }
 .map-prompt { font-weight: bold; font-size: 1.15rem; margin: 4px 0 12px; }
 
@@ -568,6 +569,21 @@ tr.row-wrong .table-input { border-color: var(--red); background: #fbeaea; }
   border: 2px solid #fff;
   box-shadow: 0 1px 4px rgba(2,46,62,0.5);
   transform: rotate(-45deg);
+}
+.map-num-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--pin-color, var(--red));
+  color: #fff;
+  font-family: Verdana, sans-serif;
+  font-size: 0.78rem;
+  font-weight: bold;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(2,46,62,0.5);
 }
 .map-label {
   font-family: Verdana, sans-serif !important;

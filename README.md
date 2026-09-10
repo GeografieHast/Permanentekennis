@@ -25,6 +25,11 @@ de hoofdsteden van Europa en de EU, de zeeën/rivieren/gebergtes, de
 landen en steden uit de wereldbundel, en voor België: provincies,
 rivieren, autowegen en Hasselt als referentiepunt.
 
+Voor de hoofdsteden van Europa/EU en de Belgische provincies is er ook
+een **genummerde kaarttoets** — precies zoals bij je eigen toetsen: op de
+kaart staat bij elk nummer een plaats gemarkeerd, en leerlingen vullen
+in een tabel de naam (en waar van toepassing de hoofdstad) in.
+
 De kaarten gebruiken [OpenStreetMap](https://www.openstreetmap.org/copyright)
 via de gratis [Leaflet](https://leafletjs.com)-bibliotheek (beide geladen
 vanaf hun eigen CDN, dus reken op een werkende internetverbinding bij de
