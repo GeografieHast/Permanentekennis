@@ -574,16 +574,16 @@ tr.row-wrong .table-input { border-color: var(--red); background: #fbeaea; }
 /* ---------- kaartoefeningen (echte bundelkaarten, zonder coördinaten) ------------------- */
 
 .mapimg-wrap {
-  width: 100%;
-  max-width: 900px;
-  margin: 12px auto 18px;
+  width: 96vw;
+  max-width: 1700px;
+  margin: 12px 0 18px calc(50% - 48vw);
   border-radius: 12px;
   border: 1px solid var(--line-strong);
   overflow: hidden;
   background: #eef1ee;
   box-shadow: 0 4px 14px rgba(2,46,62,0.08);
 }
-.mapimg-wrap-quiz { max-width: 720px; }
+.mapimg-wrap-quiz { max-width: 1300px; }
 .mapimg-plain {
   display: block;
   width: 100%;
