@@ -94,7 +94,7 @@ svg { width: 100%; height: 100%; display: block; }
 .brand-text span { display: block; font-size: 0.78rem; color: var(--ink-soft); }
 
 main {
-  max-width: 920px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 24px 20px 80px;
 }
@@ -574,16 +574,16 @@ tr.row-wrong .table-input { border-color: var(--red); background: #fbeaea; }
 /* ---------- kaartoefeningen (echte bundelkaarten, zonder coördinaten) ------------------- */
 
 .mapimg-wrap {
-  width: 96vw;
-  max-width: 1700px;
-  margin: 12px 0 18px calc(50% - 48vw);
+  width: 100%;
+  max-width: 100%;
+  margin: 12px auto 18px;
   border-radius: 12px;
   border: 1px solid var(--line-strong);
   overflow: hidden;
   background: #eef1ee;
   box-shadow: 0 4px 14px rgba(2,46,62,0.08);
 }
-.mapimg-wrap-quiz { max-width: 1300px; }
+.mapimg-wrap-quiz { max-width: 100%; }
 .mapimg-plain {
   display: block;
   width: 100%;
