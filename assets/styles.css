@@ -607,6 +607,12 @@ tr.row-wrong .table-input { border-color: var(--red); background: #fbeaea; }
   font-size: 0.82rem;
   color: var(--ink-soft);
 }
+.footer-credit {
+  display: inline-block;
+  margin-bottom: 4px;
+  color: var(--ink);
+  font-size: 0.88rem;
+}
 
 /* ---------- focus & accessibility ------------------------------------------------ */
 
