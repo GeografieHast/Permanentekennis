@@ -1,0 +1,336 @@
+/* ==========================================================================
+   Permanente Kennis — mapdata.js
+   Coördinaten voor de echte kaartoefeningen (klik-op-de-kaart), op basis
+   van OpenStreetMap. Elke groep hoort bij (een deel van) een onderdeel uit
+   data.js. Afstanden in de quiz worden vergeleken met "tolerance" (km):
+   hoe groter/vager het te zoeken object, hoe ruimer de marge.
+   ========================================================================== */
+
+window.PK_MAPS = {
+  groups: [
+    /* ===================== WERELD & EUROPA ===================== */
+    {
+      id: "eu-lidstaten-kaart",
+      moduleId: "wereld-europa",
+      title: "Kaartoefening: de 27 EU-lidstaten",
+      instructions: "Waar ligt de hoofdstad van elk EU-land?",
+      view: { center: [54, 15], zoom: 4 },
+      tolerance: 180,
+      items: [
+        { term: "België", lat: 50.85, lng: 4.35 },
+        { term: "Bulgarije", lat: 42.70, lng: 23.32 },
+        { term: "Cyprus", lat: 35.17, lng: 33.36 },
+        { term: "Denemarken", lat: 55.68, lng: 12.57 },
+        { term: "Duitsland", lat: 52.52, lng: 13.40 },
+        { term: "Estland", lat: 59.44, lng: 24.75 },
+        { term: "Finland", lat: 60.17, lng: 24.94 },
+        { term: "Frankrijk", lat: 48.86, lng: 2.35 },
+        { term: "Griekenland", lat: 37.98, lng: 23.73 },
+        { term: "Hongarije", lat: 47.50, lng: 19.04 },
+        { term: "Ierland", lat: 53.35, lng: -6.26 },
+        { term: "Italië", lat: 41.90, lng: 12.50 },
+        { term: "Letland", lat: 56.95, lng: 24.11 },
+        { term: "Litouwen", lat: 54.69, lng: 25.28 },
+        { term: "Luxemburg", lat: 49.61, lng: 6.13 },
+        { term: "Malta", lat: 35.90, lng: 14.51 },
+        { term: "Nederland", lat: 52.37, lng: 4.90 },
+        { term: "Oostenrijk", lat: 48.21, lng: 16.37 },
+        { term: "Polen", lat: 52.23, lng: 21.01 },
+        { term: "Portugal", lat: 38.72, lng: -9.14 },
+        { term: "Roemenië", lat: 44.43, lng: 26.10 },
+        { term: "Slovenië", lat: 46.06, lng: 14.51 },
+        { term: "Slowakije", lat: 48.15, lng: 17.11 },
+        { term: "Spanje", lat: 40.42, lng: -3.70 },
+        { term: "Tsjechië", lat: 50.09, lng: 14.42 },
+        { term: "Zweden", lat: 59.33, lng: 18.07 },
+        { term: "Kroatië", lat: 45.81, lng: 15.98 }
+      ]
+    },
+    {
+      id: "europa-hoofdsteden-kaart",
+      moduleId: "wereld-europa",
+      title: "Kaartoefening: Europa en zijn hoofdsteden",
+      instructions: "EU-lidstaten, kandidaat-lidstaten én andere Europese landen — waar liggen hun hoofdsteden?",
+      view: { center: [52, 25], zoom: 3 },
+      tolerance: 220,
+      items: [
+        { term: "België", lat: 50.85, lng: 4.35 },
+        { term: "Bulgarije", lat: 42.70, lng: 23.32 },
+        { term: "Cyprus", lat: 35.17, lng: 33.36 },
+        { term: "Denemarken", lat: 55.68, lng: 12.57 },
+        { term: "Duitsland", lat: 52.52, lng: 13.40 },
+        { term: "Estland", lat: 59.44, lng: 24.75 },
+        { term: "Finland", lat: 60.17, lng: 24.94 },
+        { term: "Frankrijk", lat: 48.86, lng: 2.35 },
+        { term: "Griekenland", lat: 37.98, lng: 23.73 },
+        { term: "Hongarije", lat: 47.50, lng: 19.04 },
+        { term: "Ierland", lat: 53.35, lng: -6.26 },
+        { term: "Italië", lat: 41.90, lng: 12.50 },
+        { term: "Letland", lat: 56.95, lng: 24.11 },
+        { term: "Litouwen", lat: 54.69, lng: 25.28 },
+        { term: "Luxemburg", lat: 49.61, lng: 6.13 },
+        { term: "Malta", lat: 35.90, lng: 14.51 },
+        { term: "Nederland", lat: 52.37, lng: 4.90 },
+        { term: "Oostenrijk", lat: 48.21, lng: 16.37 },
+        { term: "Polen", lat: 52.23, lng: 21.01 },
+        { term: "Portugal", lat: 38.72, lng: -9.14 },
+        { term: "Roemenië", lat: 44.43, lng: 26.10 },
+        { term: "Slovenië", lat: 46.06, lng: 14.51 },
+        { term: "Slowakije", lat: 48.15, lng: 17.11 },
+        { term: "Spanje", lat: 40.42, lng: -3.70 },
+        { term: "Tsjechië", lat: 50.09, lng: 14.42 },
+        { term: "Zweden", lat: 59.33, lng: 18.07 },
+        { term: "Kroatië", lat: 45.81, lng: 15.98 },
+        { term: "Turkije", lat: 39.93, lng: 32.86 },
+        { term: "Noord-Macedonië", lat: 41.99, lng: 21.43 },
+        { term: "Albanië", lat: 41.33, lng: 19.82 },
+        { term: "Bosnië en Herzegovina", lat: 43.86, lng: 18.41 },
+        { term: "Georgië", lat: 41.72, lng: 44.79 },
+        { term: "Moldavië", lat: 47.01, lng: 28.86 },
+        { term: "Montenegro", lat: 42.44, lng: 19.26 },
+        { term: "Oekraïne", lat: 50.45, lng: 30.52 },
+        { term: "Servië", lat: 44.79, lng: 20.45 },
+        { term: "Verenigd Koninkrijk", lat: 51.51, lng: -0.13 },
+        { term: "IJsland", lat: 64.15, lng: -21.94 },
+        { term: "Andorra", lat: 42.51, lng: 1.52 },
+        { term: "Armenië", lat: 40.18, lng: 44.51 },
+        { term: "Azerbeidzjan", lat: 40.41, lng: 49.87 },
+        { term: "Kosovo", lat: 42.67, lng: 21.17 },
+        { term: "Liechtenstein", lat: 47.14, lng: 9.52 },
+        { term: "Monaco", lat: 43.74, lng: 7.42 },
+        { term: "Noorwegen", lat: 59.91, lng: 10.75 },
+        { term: "Rusland", lat: 55.75, lng: 37.62 },
+        { term: "San Marino", lat: 43.94, lng: 12.45 },
+        { term: "Staat Vaticaanstad", lat: 41.90, lng: 12.45 },
+        { term: "Wit-Rusland (Belarus)", lat: 53.90, lng: 27.57 },
+        { term: "Zwitserland", lat: 46.95, lng: 7.45 }
+      ]
+    },
+    {
+      id: "europa-water-relief-kaart",
+      moduleId: "wereld-europa",
+      title: "Kaartoefening: zeeën, rivieren en gebergtes van Europa",
+      instructions: "Wijs de zeeën, oceanen, rivieren en gebergtes van Europa aan.",
+      view: { center: [50, 20], zoom: 4 },
+      tolerance: 260,
+      items: [
+        { term: "Atlantische Oceaan", lat: 47, lng: -18 },
+        { term: "Middellandse Zee", lat: 38, lng: 15 },
+        { term: "Noordzee", lat: 56, lng: 3 },
+        { term: "Zwarte Zee", lat: 43.5, lng: 34.5 },
+        { term: "Kaspische Zee", lat: 42, lng: 51 },
+        { term: "Noordelijke IJszee", lat: 79, lng: 35 },
+        { term: "Barentszzee", lat: 74, lng: 38 },
+        { term: "Oostzee", lat: 58, lng: 19 },
+        { term: "Taag", lat: 38.72, lng: -9.2 },
+        { term: "Seine", lat: 48.86, lng: 2.35 },
+        { term: "Schelde", lat: 51.45, lng: 3.9 },
+        { term: "Maas", lat: 50.85, lng: 5.69 },
+        { term: "Rijn", lat: 51.92, lng: 4.48 },
+        { term: "Donau", lat: 45.2, lng: 29.6 },
+        { term: "Wolga", lat: 46.35, lng: 48.05 },
+        { term: "Theems", lat: 51.5, lng: 0.6 },
+        { term: "Po", lat: 44.9, lng: 12.4 },
+        { term: "Pyreneeën", lat: 42.7, lng: 1.0 },
+        { term: "Kaukasus", lat: 42.6, lng: 45.0 },
+        { term: "Oeral", lat: 60.0, lng: 59.0 },
+        { term: "Scandinavisch hoogland", lat: 62.0, lng: 8.5 },
+        { term: "Alpen", lat: 46.5, lng: 10.5 }
+      ]
+    },
+    {
+      id: "wereld-indeling-kaart",
+      moduleId: "wereld-europa",
+      title: "Kaartoefening: continenten, werelddelen, oceanen en zeeën",
+      instructions: "Wijs de grote gebieden van de wereld aan.",
+      view: { center: [15, 10], zoom: 2 },
+      tolerance: 900,
+      items: [
+        { term: "Amerika", lat: 10, lng: -85 },
+        { term: "Eurazië", lat: 55, lng: 60 },
+        { term: "Afrika", lat: 2, lng: 20 },
+        { term: "Antarctica", lat: -80, lng: 0 },
+        { term: "Australië", lat: -25, lng: 135 },
+        { term: "Noord-Amerika", lat: 50, lng: -100 },
+        { term: "Midden-Amerika/Centraal-Amerika", lat: 15, lng: -90 },
+        { term: "Zuid-Amerika", lat: -15, lng: -60 },
+        { term: "Europa", lat: 50, lng: 15 },
+        { term: "Afrika (werelddeel)", lat: 2, lng: 20 },
+        { term: "Azië", lat: 45, lng: 90 },
+        { term: "Oceanië", lat: -22, lng: 140 },
+        { term: "Antarctica (werelddeel)", lat: -80, lng: 0 },
+        { term: "Grote of Stille Oceaan", lat: 0, lng: -160 },
+        { term: "Atlantische Oceaan (wereld)", lat: 0, lng: -30 },
+        { term: "Indische Oceaan", lat: -20, lng: 75 },
+        { term: "Zuidelijke Oceaan", lat: -65, lng: 0 },
+        { term: "Noordelijke IJszee (wereld)", lat: 85, lng: 0 }
+      ]
+    },
+    {
+      id: "wereld-landen-steden-kaart",
+      moduleId: "wereld-europa",
+      title: "Kaartoefening: 21 landen en steden van de wereld",
+      instructions: "Wijs de landen en de steden uit je bundel aan.",
+      view: { center: [15, 10], zoom: 2 },
+      tolerance: 500,
+      items: [
+        { term: "Canada", lat: 60, lng: -96 },
+        { term: "Verenigde Staten (VS)", lat: 39, lng: -98 },
+        { term: "Mexico", lat: 23, lng: -102 },
+        { term: "Brazilië", lat: -10, lng: -55 },
+        { term: "Zuid-Afrika", lat: -29, lng: 24 },
+        { term: "Argentinië", lat: -34, lng: -64 },
+        { term: "Democratische Republiek Congo", lat: -2, lng: 23 },
+        { term: "Nigeria", lat: 9, lng: 8 },
+        { term: "Libië", lat: 27, lng: 17 },
+        { term: "Egypte", lat: 27, lng: 30 },
+        { term: "Turkije (wereldkaart)", lat: 39, lng: 35 },
+        { term: "Saudi-Arabië", lat: 24, lng: 45 },
+        { term: "Iran", lat: 32, lng: 53 },
+        { term: "India", lat: 21, lng: 79 },
+        { term: "China", lat: 35, lng: 103 },
+        { term: "Indonesië", lat: -2, lng: 118 },
+        { term: "Nieuw-Zeeland", lat: -41, lng: 174 },
+        { term: "Japan", lat: 37, lng: 138 },
+        { term: "Rusland (wereldkaart)", lat: 61, lng: 90 },
+        { term: "Israël", lat: 31, lng: 35 },
+        { term: "Marokko", lat: 32, lng: -6 },
+        { term: "San Francisco", lat: 37.77, lng: -122.42, tolerance: 250 },
+        { term: "Los Angeles (LA)", lat: 34.05, lng: -118.24, tolerance: 250 },
+        { term: "New York", lat: 40.71, lng: -74.01, tolerance: 250 },
+        { term: "Washington", lat: 38.90, lng: -77.04, tolerance: 250 },
+        { term: "Mexico City", lat: 19.43, lng: -99.13, tolerance: 250 },
+        { term: "Brasilia", lat: -15.79, lng: -47.88, tolerance: 250 },
+        { term: "Rio de Janeiro", lat: -22.91, lng: -43.17, tolerance: 250 },
+        { term: "Kaapstad", lat: -33.92, lng: 18.42, tolerance: 250 },
+        { term: "Kinshasa", lat: -4.44, lng: 15.27, tolerance: 250 },
+        { term: "Caïro", lat: 30.04, lng: 31.24, tolerance: 250 },
+        { term: "Moskou", lat: 55.75, lng: 37.62, tolerance: 250 },
+        { term: "New Delhi", lat: 28.61, lng: 77.21, tolerance: 250 },
+        { term: "Mumbai", lat: 19.08, lng: 72.88, tolerance: 250 },
+        { term: "Beijing (Peking)", lat: 39.90, lng: 116.41, tolerance: 250 },
+        { term: "Tokio", lat: 35.68, lng: 139.69, tolerance: 250 },
+        { term: "Sydney", lat: -33.87, lng: 151.21, tolerance: 250 },
+        { term: "Canberra", lat: -35.28, lng: 149.13, tolerance: 250 },
+        { term: "Teheran", lat: 35.69, lng: 51.39, tolerance: 250 },
+        { term: "Dubai", lat: 25.20, lng: 55.27, tolerance: 250 },
+        { term: "Riyad", lat: 24.71, lng: 46.68, tolerance: 250 },
+        { term: "Tripoli", lat: 32.89, lng: 13.19, tolerance: 250 }
+      ]
+    },
+    {
+      id: "wereld-relief-kaart",
+      moduleId: "wereld-europa",
+      title: "Kaartoefening: reliëf, rivieren en zeeën van de wereld",
+      instructions: "Wijs de reliëfgebieden, rivieren en zeeën van je bundel aan.",
+      view: { center: [15, 10], zoom: 2 },
+      tolerance: 600,
+      items: [
+        { term: "Rocky Mountains", lat: 45, lng: -110 },
+        { term: "Andesgebergte", lat: -20, lng: -68 },
+        { term: "Atlasgebergte", lat: 31, lng: -6 },
+        { term: "Himalaya", lat: 28, lng: 84 },
+        { term: "Australische Alpen", lat: -36, lng: 148 },
+        { term: "Great Plains", lat: 42, lng: -100 },
+        { term: "Dekanplateau", lat: 17, lng: 77 },
+        { term: "Mississippivlakte", lat: 33, lng: -90 },
+        { term: "Amazonevlakte", lat: -4, lng: -63 },
+        { term: "Mississippi", lat: 29.1, lng: -89.3, tolerance: 350 },
+        { term: "Amazone", lat: 0, lng: -50, tolerance: 350 },
+        { term: "Nijl", lat: 31.5, lng: 30.8, tolerance: 350 },
+        { term: "Indus", lat: 24.0, lng: 67.4, tolerance: 350 },
+        { term: "Ganges", lat: 22.0, lng: 89.0, tolerance: 350 },
+        { term: "Gele rivier", lat: 37.8, lng: 119.0, tolerance: 350 },
+        { term: "Blauwe rivier", lat: 31.4, lng: 121.8, tolerance: 350 },
+        { term: "Middellandse Zee (wereldkaart)", lat: 38, lng: 15, tolerance: 350 },
+        { term: "Noordzee (wereldkaart)", lat: 56, lng: 3, tolerance: 350 },
+        { term: "Zwarte Zee (wereldkaart)", lat: 43.5, lng: 34.5, tolerance: 350 },
+        { term: "Kaspische Zee (wereldkaart)", lat: 42, lng: 51, tolerance: 350 }
+      ]
+    },
+
+    /* ===================== BELGIË & EU ===================== */
+    {
+      id: "provincies-kaart",
+      moduleId: "belgie-eu",
+      title: "Kaartoefening: de 10 provinciehoofdsteden",
+      instructions: "Waar ligt elke provinciehoofdstad?",
+      view: { center: [50.6, 4.8], zoom: 8 },
+      tolerance: 16,
+      items: [
+        { term: "Brugge (West-Vlaanderen)", lat: 51.21, lng: 3.22 },
+        { term: "Gent (Oost-Vlaanderen)", lat: 51.05, lng: 3.72 },
+        { term: "Antwerpen (provincie)", lat: 51.22, lng: 4.40 },
+        { term: "Hasselt (Limburg)", lat: 50.93, lng: 5.34 },
+        { term: "Leuven (Vlaams-Brabant)", lat: 50.88, lng: 4.70 },
+        { term: "Waver (Waals-Brabant)", lat: 50.72, lng: 4.60 },
+        { term: "Bergen (Henegouwen)", lat: 50.45, lng: 3.95 },
+        { term: "Namen (provincie)", lat: 50.47, lng: 4.87 },
+        { term: "Luik (provincie)", lat: 50.63, lng: 5.57 },
+        { term: "Aarlen (Luxemburg)", lat: 49.68, lng: 5.82 }
+      ]
+    },
+    {
+      id: "rivieren-belgie-kaart",
+      moduleId: "belgie-eu",
+      title: "Kaartoefening: rivieren in België",
+      instructions: "Wijs elke rivier ergens op haar loop aan.",
+      view: { center: [50.6, 4.8], zoom: 8 },
+      tolerance: 18,
+      items: [
+        { term: "IJzer", lat: 51.03, lng: 2.87 },
+        { term: "Leie", lat: 50.83, lng: 3.27 },
+        { term: "Schelde (België)", lat: 51.05, lng: 3.90 },
+        { term: "Demer", lat: 50.98, lng: 5.05 },
+        { term: "Samber", lat: 50.41, lng: 4.44 },
+        { term: "Maas (België)", lat: 50.63, lng: 5.57 },
+        { term: "Ourthe", lat: 50.18, lng: 5.58 }
+      ]
+    },
+    {
+      id: "autowegen-belgie-kaart",
+      moduleId: "belgie-eu",
+      title: "Kaartoefening: autowegen in België",
+      instructions: "Klik ergens op het tracé van elke autoweg.",
+      view: { center: [50.6, 4.8], zoom: 8 },
+      tolerance: 14,
+      lines: [
+        {
+          term: "E17",
+          path: [[51.22, 4.40], [51.05, 3.72], [50.83, 3.27], [50.76, 3.26]]
+        },
+        {
+          term: "E40",
+          path: [[51.23, 2.93], [51.21, 3.22], [51.05, 3.72], [50.85, 4.35], [50.88, 4.70], [50.63, 5.57], [50.68, 6.02]]
+        },
+        {
+          term: "E19",
+          path: [[51.43, 4.63], [51.22, 4.40], [50.85, 4.35], [50.45, 3.95], [50.33, 3.82]]
+        },
+        {
+          term: "E411",
+          path: [[50.85, 4.35], [50.47, 4.87], [49.68, 5.82]]
+        },
+        {
+          term: "E313",
+          path: [[51.22, 4.40], [50.93, 5.34], [50.63, 5.57]]
+        }
+      ]
+    },
+    {
+      id: "hasselt-referentie-kaart",
+      moduleId: "belgie-eu",
+      title: "Kaartoefening: Hasselt en omgeving",
+      instructions: "Ken je je eigen leefomgeving? Wijs deze elementen uit je referentiekaart aan.",
+      view: { center: [50.93, 5.34], zoom: 11 },
+      tolerance: 6,
+      items: [
+        { term: "Hasselt (centrum)", lat: 50.931, lng: 5.338 },
+        { term: "Demer (bij Hasselt)", lat: 50.965, lng: 5.15 },
+        { term: "Herk", lat: 50.945, lng: 5.171 },
+        { term: "Albertkanaal (bij Hasselt)", lat: 50.97, lng: 5.36 },
+        { term: "E313 (bij Hasselt)", lat: 50.95, lng: 5.31 }
+      ]
+    }
+  ]
+};
