@@ -227,7 +227,7 @@
         el("div", { class: "hero-content" }, [
           el("h1", null, ["Permanente Kennis"]),
           el("p", { class: "hero-sub" }, [
-            "Aardrijkskunde — studeer je referentiekaarten in met leerkaarten, meerkeuzevragen, invultoetsen én echte kaartoefeningen."
+            "Aardrijkskunde — studeer je referentiekaarten in met leerkaarten, meerkeuzevragen, invultoetsen en echte kaartoefeningen."
           ])
         ])
       ])
