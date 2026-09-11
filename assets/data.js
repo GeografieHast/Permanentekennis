@@ -178,50 +178,10 @@ window.PK_DATA = {
       ]
     },
 
-    /* ================= 4. EUROPESE RIVIEREN EN GEBERGTES ==================== */
-    {
-      id: "eu-rivieren-gebergtes",
-      label: "Kaartblad 4",
-      title: "Europese rivieren en gebergtes",
-      subtitle: "op de EU-kaart",
-      intro: "Enkele belangrijke rivieren en gebergtes van Europa, zoals ze aangeduid staan op de EU-kaart.",
-      topics: [
-        {
-          id: "eu-rivieren",
-          title: "Enkele belangrijke rivieren van de EU",
-          kind: "pair",
-          promptLabel: "Rivier",
-          answerLabel: "Waar?",
-          allowTyping: false,
-          items: [
-            { term: "Rijn", answer: "Zwitserland, Duitsland, Nederland" },
-            { term: "Donau", answer: "Duitsland, Oostenrijk, Slowakije, Hongarije, Kroatië, Roemenië, Bulgarije" },
-            { term: "Seine", answer: "Frankrijk (door Parijs)" },
-            { term: "Schelde (EU)", answer: "Frankrijk, België, Nederland" },
-            { term: "Maas (EU)", answer: "Frankrijk, België, Nederland" }
-          ]
-        },
-        {
-          id: "eu-gebergtes",
-          title: "Enkele belangrijke gebergtes van de EU",
-          kind: "pair",
-          promptLabel: "Gebergte",
-          answerLabel: "Waar?",
-          allowTyping: false,
-          items: [
-            { term: "Pyreneeën (EU)", answer: "Grens tussen Frankrijk en Spanje" },
-            { term: "Alpen (EU)", answer: "Frankrijk, Italië, Zwitserland, Oostenrijk, Slovenië" },
-            { term: "Oeral (EU)", answer: "Natuurlijke grens tussen werelddeel Europa en werelddeel Azië" },
-            { term: "Scandinavisch hoogland (EU)", answer: "Noorden van Europa, in Scandinavië" }
-          ]
-        }
-      ]
-    },
-
-    /* ============================= 5. EUROPA ================================ */
+    /* ============================= 4. EUROPA ================================ */
     {
       id: "europa",
-      label: "Kaartblad 5",
+      label: "Kaartblad 4",
       title: "Europa",
       subtitle: "alle landen en hoofdsteden",
       intro: "Naast de EU: de kandidaat-lidstaten en de andere landen van Europa — en alle 50 landen samen.",
@@ -327,6 +287,46 @@ window.PK_DATA = {
             { term: "Staat Vaticaanstad", answer: "Vaticaanstad" },
             { term: "Wit-Rusland (Belarus)", answer: "Minsk" },
             { term: "Zwitserland", answer: "Bern" }
+          ]
+        }
+      ]
+    },
+
+    /* ================= 5. EUROPESE RIVIEREN EN GEBERGTES ==================== */
+    {
+      id: "eu-rivieren-gebergtes",
+      label: "Kaartblad 5",
+      title: "Europese rivieren en gebergtes",
+      subtitle: "op de EU-kaart",
+      intro: "Enkele belangrijke rivieren en gebergtes van Europa, zoals ze aangeduid staan op de EU-kaart.",
+      topics: [
+        {
+          id: "eu-rivieren",
+          title: "Enkele belangrijke rivieren van de EU",
+          kind: "pair",
+          promptLabel: "Rivier",
+          answerLabel: "Waar?",
+          allowTyping: false,
+          items: [
+            { term: "Rijn", answer: "Zwitserland, Duitsland, Nederland" },
+            { term: "Donau", answer: "Duitsland, Oostenrijk, Slowakije, Hongarije, Kroatië, Roemenië, Bulgarije" },
+            { term: "Seine", answer: "Frankrijk (door Parijs)" },
+            { term: "Schelde (EU)", answer: "Frankrijk, België, Nederland" },
+            { term: "Maas (EU)", answer: "Frankrijk, België, Nederland" }
+          ]
+        },
+        {
+          id: "eu-gebergtes",
+          title: "Enkele belangrijke gebergtes van de EU",
+          kind: "pair",
+          promptLabel: "Gebergte",
+          answerLabel: "Waar?",
+          allowTyping: false,
+          items: [
+            { term: "Pyreneeën (EU)", answer: "Grens tussen Frankrijk en Spanje" },
+            { term: "Alpen (EU)", answer: "Frankrijk, Italië, Zwitserland, Oostenrijk, Slovenië" },
+            { term: "Oeral (EU)", answer: "Natuurlijke grens tussen werelddeel Europa en werelddeel Azië" },
+            { term: "Scandinavisch hoogland (EU)", answer: "Noorden van Europa, in Scandinavië" }
           ]
         }
       ]

@@ -23,8 +23,8 @@ naar de wereld:
 1. **Hasselt** — de eigen leefruimte
 2. **België** — provincies, gewesten, rivieren, autowegen
 3. **Europese Unie** — de 27 lidstaten
-4. **Europese rivieren en gebergtes** — op de EU-kaart
-5. **Europa** — kandidaat-lidstaten, andere landen, alle 50 landen samen
+4. **Europa** — kandidaat-lidstaten, andere landen, alle 50 landen samen
+5. **Europese rivieren en gebergtes** — op de EU-kaart
 6. **Europa: water en reliëf** — zeeën, oceanen, rivieren, gebergte
 7. **Continenten & werelddelen** — en de oceanen/zeeën van de wereld
 8. **Landen & steden** — de 21 landen en steden uit de wereldbundel
