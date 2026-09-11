@@ -4,7 +4,7 @@
    - Permanente Kennis (2025): Wereld & Europa
    - Permanente Kennis (eerste graad): België & de Europese Unie
 
-   Ingedeeld in 8 kaartbladen, van eigen leefomgeving naar wereld — net als
+   Ingedeeld in 9 kaartbladen, van eigen leefomgeving naar wereld — net als
    in de bundels. Bewust weggelaten: inwonersaantallen en vlaggen. Die
    hoeven leerlingen niet te kennen, dus staan ze hier niet in.
    ========================================================================== */
@@ -136,7 +136,7 @@ window.PK_DATA = {
       label: "Kaartblad 3",
       title: "Europese Unie",
       subtitle: "de 27 lidstaten",
-      intro: "De 27 EU-lidstaten en hun hoofdsteden, en enkele belangrijke rivieren en gebergtes van de EU.",
+      intro: "De 27 EU-lidstaten en hun hoofdsteden.",
       topics: [
         {
           id: "eu-lidstaten",
@@ -174,7 +174,18 @@ window.PK_DATA = {
             { term: "Zweden", answer: "Stockholm" },
             { term: "Kroatië", answer: "Zagreb" }
           ]
-        },
+        }
+      ]
+    },
+
+    /* ================= 4. EUROPESE RIVIEREN EN GEBERGTES ==================== */
+    {
+      id: "eu-rivieren-gebergtes",
+      label: "Kaartblad 4",
+      title: "Europese rivieren en gebergtes",
+      subtitle: "op de EU-kaart",
+      intro: "Enkele belangrijke rivieren en gebergtes van Europa, zoals ze aangeduid staan op de EU-kaart.",
+      topics: [
         {
           id: "eu-rivieren",
           title: "Enkele belangrijke rivieren van de EU",
@@ -207,10 +218,10 @@ window.PK_DATA = {
       ]
     },
 
-    /* ============================= 4. EUROPA ================================ */
+    /* ============================= 5. EUROPA ================================ */
     {
       id: "europa",
-      label: "Kaartblad 4",
+      label: "Kaartblad 5",
       title: "Europa",
       subtitle: "alle landen en hoofdsteden",
       intro: "Naast de EU: de kandidaat-lidstaten en de andere landen van Europa — en alle 50 landen samen.",
@@ -324,7 +335,7 @@ window.PK_DATA = {
     /* ================ 5. EUROPA: RIVIEREN, ZEEËN, GEBERGTE ================== */
     {
       id: "europa-water",
-      label: "Kaartblad 5",
+      label: "Kaartblad 6",
       title: "Europa: water en reliëf",
       subtitle: "rivieren, zeeën, oceanen en gebergte",
       intro: "De zeeën, oceanen, rivieren en gebergtes van Europa.",
@@ -366,7 +377,7 @@ window.PK_DATA = {
     /* ============ 6. WERELD: CONTINENTEN, WERELDDELEN, ZEEËN =============== */
     {
       id: "wereld-continenten",
-      label: "Kaartblad 6",
+      label: "Kaartblad 7",
       title: "Continenten & werelddelen",
       subtitle: "en de oceanen en zeeën van de wereld",
       intro: "Kernbegrippen en de indeling van de wereld in continenten, werelddelen, oceanen en zeeën.",
@@ -418,7 +429,7 @@ window.PK_DATA = {
     /* ================= 7. WERELD: LANDEN EN STEDEN ========================== */
     {
       id: "wereld-landen-steden",
-      label: "Kaartblad 7",
+      label: "Kaartblad 8",
       title: "Landen & steden",
       subtitle: "in de wereld",
       intro: "De 21 landen en steden uit je wereldbundel.",
@@ -482,7 +493,7 @@ window.PK_DATA = {
     /* ==================== 8. WERELD: RELIËF EN RIVIEREN ====================== */
     {
       id: "wereld-relief",
-      label: "Kaartblad 8",
+      label: "Kaartblad 9",
       title: "Reliëf, rivieren & zeeën",
       subtitle: "in de wereld",
       intro: "De reliëfgebieden, rivieren en zeeën uit je wereldbundel.",

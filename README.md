@@ -15,7 +15,7 @@ Dubbelklik gewoon op `index.html`. De site werkt volledig offline (de
 kaartafbeeldingen zitten er zelf bij, er wordt geen externe kaartendienst
 gebruikt), er is geen server of build-stap nodig.
 
-## De 8 kaartbladen
+## De 9 kaartbladen
 
 De site volgt dezelfde opbouw als je bundels, van de eigen leefomgeving
 naar de wereld:
@@ -23,11 +23,12 @@ naar de wereld:
 1. **Hasselt** — de eigen leefruimte
 2. **België** — provincies, gewesten, rivieren, autowegen
 3. **Europese Unie** — de 27 lidstaten
-4. **Europa** — kandidaat-lidstaten, andere landen, alle 50 landen samen
-5. **Europa: water en reliëf** — zeeën, oceanen, rivieren, gebergte
-6. **Continenten & werelddelen** — en de oceanen/zeeën van de wereld
-7. **Landen & steden** — de 21 landen en steden uit de wereldbundel
-8. **Reliëf, rivieren & zeeën** — in de wereld
+4. **Europese rivieren en gebergtes** — op de EU-kaart
+5. **Europa** — kandidaat-lidstaten, andere landen, alle 50 landen samen
+6. **Europa: water en reliëf** — zeeën, oceanen, rivieren, gebergte
+7. **Continenten & werelddelen** — en de oceanen/zeeën van de wereld
+8. **Landen & steden** — de 21 landen en steden uit de wereldbundel
+9. **Reliëf, rivieren & zeeën** — in de wereld
 
 ## Wat zit erin?
 

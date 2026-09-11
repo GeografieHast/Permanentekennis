@@ -106,7 +106,7 @@ window.PK_MAPS = {
     },
     {
       id: "eu-rivieren-gebergtes-kaart",
-      moduleId: "eu",
+      moduleId: "eu-rivieren-gebergtes",
       title: "Kaartoefening: rivieren en gebergtes binnen Europa",
       image: "assets/img/maps/eu-hoofdsteden.jpg",
       legend: [
@@ -277,16 +277,22 @@ window.PK_MAPS = {
     {
       id: "rivieren-belgie-kaart",
       moduleId: "belgie",
-      title: "Kaartoefening: rivieren in België",
+      title: "Kaartoefening: rivieren en autowegen in België",
       image: "assets/img/maps/belgie-rivieren-wegen-genummerd.jpg",
       legend: [
         { key: "a", term: "IJzer" },
         { key: "b", term: "Leie" },
         { key: "c", term: "Schelde (België)" },
-        { key: "d", term: "Demer" },
+        { key: "d", term: "Maas (België)" },
         { key: "e", term: "Samber" },
-        { key: "f", term: "Maas (België)" },
-        { key: "g", term: "Ourthe" }
+        { key: "f", term: "Demer" },
+        { key: "g", term: "Ourthe" },
+        { key: "1", term: "E17" },
+        { key: "2", term: "E19" },
+        { key: "3", term: "E40" },
+        { key: "4", term: "E411" },
+        { key: "5", term: "E313" },
+        { key: "6", term: "E314" }
       ]
     }
   ]
