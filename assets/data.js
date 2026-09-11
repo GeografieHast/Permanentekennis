@@ -25,7 +25,6 @@ window.PK_DATA = {
           kind: "category",
           categoryLabel: "Soort",
           categories: ["Rivier", "Snelweg", "Kanaal", "Gemeente"],
-          note: "De omliggende gemeenten (Genk, Bilzen, Diepenbeek, Kortessem, Zonhoven, Alken, Lummen, Herk-de-Stad) oefen je het best op de kaartoefening hierboven — daar zie je meteen waar ze liggen.",
           items: [
             { term: "Demer", category: "Rivier" },
             { term: "Herk", category: "Rivier" },
