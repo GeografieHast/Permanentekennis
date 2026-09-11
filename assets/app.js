@@ -217,7 +217,7 @@
     "wereld-landen-steden": skylineIconSVG,
     "wereld-relief": mountainIconSVG
   };
-  const MODULE_ACCENTS = ["accent-ink", "accent-red", "accent-teal", "accent-amber"];
+  const MODULE_ACCENTS = ["accent-red", "accent-teal", "accent-amber", "accent-violet", "accent-sky", "accent-ink"];
 
   function renderHome() {
     const wrap = el("div", { class: "view view-home" });
@@ -229,6 +229,11 @@
           el("h1", null, ["Permanente Kennis"]),
           el("p", { class: "hero-sub" }, [
             "Aardrijkskunde: studeer je referentiekaarten in met leerkaarten, meerkeuzevragen, invultoetsen en echte kaartoefeningen."
+          ]),
+          el("div", { class: "hero-badges" }, [
+            el("span", { class: "hero-badge badge-red" }, ["🧭 9 kaartbladen"]),
+            el("span", { class: "hero-badge badge-teal" }, ["🗺️ echte bundelkaarten"]),
+            el("span", { class: "hero-badge badge-amber" }, ["📶 werkt offline"])
           ])
         ])
       ])
@@ -241,6 +246,7 @@
       const accent = MODULE_ACCENTS[i % MODULE_ACCENTS.length];
       grid.appendChild(
         el("a", { class: "sheet-card " + accent, href: "#/module/" + mod.id }, [
+          el("span", { class: "sheet-stamp", "aria-hidden": "true" }, [(mod.label.match(/\d+/) || [""])[0]]),
           el("div", { class: "sheet-icon-badge", "aria-hidden": "true" }, [iconFn()]),
           el("span", { class: "sheet-label" }, [mod.label]),
           el("h2", null, [mod.title]),
