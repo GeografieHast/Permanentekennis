@@ -71,7 +71,7 @@ window.PK_MAPS = {
     {
       id: "eu-lidstaten-kaart",
       moduleId: "eu",
-      title: "Kaartoefening: de 27 EU-lidstaten, rivieren en gebergtes",
+      title: "Kaartoefening: de 27 EU-lidstaten",
       image: "assets/img/maps/eu-hoofdsteden.jpg",
       secondaryLabel: "Hoofdstad",
       legend: [
@@ -101,7 +101,15 @@ window.PK_MAPS = {
         { key: "24", term: "Spanje", capital: "Madrid" },
         { key: "25", term: "Tsjechië", capital: "Praag" },
         { key: "26", term: "Zweden", capital: "Stockholm" },
-        { key: "27", term: "Kroatië", capital: "Zagreb" },
+        { key: "27", term: "Kroatië", capital: "Zagreb" }
+      ]
+    },
+    {
+      id: "eu-rivieren-gebergtes-kaart",
+      moduleId: "eu",
+      title: "Kaartoefening: rivieren en gebergtes binnen Europa",
+      image: "assets/img/maps/eu-hoofdsteden.jpg",
+      legend: [
         { key: "A", term: "Rijn (rivier)" },
         { key: "B", term: "Donau (rivier)" },
         { key: "C", term: "Seine (rivier)" },
@@ -271,7 +279,6 @@ window.PK_MAPS = {
       moduleId: "belgie",
       title: "Kaartoefening: rivieren in België",
       image: "assets/img/maps/belgie-rivieren-wegen-genummerd.jpg",
-      note: "De rode nummers (autowegen) op deze kaart zijn hier niet gebruikt: van dat deel van de originele kaartoefening kon niet met zekerheid worden achterhaald welk nummer bij welke autoweg hoort. Gebruik daarvoor de gewone oefeningen bij \u201cBelangrijkste autowegen in België\u201d.",
       legend: [
         { key: "a", term: "IJzer" },
         { key: "b", term: "Leie" },
