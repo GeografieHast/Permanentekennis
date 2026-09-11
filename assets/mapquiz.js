@@ -69,10 +69,37 @@
     return p[id] ? p[id].best : null;
   }
 
+  function closeLightbox(overlay, onKey) {
+    overlay.remove();
+    document.removeEventListener("keydown", onKey);
+    document.body.classList.remove("lightbox-open");
+  }
+  function openLightbox(src, alt) {
+    const overlay = el("div", { class: "map-lightbox", role: "dialog", "aria-modal": "true", "aria-label": alt || "Kaart" });
+    const img = el("img", { src: src, alt: alt || "", class: "map-lightbox-img" });
+    function onKey(e) { if (e.key === "Escape") closeLightbox(overlay, onKey); }
+    const closeBtn = el("button", {
+      class: "map-lightbox-close", type: "button", "aria-label": "Sluiten",
+      onclick: () => closeLightbox(overlay, onKey)
+    }, ["\u2715 Sluiten"]);
+    overlay.appendChild(closeBtn);
+    overlay.appendChild(img);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeLightbox(overlay, onKey); });
+    document.addEventListener("keydown", onKey);
+    document.body.classList.add("lightbox-open");
+    document.body.appendChild(overlay);
+  }
+
   function mapImage(group, cls) {
-    return el("div", { class: "mapimg-wrap " + (cls || "") }, [
-      el("img", { src: group.image, alt: group.title, class: "mapimg-plain" })
-    ]);
+    const img = el("img", {
+      src: group.image, alt: group.title, class: "mapimg-plain",
+      onclick: () => openLightbox(group.image, group.title)
+    });
+    const zoomBtn = el("button", {
+      class: "mapimg-zoom-btn", type: "button", "aria-label": "Kaart vergroten",
+      onclick: () => openLightbox(group.image, group.title)
+    }, ["\u26F6 Vergroten"]);
+    return el("div", { class: "mapimg-wrap " + (cls || "") }, [img, zoomBtn]);
   }
 
   /* ---------- bekijk-modus: kaart + volledige legende ---------------------- */

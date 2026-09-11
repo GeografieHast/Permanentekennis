@@ -210,6 +210,7 @@
     "hasselt": pinIconOutlineSVG,
     "belgie": shieldIconSVG,
     "eu": starsRingIconSVG,
+    "eu-rivieren-gebergtes": riverMountainIconSVG,
     "europa": compassSVG,
     "europa-water": waveIconSVG,
     "wereld-continenten": globeIconSVG,
@@ -240,7 +241,7 @@
       const accent = MODULE_ACCENTS[i % MODULE_ACCENTS.length];
       grid.appendChild(
         el("a", { class: "sheet-card " + accent, href: "#/module/" + mod.id }, [
-          el("div", { class: "sheet-icon", "aria-hidden": "true" }, [iconFn()]),
+          el("div", { class: "sheet-icon-badge", "aria-hidden": "true" }, [iconFn()]),
           el("span", { class: "sheet-label" }, [mod.label]),
           el("h2", null, [mod.title]),
           el("p", { class: "sheet-subtitle" }, [mod.subtitle]),
@@ -944,6 +945,15 @@
     s.innerHTML =
       '<path d="M10 96 L42 44 L60 70 L74 50 L110 96 Z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/>' +
       '<path d="M35 58 L42 44 L49 58 Z" fill="currentColor" opacity="0.5"/>';
+    return s;
+  }
+  function riverMountainIconSVG() {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 120 120");
+    s.innerHTML =
+      '<path d="M8 52 L38 14 L56 38 L70 20 L112 52 Z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/>' +
+      '<path d="M10 88c12-10 20-10 30 0s20 10 30 0 20-10 30 0" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>' +
+      '<path d="M10 106c12-10 20-10 30 0s20 10 30 0 20-10 30 0" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" opacity="0.45"/>';
     return s;
   }
   function heroIllustrationSVG() {
