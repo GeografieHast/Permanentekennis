@@ -63,10 +63,42 @@
     const pct = total ? Math.round((correct / total) * 100) : 0;
     p[id] = { best: Math.max(prev.best, pct), attempts: prev.attempts + 1, last: pct };
     saveProgress(p);
+    bumpStats(total);
   }
   function mastery(id) {
     const p = loadProgress();
     return p[id] ? p[id].best : null;
+  }
+
+  /* ---------- gedeelde statistieken (zelfde sleutel als app.js) -------------- */
+
+  const STATS_KEY = "pk-stats-v1";
+  function todayStr() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function dayBefore(str) {
+    const d = new Date(str + "T00:00:00");
+    d.setDate(d.getDate() - 1);
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function loadStats() {
+    try { return JSON.parse(localStorage.getItem(STATS_KEY)) || { totalAnswered: 0, streakCount: 0, lastDate: null }; }
+    catch (e) { return { totalAnswered: 0, streakCount: 0, lastDate: null }; }
+  }
+  function saveStats(s) {
+    try { localStorage.setItem(STATS_KEY, JSON.stringify(s)); }
+    catch (e) { /* negeren */ }
+  }
+  function bumpStats(total) {
+    const s = loadStats();
+    s.totalAnswered = (s.totalAnswered || 0) + (total || 0);
+    const today = todayStr();
+    if (s.lastDate !== today) {
+      s.streakCount = s.lastDate === dayBefore(today) ? (s.streakCount || 0) + 1 : 1;
+      s.lastDate = today;
+    }
+    saveStats(s);
   }
 
   function closeLightbox(overlay, onKey) {

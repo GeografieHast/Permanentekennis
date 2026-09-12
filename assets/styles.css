@@ -180,6 +180,35 @@ main {
 .hero-badge.badge-teal { background: var(--teal); }
 .hero-badge.badge-amber { background: var(--amber-dark); }
 
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin: 0 0 30px;
+}
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+  padding: 16px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+.stat-icon { font-size: 1.5rem; line-height: 1; margin-bottom: 4px; }
+.stat-value { font-family: "Atkinson Hyperlegible", Verdana, sans-serif; font-size: 1.8rem; font-weight: bold; line-height: 1; }
+.stat-label { font-size: 0.78rem; color: var(--ink-soft); }
+.stat-milestone { font-size: 0.74rem; font-weight: bold; margin-top: 6px; padding: 3px 10px; border-radius: 999px; background: var(--paper); color: var(--ink-soft); }
+.stat-streak { border-top: 4px solid var(--amber); }
+.stat-streak .stat-value { color: var(--amber-dark); }
+.stat-answered { border-top: 4px solid var(--teal); }
+.stat-answered .stat-value { color: var(--teal-dark); }
+.stat-global { border-top: 4px solid var(--sky); }
+.stat-global .stat-value { color: var(--sky-dark); }
+
 .sheet-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -283,6 +312,25 @@ main {
   margin-top: 10px;
   font-size: 0.82rem;
   font-weight: bold;
+}
+.sheet-progress {
+  margin-top: 12px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(2,46,62,0.08);
+  overflow: hidden;
+}
+.sheet-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: currentColor;
+}
+.sheet-progress-label {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.74rem;
+  font-weight: bold;
+  color: var(--ink-soft);
 }
 
 .legend-block {

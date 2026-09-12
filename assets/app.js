@@ -80,10 +80,85 @@
       last: pct
     };
     saveProgress(p);
+    bumpStats(total);
   }
   function topicMastery(topicId) {
     const p = loadProgress();
     return p[topicId] ? p[topicId].best : null;
+  }
+
+  /* ---------- eigen statistieken: totaal beantwoord + studeer-streak --------- */
+
+  const STATS_KEY = "pk-stats-v1";
+  function todayStr() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function dayBefore(str) {
+    const d = new Date(str + "T00:00:00");
+    d.setDate(d.getDate() - 1);
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function loadStats() {
+    try {
+      return JSON.parse(localStorage.getItem(STATS_KEY)) || { totalAnswered: 0, streakCount: 0, lastDate: null };
+    } catch (e) {
+      return { totalAnswered: 0, streakCount: 0, lastDate: null };
+    }
+  }
+  function saveStats(s) {
+    try {
+      localStorage.setItem(STATS_KEY, JSON.stringify(s));
+    } catch (e) {
+      /* privé-modus of vol geheugen: negeren */
+    }
+  }
+  function bumpStats(total) {
+    const s = loadStats();
+    s.totalAnswered = (s.totalAnswered || 0) + (total || 0);
+    const today = todayStr();
+    if (s.lastDate !== today) {
+      s.streakCount = s.lastDate === dayBefore(today) ? (s.streakCount || 0) + 1 : 1;
+      s.lastDate = today;
+    }
+    saveStats(s);
+    return s;
+  }
+
+  /* ---------- gedeelde teller (bezoeken door iedereen samen) ----------------- */
+
+  const GLOBAL_COUNTER_KEY = "geografiehast-permanentekennis-bezoeken";
+  const GLOBAL_COUNTER_BASE = "https://countapi.mileshilliard.com/api/v1/";
+  function fetchGlobalCounter(el) {
+    let hitOnce = false;
+    try {
+      hitOnce = sessionStorage.getItem("pk-global-hit") === "1";
+    } catch (e) { /* privé-modus: telkens gewoon opvragen zonder te verhogen telt niet mee, maar app blijft werken */ }
+    const url = GLOBAL_COUNTER_BASE + (hitOnce ? "get/" : "hit/") + GLOBAL_COUNTER_KEY;
+    fetch(url)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.value != null) {
+          el.textContent = Number(data.value).toLocaleString("nl-BE");
+          try { sessionStorage.setItem("pk-global-hit", "1"); } catch (e) { /* negeren */ }
+        } else {
+          el.textContent = "—";
+        }
+      })
+      .catch(() => { el.textContent = "—"; });
+  }
+
+  /* ---------- mijlpalen (badges) ---------------------------------------------- */
+
+  const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
+  const ANSWERED_MILESTONES = [25, 50, 100, 250, 500, 1000];
+  function milestoneNote(value, list, singular, plural) {
+    const next = list.find((m) => m > value);
+    const achieved = value >= list[list.length - 1];
+    if (achieved) return "🏆 topscore behaald!";
+    const hasBadge = list.some((m) => m <= value);
+    const word = next === 1 ? singular : plural;
+    return (hasBadge ? "🏅 volgend doel: " : "🎯 doel: ") + next + " " + word;
   }
 
   /* ---------- data lookup ------------------------------------------------- */
@@ -129,6 +204,15 @@
   }
   function getMapGroup(groupId) {
     return (window.PK_MAPS ? window.PK_MAPS.groups : []).find((g) => g.id === groupId);
+  }
+  function moduleMastery(mod) {
+    const scores = mod.topics.map((t) => topicMastery(t.id) || 0);
+    mapGroupsFor(mod.id).forEach((g) => {
+      const m = window.PKMapExercise ? window.PKMapExercise.mastery("map-" + g.id + "-mc") : null;
+      scores.push(m || 0);
+    });
+    if (!scores.length) return 0;
+    return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
   }
 
   function render() {
@@ -239,11 +323,37 @@
       ])
     );
 
+    const stats = loadStats();
+    const globalValueEl = el("span", { class: "stat-value" }, ["…"]);
+    wrap.appendChild(
+      el("section", { class: "stats-strip" }, [
+        el("div", { class: "stat-tile stat-streak" }, [
+          el("span", { class: "stat-icon", "aria-hidden": "true" }, ["🔥"]),
+          el("span", { class: "stat-value" }, [String(stats.streakCount || 0)]),
+          el("span", { class: "stat-label" }, [(stats.streakCount === 1 ? "dag" : "dagen") + " op rij geoefend"]),
+          el("span", { class: "stat-milestone" }, [milestoneNote(stats.streakCount || 0, STREAK_MILESTONES, "dag", "dagen")])
+        ]),
+        el("div", { class: "stat-tile stat-answered" }, [
+          el("span", { class: "stat-icon", "aria-hidden": "true" }, ["✅"]),
+          el("span", { class: "stat-value" }, [String(stats.totalAnswered || 0)]),
+          el("span", { class: "stat-label" }, ["vragen door jou beantwoord"]),
+          el("span", { class: "stat-milestone" }, [milestoneNote(stats.totalAnswered || 0, ANSWERED_MILESTONES, "vraag", "vragen")])
+        ]),
+        el("div", { class: "stat-tile stat-global" }, [
+          el("span", { class: "stat-icon", "aria-hidden": "true" }, ["🌍"]),
+          globalValueEl,
+          el("span", { class: "stat-label" }, ["keer geopend door iedereen samen"])
+        ])
+      ])
+    );
+    fetchGlobalCounter(globalValueEl);
+
     const grid = el("div", { class: "sheet-grid" });
     PK_DATA.modules.forEach((mod, i) => {
       const count = mod.topics.length + mapGroupsFor(mod.id).length;
       const iconFn = MODULE_ICONS[mod.id] || compassSVG;
       const accent = MODULE_ACCENTS[i % MODULE_ACCENTS.length];
+      const pct = moduleMastery(mod);
       grid.appendChild(
         el("a", { class: "sheet-card " + accent, href: "#/module/" + mod.id }, [
           el("span", { class: "sheet-stamp", "aria-hidden": "true" }, [(mod.label.match(/\d+/) || [""])[0]]),
@@ -252,7 +362,11 @@
           el("h2", null, [mod.title]),
           el("p", { class: "sheet-subtitle" }, [mod.subtitle]),
           el("p", { class: "sheet-intro" }, [mod.intro]),
-          el("span", { class: "sheet-meta" }, [count + " onderdelen · openen →"])
+          el("span", { class: "sheet-meta" }, [count + " onderdelen · openen →"]),
+          el("div", { class: "sheet-progress", title: pct + "% onder de knie" }, [
+            el("div", { class: "sheet-progress-fill", style: "width:" + pct + "%" })
+          ]),
+          el("span", { class: "sheet-progress-label" }, [pct + "% onder de knie"])
         ])
       );
     });
