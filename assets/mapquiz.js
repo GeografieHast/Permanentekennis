@@ -98,7 +98,7 @@
     const zoomBtn = el("button", {
       class: "mapimg-zoom-btn", type: "button", "aria-label": "Kaart vergroten",
       onclick: () => openLightbox(group.image, group.title)
-    }, ["\u26F6 Vergroten"]);
+    }, ["\uD83D\uDD0D Vergroten"]);
     return el("div", { class: "mapimg-wrap " + (cls || "") }, [img, zoomBtn]);
   }
 
@@ -164,10 +164,11 @@
 
       if (pos >= order.length) {
         const pct = totalFields ? Math.round((correctFields / totalFields) * 100) : 0;
+        const emoji = pct >= 90 ? "\uD83C\uDF89 " : pct >= 70 ? "\uD83D\uDC4D " : "\uD83C\uDF31 ";
         onFinish(correctFields, totalFields);
         stage.className = "quiz-result";
         stage.appendChild(el("p", { class: "result-big" }, [pct + "%"]));
-        stage.appendChild(el("p", { class: "result-msg" }, [correctFields + " van de " + totalFields + " juist"]));
+        stage.appendChild(el("p", { class: "result-msg" }, [emoji + correctFields + " van de " + totalFields + " juist"]));
         stage.appendChild(el("div", { class: "quiz-actions" }, [
           el("button", { class: "btn btn-primary", type: "button", onclick: () => runQuiz(root, group, kind, onFinish) }, ["Nog een keer"])
         ]));

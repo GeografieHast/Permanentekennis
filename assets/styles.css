@@ -289,6 +289,17 @@ main {
   border-top: 1px dashed var(--line-strong);
   padding-top: 20px;
 }
+.legend-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.legend-heading h3 { margin: 0; }
+.legend-mascot {
+  width: 40px; height: 40px; flex: none;
+  color: var(--teal);
+}
 .legend-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -771,12 +782,13 @@ body.lightbox-open { overflow: hidden; }
 /* ---------- footer -------------------------------------------------------------- */
 
 .site-footer {
-  border-top: 1px solid var(--line-strong);
+  border-top: 3px solid var(--sand);
   padding: 20px;
   text-align: center;
   font-size: 0.82rem;
   color: var(--ink-soft);
 }
+.footer-mascot { display: block; font-size: 1.6rem; margin-bottom: 4px; }
 .footer-credit {
   display: inline-block;
   margin-bottom: 4px;

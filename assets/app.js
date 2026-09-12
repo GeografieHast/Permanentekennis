@@ -260,7 +260,10 @@
 
     wrap.appendChild(
       el("section", { class: "legend-block" }, [
-        el("h3", null, ["Hoe werkt het?"]),
+        el("div", { class: "legend-heading" }, [
+          el("div", { class: "legend-mascot", "aria-hidden": "true" }, [mascotGlobeSVG()]),
+          el("h3", null, ["Hoe werkt het?"])
+        ]),
         el("div", { class: "legend-row" }, [
           legendItem(mapPinIconSVG(), "Kaartoefening", "De echte, genummerde kaart uit je bundel — zeg wat elk symbool is."),
           legendItem(cardsIconSVG(), "Leerkaarten", "Klik een kaart om en toont het antwoord."),
@@ -637,7 +640,7 @@
       const pct = total ? Math.round((correctCount / total) * 100) : 0;
       stage.innerHTML = "";
       const msg =
-        pct >= 90 ? "Uitstekend, dit zit goed vast." : pct >= 70 ? "Goed bezig — nog even bijschaven." : "Blijf oefenen, je gaat vooruit.";
+        pct >= 90 ? "\uD83C\uDF89 Uitstekend, dit zit goed vast." : pct >= 70 ? "\uD83D\uDC4D Goed bezig — nog even bijschaven." : "\uD83C\uDF31 Blijf oefenen, je gaat vooruit.";
       const result = el("div", { class: "quiz-result" }, [
         el("p", { class: "result-big" }, [pct + "%"]),
         el("p", { class: "result-msg" }, [msg + " (" + correctCount + " van de " + total + " juist)"])
@@ -974,7 +977,7 @@
       '</linearGradient>' +
       '</defs>' +
       '<rect width="900" height="280" fill="url(#oceanGrad)"/>' +
-      '<g stroke="#ffffff" stroke-opacity="0.08" stroke-width="1">' +
+      '<g stroke="#ffffff" stroke-opacity="0.07" stroke-width="1">' +
       '<line x1="0" y1="40" x2="900" y2="40"/><line x1="0" y1="90" x2="900" y2="90"/>' +
       '<line x1="0" y1="140" x2="900" y2="140"/><line x1="0" y1="190" x2="900" y2="190"/>' +
       '<line x1="0" y1="240" x2="900" y2="240"/>' +
@@ -982,28 +985,55 @@
       '<line x1="370" y1="0" x2="370" y2="280"/><line x1="510" y1="0" x2="510" y2="280"/>' +
       '<line x1="650" y1="0" x2="650" y2="280"/><line x1="790" y1="0" x2="790" y2="280"/>' +
       '</g>' +
-      '<g fill="#F4E4C1" opacity="0.92">' +
-      '<path d="M-20 210 Q60 160 140 195 T300 190 Q360 175 420 205 L420 300 L-20 300 Z"/>' +
-      '<path d="M520 230 Q600 190 700 215 T900 205 L900 300 L520 300 Z"/>' +
-      '<ellipse cx="170" cy="70" rx="60" ry="26" opacity="0.85"/>' +
-      '<ellipse cx="640" cy="55" rx="80" ry="30" opacity="0.85"/>' +
-      '</g>' +
-      '<g fill="none" stroke="#E5343C" stroke-width="2.5" stroke-dasharray="1 9" stroke-linecap="round">' +
+      '<path d="M-20 210 Q60 160 140 195 T300 190 Q360 175 420 205 L420 300 L-20 300 Z" fill="#F0A63B" opacity="0.92"/>' +
+      '<path d="M520 230 Q600 190 700 215 T900 205 L900 300 L520 300 Z" fill="#1F7A6C" opacity="0.92"/>' +
+      '<ellipse cx="170" cy="70" rx="60" ry="26" fill="#E5343C" opacity="0.85"/>' +
+      '<ellipse cx="640" cy="55" rx="80" ry="30" fill="#2F86C9" opacity="0.85"/>' +
+      '<g fill="none" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="1 9" stroke-linecap="round" opacity="0.85">' +
       '<path d="M150 210 Q400 60 620 130"/>' +
       '<path d="M620 130 Q760 170 830 90"/>' +
       '<path d="M150 210 Q280 260 470 235"/>' +
       '</g>' +
       '<g>' +
-      '<circle cx="150" cy="210" r="7" fill="#E5343C" stroke="#fff" stroke-width="2"/>' +
-      '<circle cx="620" cy="130" r="7" fill="#E5343C" stroke="#fff" stroke-width="2"/>' +
-      '<circle cx="830" cy="90" r="7" fill="#E5343C" stroke="#fff" stroke-width="2"/>' +
-      '<circle cx="470" cy="235" r="7" fill="#E5343C" stroke="#fff" stroke-width="2"/>' +
+      '<circle cx="150" cy="210" r="7" fill="#F0A63B" stroke="#fff" stroke-width="2"/>' +
+      '<circle cx="620" cy="130" r="7" fill="#F0A63B" stroke="#fff" stroke-width="2"/>' +
+      '<circle cx="830" cy="90" r="7" fill="#F0A63B" stroke="#fff" stroke-width="2"/>' +
+      '<circle cx="470" cy="235" r="7" fill="#F0A63B" stroke="#fff" stroke-width="2"/>' +
+      '</g>' +
+      '<g fill="#ffffff" opacity="0.7">' +
+      '<path d="M60 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/>' +
+      '<path d="M740 200l2.4 6.4 6.4 2.4-6.4 2.4-2.4 6.4-2.4-6.4-6.4-2.4 6.4-2.4z"/>' +
+      '<path d="M860 190l2 5.2 5.2 2-5.2 2-2 5.2-2-5.2-5.2-2 5.2-2z"/>' +
       '</g>' +
       '<g transform="translate(798,54)" opacity="0.9">' +
       '<circle r="34" fill="none" stroke="#fff" stroke-width="1.6" opacity="0.7"/>' +
       '<path d="M0 -26 L7 -2 L0 4 L-7 -2 Z" fill="#fff"/>' +
       '<path d="M0 26 L7 4 L0 -4 L-7 4 Z" fill="#fff" opacity="0.4"/>' +
       '<text x="0" y="-38" text-anchor="middle" font-size="13" fill="#fff" font-family="Verdana">N</text>' +
+      '</g>' +
+      '<g transform="translate(58,168)" opacity="0.95">' +
+      '<circle r="30" fill="#F4E4C1"/>' +
+      '<path d="M-19 -6 Q-10 -16 2 -12 T18 -3" fill="none" stroke="#1F7A6C" stroke-width="6" stroke-linecap="round"/>' +
+      '<path d="M-14 10 Q-4 2 8 9 T22 14" fill="none" stroke="#1F7A6C" stroke-width="6" stroke-linecap="round" opacity="0.7"/>' +
+      '<circle cx="-9" cy="-9" r="3" fill="#022E3E"/><circle cx="9" cy="-9" r="3" fill="#022E3E"/>' +
+      '<path d="M-8 4 Q0 10 8 4" fill="none" stroke="#022E3E" stroke-width="2.4" stroke-linecap="round"/>' +
+      '</g>';
+    return s;
+  }
+  function mascotGlobeSVG() {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 120 120");
+    s.innerHTML =
+      '<g transform="translate(4,2)">' +
+      '<path d="M20 96 H92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>' +
+      '<path d="M56 96 V74" stroke="currentColor" stroke-width="5"/>' +
+      '<path d="M40 74 H72 L68 60 H44 Z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/>' +
+      '<path d="M20 30 A38 30 0 0 1 96 22" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>' +
+      '<circle cx="56" cy="38" r="34" fill="#F4E4C1" stroke="currentColor" stroke-width="5"/>' +
+      '<path d="M28 26 Q38 16 50 20 T70 27" fill="none" stroke="#1F7A6C" stroke-width="6" stroke-linecap="round"/>' +
+      '<path d="M32 46 Q42 38 54 45 T76 50" fill="none" stroke="#1F7A6C" stroke-width="6" stroke-linecap="round" opacity="0.75"/>' +
+      '<circle cx="46" cy="34" r="3.4" fill="currentColor"/><circle cx="66" cy="34" r="3.4" fill="currentColor"/>' +
+      '<path d="M46 48 Q56 55 66 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>' +
       '</g>';
     return s;
   }
