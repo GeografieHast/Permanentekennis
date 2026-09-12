@@ -324,8 +324,14 @@
     mastery: mastery,
     render: function (root, group, mode) {
       if (mode === "leer") renderStudy(root, group);
-      else if (mode === "mc") runQuiz(root, group, "mc", (c, t) => recordScore("map-" + group.id + "-mc", c, t));
-      else runQuiz(root, group, "typ", (c, t) => recordScore("map-" + group.id + "-typ", c, t));
+      else if (mode === "mc") runQuiz(root, group, "mc", (c, t) => {
+        recordScore("map-" + group.id + "-mc", c, t);
+        if (window.PKCounter) window.PKCounter.bump(group.moduleId);
+      });
+      else runQuiz(root, group, "typ", (c, t) => {
+        recordScore("map-" + group.id + "-typ", c, t);
+        if (window.PKCounter) window.PKCounter.bump(group.moduleId);
+      });
     }
   };
 })();

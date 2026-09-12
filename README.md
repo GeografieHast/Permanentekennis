@@ -103,6 +103,29 @@ soms iets langer.
   is niet meegeüpload, of niet op hetzelfde niveau als `index.html`
   beland.
 
+## Teller per kaartblad
+
+Op de startpagina en bovenaan elk kaartblad staat een teller: hoeveel
+leerlingen er op dat kaartblad al minstens één oefening hebben
+afgerond (leerkaarten tellen niet mee, wel meerkeuze, juist/fout,
+invultoets, tabeltoets, kaartoefeningen en de grote overhoring), over
+alle toestellen samen. Dit gebruikt dezelfde gratis, accountloze
+tellerdienst die de site al gebruikt voor de bezoekersteller op de
+startpagina (`countapi.mileshilliard.com`) — gewoon met een eigen
+sleutel per kaartblad. Er is niets in te stellen: dit werkt meteen,
+ook meteen na het uploaden naar GitHub Pages.
+
+Om dichter bij "hoeveel leerlingen" te komen dan bij "hoeveel keer
+geoefend": elk toestel telt maar één keer mee per kaartblad, ook al
+oefent diezelfde leerling er nadien nog vaker op. Er wordt geen enkel
+ander gegeven over een leerling bewaard of verstuurd, enkel dat ene
+"+1"-signaal per kaartblad en per toestel.
+
+Zoals bij de bezoekersteller geldt: dit is een klein, gratis dienstje
+zonder garanties. Is het even niet bereikbaar, dan blijft de teller
+gewoon op "…" staan en werkt de rest van de site (leerkaarten,
+quizzen, kaartoefeningen, eigen voortgang) volledig normaal verder.
+
 ## Inhoud aanpassen of uitbreiden
 
 **Tekst-onderdelen** (leerkaarten/meerkeuze/invultoets/...) staan in
@@ -138,6 +161,12 @@ gewoon als bestand meegeleverd — inclusief hun eigen ingedrukte cijfers
 en letters. De voortgang (beste score per onderdeel) wordt per toestel
 bewaard in de browser (`localStorage`) — er wordt niets naar een server
 gestuurd en er worden geen gegevens over leerlingen verzameld.
+
+De enige uitzondering is de teller per kaartblad (zie hierboven): die
+stuurt, de eerste keer dat een toestel een oefening op dat kaartblad
+afrondt, enkel een "+1"-signaal naar hetzelfde gratis, accountloze
+tellerdienstje als de bezoekersteller — gekoppeld aan het kaartblad-id,
+geen naam, geen toestel-ID, geen enkel ander gegeven.
 
 ## Huisstijl Hast
 

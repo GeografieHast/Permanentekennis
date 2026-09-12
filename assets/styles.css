@@ -385,6 +385,8 @@ main {
   margin-bottom: 8px;
 }
 .module-intro { color: var(--ink-soft); max-width: 60ch; }
+.module-counter { color: var(--ink-soft); font-size: 0.85rem; margin-top: -8px; }
+.sheet-counter { display: block; color: currentColor; opacity: 0.75; font-size: 0.76rem; margin-top: 2px; }
 
 .topic-list {
   display: flex;

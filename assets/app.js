@@ -366,11 +366,24 @@
           el("div", { class: "sheet-progress", title: pct + "% onder de knie" }, [
             el("div", { class: "sheet-progress-fill", style: "width:" + pct + "%" })
           ]),
-          el("span", { class: "sheet-progress-label" }, [pct + "% onder de knie"])
+          el("span", { class: "sheet-progress-label" }, [pct + "% onder de knie"]),
+          el("span", { class: "sheet-counter", id: "sheet-counter-" + mod.id }, ["…"])
         ])
       );
     });
     wrap.appendChild(grid);
+
+    if (window.PKCounter) {
+      window.PKCounter.fetchAll(PK_DATA.modules.map((m) => m.id), (counts) => {
+        PK_DATA.modules.forEach((mod) => {
+          const counterEl = document.getElementById("sheet-counter-" + mod.id);
+          if (counterEl) {
+            const n = counts[mod.id] || 0;
+            counterEl.textContent = "🌍 " + n.toLocaleString("nl-BE") + (n === 1 ? " leerling" : " leerlingen") + " oefenden hier al";
+          }
+        });
+      });
+    }
 
     wrap.appendChild(
       el("section", { class: "legend-block" }, [
@@ -410,6 +423,14 @@
     wrap.appendChild(el("span", { class: "kicker" }, [mod.label]));
     wrap.appendChild(el("h1", null, [mod.title]));
     wrap.appendChild(el("p", { class: "module-intro" }, [mod.intro]));
+
+    const counterEl = el("p", { class: "module-counter", id: "module-counter-" + moduleId }, ["🌍 … leerlingen oefenden hier al"]);
+    wrap.appendChild(counterEl);
+    if (window.PKCounter) {
+      window.PKCounter.fetchOne(moduleId, (n) => {
+        counterEl.textContent = "🌍 " + Number(n || 0).toLocaleString("nl-BE") + (n === 1 ? " leerling oefende" : " leerlingen oefenden") + " hier al op dit kaartblad";
+      });
+    }
 
     const mapGroups = mapGroupsFor(moduleId);
     if (mapGroups.length) {
@@ -698,7 +719,10 @@
       items: shuffle(topic.items),
       questionFor: (item) => (kind === "tf" ? buildTF(topic, item, reverse) : buildQuestion(topic, item, reverse)),
       kind: kind,
-      onFinish: (correct, total) => recordScore(topicId, correct, total)
+      onFinish: (correct, total) => {
+        recordScore(topicId, correct, total);
+        if (window.PKCounter) window.PKCounter.bump(moduleId);
+      }
     });
   }
 
@@ -716,7 +740,9 @@
       items: items,
       questionFor: (entry) => buildQuestion(entry.topic, entry.item),
       kind: "mc",
-      onFinish: () => {}
+      onFinish: () => {
+        if (window.PKCounter) window.PKCounter.bump(moduleId);
+      }
     });
   }
 
@@ -982,6 +1008,7 @@
       feedback.textContent = correctCount + " van de " + rows.length + " juist (" + pct + "%).";
       feedback.className = "quiz-feedback " + (pct >= 70 ? "feedback-good" : "feedback-bad");
       recordScore(topicId, correctCount, rows.length);
+      if (window.PKCounter) window.PKCounter.bump(moduleId);
       actions.appendChild(
         el("a", { class: "btn", href: "#/module/" + moduleId + "/" + topicId }, ["Terug"])
       );
