@@ -367,23 +367,18 @@
             el("div", { class: "sheet-progress-fill", style: "width:" + pct + "%" })
           ]),
           el("span", { class: "sheet-progress-label" }, [pct + "% onder de knie"]),
-          el("span", { class: "sheet-counter", id: "sheet-counter-" + mod.id }, ["…"])
+          window.PKCounter
+            ? el("img", {
+                class: "sheet-counter",
+                src: window.PKCounter.badgeUrl(mod.id, "leerlingen"),
+                alt: "Aantal leerlingen dat hier al oefende",
+                loading: "lazy"
+              })
+            : null
         ])
       );
     });
     wrap.appendChild(grid);
-
-    if (window.PKCounter) {
-      window.PKCounter.fetchAll(PK_DATA.modules.map((m) => m.id), (counts) => {
-        PK_DATA.modules.forEach((mod) => {
-          const counterEl = document.getElementById("sheet-counter-" + mod.id);
-          if (counterEl) {
-            const n = counts[mod.id] || 0;
-            counterEl.textContent = "🌍 " + n.toLocaleString("nl-BE") + (n === 1 ? " leerling" : " leerlingen") + " oefenden hier al";
-          }
-        });
-      });
-    }
 
     wrap.appendChild(
       el("section", { class: "legend-block" }, [
@@ -424,12 +419,16 @@
     wrap.appendChild(el("h1", null, [mod.title]));
     wrap.appendChild(el("p", { class: "module-intro" }, [mod.intro]));
 
-    const counterEl = el("p", { class: "module-counter", id: "module-counter-" + moduleId }, ["🌍 … leerlingen oefenden hier al"]);
-    wrap.appendChild(counterEl);
     if (window.PKCounter) {
-      window.PKCounter.fetchOne(moduleId, (n) => {
-        counterEl.textContent = "🌍 " + Number(n || 0).toLocaleString("nl-BE") + (n === 1 ? " leerling oefende" : " leerlingen oefenden") + " hier al op dit kaartblad";
-      });
+      wrap.appendChild(
+        el("p", { class: "module-counter" }, [
+          el("img", {
+            src: window.PKCounter.badgeUrl(moduleId, "leerlingen oefenden hier al"),
+            alt: "Aantal leerlingen dat hier al oefende",
+            loading: "lazy"
+          })
+        ])
+      );
     }
 
     const mapGroups = mapGroupsFor(moduleId);

@@ -1,11 +1,14 @@
 /* ==========================================================================
    Permanente Kennis — kaartblad-teller.js
    Telt, per kaartblad, hoeveel verschillende toestellen er minstens één
-   oefening op hebben afgerond — over alle leerlingen samen. Geen account,
-   geen server van onszelf nodig: dezelfde gratis, accountloze tellerdienst
-   die de site al gebruikt voor de bezoekersteller op de startpagina
-   (countapi.mileshilliard.com), gewoon met een eigen sleutel per
-   kaartblad.
+   oefening op hebben afgerond — over alle leerlingen samen.
+
+   Werkt via een afbeeldingsverzoek (zoals een klassieke "tracking pixel")
+   in plaats van fetch()+JSON: dat wordt door browsers nooit geblokkeerd
+   (geen CORS-gedoe), in tegenstelling tot een gewone fetch()-aanroep naar
+   een extern domein, die in veel browsers stil faalt. Gebruikt dezelfde
+   gratis, accountloze tellerdienst als voorheen (countapi.mileshilliard.com),
+   met een eigen sleutel per kaartblad.
 
    Om dichter bij "hoeveel leerlingen" te komen dan bij "hoeveel keer
    geoefend": elk toestel telt maar één keer mee per kaartblad, ook al
@@ -13,10 +16,6 @@
    localStorage, net zoals de rest van de voortgang). Er wordt geen
    enkel ander gegeven over een leerling bewaard of verstuurd, enkel dat
    ene "+1"-signaal.
-
-   Geen internet of de tellerdienst niet bereikbaar? Dan faalt dit
-   gewoon stil op de achtergrond — de rest van de app (leerkaarten,
-   quizzen, kaartoefeningen, eigen voortgang) blijft normaal werken.
    ========================================================================== */
 
 (function () {
@@ -45,40 +44,28 @@
     }
   }
 
-  /* Dit toestel deed net een oefening af op kaartblad "moduleId". Telt
-     enkel de allereerste keer mee voor dit toestel op dit kaartblad. */
+  /* Dit toestel deed net een oefening af op kaartblad "moduleId". Vuurt
+     een onzichtbaar afbeeldingsverzoek af (geen CORS-probleem mogelijk),
+     enkel de allereerste keer voor dit toestel op dit kaartblad. */
   function bump(moduleId) {
     if (!moduleId || alreadyCounted(moduleId)) return;
     markCounted(moduleId);
-    fetch(BASE + "hit/" + key(moduleId)).catch(() => {
-      /* mislukt? dan proberen we het gewoon een volgende keer weer */
-    });
+    try {
+      const pixel = new Image();
+      pixel.src = BASE + "hit/" + key(moduleId);
+    } catch (e) {
+      /* kan hier eigenlijk niet mislukken, maar voor de zekerheid */
+    }
   }
 
-  /* Haal de telling van precies één kaartblad op (verhoogt niets). */
-  function fetchOne(moduleId, callback) {
-    fetch(BASE + "get/" + key(moduleId))
-      .then((r) => r.json())
-      .then((data) => callback(data && data.value != null ? data.value : 0))
-      .catch(() => callback(0));
+  /* URL van een klein badge-plaatje met het huidige aantal voor dit
+     kaartblad (verhoogt de teller niet). Rechtstreeks bruikbaar als
+     <img src="..."> — geen JavaScript-uitlezing nodig, dus ook geen
+     CORS-gevoeligheid. */
+  function badgeUrl(moduleId, label) {
+    const params = "text=" + encodeURIComponent(label || "leerlingen") + "&bgcolor=1F7A6C&textcolor=ffffff&style=flat";
+    return BASE + "get/" + key(moduleId) + "/shield?" + params;
   }
 
-  /* Haal de tellingen van een lijst kaartblad-id's in één keer op. */
-  function fetchAll(moduleIds, callback) {
-    const result = {};
-    const ids = moduleIds || [];
-    Promise.all(
-      ids.map(
-        (id) =>
-          new Promise((resolve) => {
-            fetchOne(id, (n) => {
-              result[id] = n;
-              resolve();
-            });
-          })
-      )
-    ).then(() => callback(result));
-  }
-
-  window.PKCounter = { bump: bump, fetchOne: fetchOne, fetchAll: fetchAll };
+  window.PKCounter = { bump: bump, badgeUrl: badgeUrl };
 })();

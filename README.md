@@ -115,6 +115,14 @@ startpagina (`countapi.mileshilliard.com`) — gewoon met een eigen
 sleutel per kaartblad. Er is niets in te stellen: dit werkt meteen,
 ook meteen na het uploaden naar GitHub Pages.
 
+Deze teller praat met die dienst via een **afbeeldingsverzoek**
+(zoals een klassieke "tracking pixel" en een badge-plaatje), niet via
+een gewone JavaScript-`fetch()`-aanroep. Dat is bewust: browsers
+blokkeren `fetch()`-aanroepen naar externe domeinen soms stilzwijgend
+(CORS), maar een afbeelding laden wordt nooit geblokkeerd. Daardoor
+werkt deze teller betrouwbaarder dan de oorspronkelijke
+bezoekersteller.
+
 Om dichter bij "hoeveel leerlingen" te komen dan bij "hoeveel keer
 geoefend": elk toestel telt maar één keer mee per kaartblad, ook al
 oefent diezelfde leerling er nadien nog vaker op. Er wordt geen enkel
@@ -123,8 +131,9 @@ ander gegeven over een leerling bewaard of verstuurd, enkel dat ene
 
 Zoals bij de bezoekersteller geldt: dit is een klein, gratis dienstje
 zonder garanties. Is het even niet bereikbaar, dan blijft de teller
-gewoon op "…" staan en werkt de rest van de site (leerkaarten,
-quizzen, kaartoefeningen, eigen voortgang) volledig normaal verder.
+gewoon een leeg plaatje tonen en werkt de rest van de site
+(leerkaarten, quizzen, kaartoefeningen, eigen voortgang) volledig
+normaal verder.
 
 ## Inhoud aanpassen of uitbreiden
 
