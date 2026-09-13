@@ -362,19 +362,21 @@
           el("h2", null, [mod.title]),
           el("p", { class: "sheet-subtitle" }, [mod.subtitle]),
           el("p", { class: "sheet-intro" }, [mod.intro]),
-          el("span", { class: "sheet-meta" }, [count + " onderdelen · openen →"]),
-          el("div", { class: "sheet-progress", title: pct + "% onder de knie" }, [
-            el("div", { class: "sheet-progress-fill", style: "width:" + pct + "%" })
-          ]),
-          el("span", { class: "sheet-progress-label" }, [pct + "% onder de knie"]),
-          window.PKCounter
-            ? el("img", {
-                class: "sheet-counter",
-                src: window.PKCounter.badgeUrl(mod.id, "leerlingen"),
-                alt: "Aantal leerlingen dat hier al oefende",
-                loading: "lazy"
-              })
-            : null
+          el("div", { class: "sheet-footer" }, [
+            el("span", { class: "sheet-meta" }, [count + " onderdelen · openen →"]),
+            el("div", { class: "sheet-progress", title: pct + "% onder de knie" }, [
+              el("div", { class: "sheet-progress-fill", style: "width:" + pct + "%" })
+            ]),
+            el("span", { class: "sheet-progress-label" }, [pct + "% onder de knie"]),
+            window.PKCounter
+              ? el("img", {
+                  class: "sheet-counter",
+                  src: window.PKCounter.badgeUrl(mod.id, "leerlingen"),
+                  alt: "Aantal leerlingen dat hier al oefende",
+                  loading: "lazy"
+                })
+              : null
+          ])
         ])
       );
     });

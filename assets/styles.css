@@ -216,7 +216,9 @@ main {
   margin: 28px 0 36px;
 }
 .sheet-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   background: var(--card);
   border: 1px solid var(--line-strong);
   border-top: 6px solid var(--ink);
@@ -307,9 +309,13 @@ main {
 .sheet-card h2 { margin-bottom: 2px; }
 .sheet-subtitle { color: var(--ink-soft); font-size: 0.85rem; margin-bottom: 10px; }
 .sheet-intro { font-size: 0.92rem; color: var(--ink-soft); }
+.sheet-footer {
+  margin-top: auto;
+  padding-top: 10px;
+}
 .sheet-meta {
   display: inline-flex;
-  margin-top: 10px;
+  margin-top: 0;
   font-size: 0.82rem;
   font-weight: bold;
 }
