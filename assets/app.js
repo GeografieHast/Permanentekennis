@@ -288,6 +288,20 @@
     return parts;
   }
 
+  function animateCount(target, end) {
+    const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion || !end) { target.textContent = String(end); return; }
+    const dur = 700;
+    const start = performance.now();
+    function tick(now) {
+      const p = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      target.textContent = String(Math.round(eased * end));
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
   /* ---------- HOME ---------------------------------------------------------- */
 
   const MODULE_ICONS = {
@@ -324,18 +338,20 @@
     );
 
     const stats = loadStats();
+    const streakValueEl = el("span", { class: "stat-value" }, ["0"]);
+    const answeredValueEl = el("span", { class: "stat-value" }, ["0"]);
     const globalValueEl = el("span", { class: "stat-value" }, ["…"]);
     wrap.appendChild(
       el("section", { class: "stats-strip" }, [
         el("div", { class: "stat-tile stat-streak" }, [
-          el("span", { class: "stat-icon", "aria-hidden": "true" }, ["🔥"]),
-          el("span", { class: "stat-value" }, [String(stats.streakCount || 0)]),
+          el("span", { class: "stat-icon stat-icon-pulse", "aria-hidden": "true" }, ["🔥"]),
+          streakValueEl,
           el("span", { class: "stat-label" }, [(stats.streakCount === 1 ? "dag" : "dagen") + " op rij geoefend"]),
           el("span", { class: "stat-milestone" }, [milestoneNote(stats.streakCount || 0, STREAK_MILESTONES, "dag", "dagen")])
         ]),
         el("div", { class: "stat-tile stat-answered" }, [
           el("span", { class: "stat-icon", "aria-hidden": "true" }, ["✅"]),
-          el("span", { class: "stat-value" }, [String(stats.totalAnswered || 0)]),
+          answeredValueEl,
           el("span", { class: "stat-label" }, ["vragen door jou beantwoord"]),
           el("span", { class: "stat-milestone" }, [milestoneNote(stats.totalAnswered || 0, ANSWERED_MILESTONES, "vraag", "vragen")])
         ]),
@@ -346,6 +362,8 @@
         ])
       ])
     );
+    animateCount(streakValueEl, stats.streakCount || 0);
+    animateCount(answeredValueEl, stats.totalAnswered || 0);
     fetchGlobalCounter(globalValueEl);
 
     const grid = el("div", { class: "sheet-grid" });
@@ -354,8 +372,9 @@
       const iconFn = MODULE_ICONS[mod.id] || compassSVG;
       const accent = MODULE_ACCENTS[i % MODULE_ACCENTS.length];
       const pct = moduleMastery(mod);
+      const progressFill = el("div", { class: "sheet-progress-fill", style: "width:0%" });
       grid.appendChild(
-        el("a", { class: "sheet-card " + accent, href: "#/module/" + mod.id }, [
+        el("a", { class: "sheet-card " + accent, href: "#/module/" + mod.id, style: "--i:" + i }, [
           el("span", { class: "sheet-stamp", "aria-hidden": "true" }, [(mod.label.match(/\d+/) || [""])[0]]),
           el("div", { class: "sheet-icon-badge", "aria-hidden": "true" }, [iconFn()]),
           el("span", { class: "sheet-label" }, [mod.label]),
@@ -364,9 +383,7 @@
           el("p", { class: "sheet-intro" }, [mod.intro]),
           el("div", { class: "sheet-footer" }, [
             el("span", { class: "sheet-meta" }, [count + " onderdelen · openen →"]),
-            el("div", { class: "sheet-progress", title: pct + "% onder de knie" }, [
-              el("div", { class: "sheet-progress-fill", style: "width:" + pct + "%" })
-            ]),
+            el("div", { class: "sheet-progress", title: pct + "% onder de knie" }, [progressFill]),
             el("span", { class: "sheet-progress-label" }, [pct + "% onder de knie"]),
             window.PKCounter
               ? el("img", {
@@ -379,6 +396,9 @@
           ])
         ])
       );
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { progressFill.style.width = pct + "%"; });
+      });
     });
     wrap.appendChild(grid);
 
@@ -1129,31 +1149,33 @@
       '</g>' +
       '<path d="M-20 210 Q60 160 140 195 T300 190 Q360 175 420 205 L420 300 L-20 300 Z" fill="#F0A63B" opacity="0.92"/>' +
       '<path d="M520 230 Q600 190 700 215 T900 205 L900 300 L520 300 Z" fill="#1F7A6C" opacity="0.92"/>' +
-      '<ellipse cx="170" cy="70" rx="60" ry="26" fill="#E5343C" opacity="0.85"/>' +
-      '<ellipse cx="640" cy="55" rx="80" ry="30" fill="#2F86C9" opacity="0.85"/>' +
-      '<g fill="none" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="1 9" stroke-linecap="round" opacity="0.85">' +
+      '<ellipse class="hero-cloud" style="--d:0s" cx="170" cy="70" rx="60" ry="26" fill="#E5343C" opacity="0.85"/>' +
+      '<ellipse class="hero-cloud" style="--d:1.2s" cx="640" cy="55" rx="80" ry="30" fill="#2F86C9" opacity="0.85"/>' +
+      '<g class="hero-route" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="1 9" stroke-linecap="round" opacity="0.85">' +
       '<path d="M150 210 Q400 60 620 130"/>' +
       '<path d="M620 130 Q760 170 830 90"/>' +
       '<path d="M150 210 Q280 260 470 235"/>' +
       '</g>' +
       '<g>' +
-      '<circle cx="150" cy="210" r="7" fill="#F0A63B" stroke="#fff" stroke-width="2"/>' +
-      '<circle cx="620" cy="130" r="7" fill="#F0A63B" stroke="#fff" stroke-width="2"/>' +
-      '<circle cx="830" cy="90" r="7" fill="#F0A63B" stroke="#fff" stroke-width="2"/>' +
-      '<circle cx="470" cy="235" r="7" fill="#F0A63B" stroke="#fff" stroke-width="2"/>' +
+      '<circle class="hero-waypoint" style="--d:0s" cx="150" cy="210" r="7" fill="#F0A63B" stroke="#fff" stroke-width="2"/>' +
+      '<circle class="hero-waypoint" style="--d:.3s" cx="620" cy="130" r="7" fill="#F0A63B" stroke="#fff" stroke-width="2"/>' +
+      '<circle class="hero-waypoint" style="--d:.6s" cx="830" cy="90" r="7" fill="#F0A63B" stroke="#fff" stroke-width="2"/>' +
+      '<circle class="hero-waypoint" style="--d:.9s" cx="470" cy="235" r="7" fill="#F0A63B" stroke="#fff" stroke-width="2"/>' +
       '</g>' +
-      '<g fill="#ffffff" opacity="0.7">' +
-      '<path d="M60 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/>' +
-      '<path d="M740 200l2.4 6.4 6.4 2.4-6.4 2.4-2.4 6.4-2.4-6.4-6.4-2.4 6.4-2.4z"/>' +
-      '<path d="M860 190l2 5.2 5.2 2-5.2 2-2 5.2-2-5.2-5.2-2 5.2-2z"/>' +
+      '<g class="hero-sparkles" fill="#ffffff" opacity="0.7">' +
+      '<path class="hero-sparkle" style="--d:0s" d="M60 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/>' +
+      '<path class="hero-sparkle" style="--d:.7s" d="M740 200l2.4 6.4 6.4 2.4-6.4 2.4-2.4 6.4-2.4-6.4-6.4-2.4 6.4-2.4z"/>' +
+      '<path class="hero-sparkle" style="--d:1.3s" d="M860 190l2 5.2 5.2 2-5.2 2-2 5.2-2-5.2-5.2-2 5.2-2z"/>' +
       '</g>' +
-      '<g transform="translate(798,54)" opacity="0.9">' +
+      '<g class="hero-compass" transform="translate(798,54)" opacity="0.9">' +
       '<circle r="34" fill="none" stroke="#fff" stroke-width="1.6" opacity="0.7"/>' +
+      '<g class="hero-compass-needle">' +
       '<path d="M0 -26 L7 -2 L0 4 L-7 -2 Z" fill="#fff"/>' +
       '<path d="M0 26 L7 4 L0 -4 L-7 4 Z" fill="#fff" opacity="0.4"/>' +
+      '</g>' +
       '<text x="0" y="-38" text-anchor="middle" font-size="13" fill="#fff" font-family="Verdana">N</text>' +
       '</g>' +
-      '<g transform="translate(58,168)" opacity="0.95">' +
+      '<g class="hero-mascot" transform="translate(58,168)" opacity="0.95">' +
       '<circle r="30" fill="#F4E4C1"/>' +
       '<path d="M-19 -6 Q-10 -16 2 -12 T18 -3" fill="none" stroke="#1F7A6C" stroke-width="6" stroke-linecap="round"/>' +
       '<path d="M-14 10 Q-4 2 8 9 T22 14" fill="none" stroke="#1F7A6C" stroke-width="6" stroke-linecap="round" opacity="0.7"/>' +

@@ -91,7 +91,8 @@ svg { width: 100%; height: 100%; display: block; }
   overflow: hidden;
   display: block;
 }
-.brand-mark img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.brand-mark img { width: 100%; height: 100%; display: block; object-fit: cover; transition: transform 0.3s ease; }
+.brand:hover .brand-mark img { transform: rotate(-8deg) scale(1.08); }
 .brand-text strong { display: block; font-family: "Atkinson Hyperlegible", Verdana, sans-serif; font-size: 1.02rem; }
 .brand-text span { display: block; font-size: 0.78rem; color: var(--ink-soft); }
 
@@ -165,6 +166,67 @@ main {
   gap: 8px;
   margin-top: 14px;
 }
+@keyframes pk-badge-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hero-badge {
+  animation: pk-badge-in 0.5s ease backwards;
+}
+.hero-badge.badge-red { animation-delay: 0.05s; }
+.hero-badge.badge-teal { animation-delay: 0.15s; }
+.hero-badge.badge-amber { animation-delay: 0.25s; }
+
+@keyframes pk-dash-flow {
+  to { stroke-dashoffset: -100; }
+}
+.hero-route path {
+  animation: pk-dash-flow 3.5s linear infinite;
+}
+@keyframes pk-waypoint-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.75; }
+}
+.hero-waypoint {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pk-waypoint-pulse 2.2s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+@keyframes pk-sparkle-twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.75); }
+  50% { opacity: 0.9; transform: scale(1.15); }
+}
+.hero-sparkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pk-sparkle-twinkle 2.4s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+@keyframes pk-needle-swing {
+  0%, 100% { transform: rotate(-7deg); }
+  50% { transform: rotate(7deg); }
+}
+.hero-compass-needle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pk-needle-swing 3.6s ease-in-out infinite;
+}
+@keyframes pk-cloud-drift {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(10px, -4px); }
+}
+.hero-cloud {
+  animation: pk-cloud-drift 6s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+@keyframes pk-mascot-bob {
+  0%, 100% { transform: translate(58px, 168px) rotate(0deg); }
+  50% { transform: translate(58px, 164px) rotate(-2deg); }
+}
+.hero-mascot {
+  animation: pk-mascot-bob 3.2s ease-in-out infinite;
+}
 .hero-badge {
   display: inline-flex;
   align-items: center;
@@ -199,6 +261,13 @@ main {
   box-shadow: var(--shadow);
 }
 .stat-icon { font-size: 1.5rem; line-height: 1; margin-bottom: 4px; }
+@keyframes pk-flame-flicker {
+  0%, 100% { transform: scale(1) rotate(-2deg); }
+  50% { transform: scale(1.12) rotate(2deg); }
+}
+.stat-icon-pulse { display: inline-block; animation: pk-flame-flicker 1.6s ease-in-out infinite; }
+.stat-tile { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.stat-tile:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(2,46,62,0.14); }
 .stat-value { font-family: "Atkinson Hyperlegible", Verdana, sans-serif; font-size: 1.8rem; font-weight: bold; line-height: 1; }
 .stat-label { font-size: 0.78rem; color: var(--ink-soft); }
 .stat-milestone { font-size: 0.74rem; font-weight: bold; margin-top: 6px; padding: 3px 10px; border-radius: 999px; background: var(--paper); color: var(--ink-soft); }
@@ -253,6 +322,14 @@ main {
 .sheet-card:hover { transform: translateY(-5px) scale(1.015); box-shadow: 0 16px 30px rgba(2,46,62,0.18); }
 .sheet-card:hover::after { transform: scale(1.25); }
 .sheet-card:hover .sheet-icon-badge { transform: rotate(-6deg) scale(1.08); }
+@keyframes pk-card-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.sheet-card {
+  animation: pk-card-in 0.5s ease backwards;
+  animation-delay: calc(var(--i, 0) * 0.07s);
+}
 .sheet-stamp {
   position: absolute;
   top: 14px; right: 16px;
@@ -330,6 +407,8 @@ main {
   height: 100%;
   border-radius: 999px;
   background: currentColor;
+  width: 0%;
+  transition: width 0.9s cubic-bezier(.22,.9,.3,1);
 }
 .sheet-progress-label {
   display: block;
@@ -354,6 +433,11 @@ main {
   width: 40px; height: 40px; flex: none;
   color: var(--teal);
 }
+@keyframes pk-globe-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-3px) rotate(-4deg); }
+}
+.legend-mascot svg { animation: pk-globe-bob 3s ease-in-out infinite; }
 .legend-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -611,6 +695,20 @@ main {
 @media (prefers-reduced-motion: reduce) {
   .flashcard-inner { transition: none; }
   .sheet-card, .mode-card { transition: none; }
+  .sheet-card,
+  .hero-badge,
+  .hero-route path,
+  .hero-waypoint,
+  .hero-sparkle,
+  .hero-compass-needle,
+  .hero-cloud,
+  .hero-mascot,
+  .stat-icon-pulse,
+  .legend-mascot svg {
+    animation: none !important;
+  }
+  .sheet-progress-fill { transition: none; }
+  .brand-mark img { transition: none; }
 }
 
 /* ---------- quiz --------------------------------------------------------------- */
