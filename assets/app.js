@@ -357,17 +357,24 @@
     { emojis: ["📯", "🎺", "🎉"], mode: "burst", count: 10 },
     { emojis: ["👏"], mode: "clap", count: 7 }
   ];
-  function celebrate() {
+  function celebrate(originEl) {
     const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduceMotion) return;
     const kind = CELEBRATIONS[Math.floor(Math.random() * CELEBRATIONS.length)];
     const layer = document.createElement("div");
     layer.className = "celebrate-layer";
-    const originY = kind.mode === "clap" ? 22 : 40;
+    let originX = 50, originY = kind.mode === "clap" ? 22 : 40;
+    if (originEl && originEl.getBoundingClientRect) {
+      const r = originEl.getBoundingClientRect();
+      originX = ((r.left + r.width / 2) / window.innerWidth) * 100;
+      originY = ((r.top + r.height / 2) / window.innerHeight) * 100;
+    }
     for (let i = 0; i < kind.count; i++) {
       const piece = document.createElement("span");
       piece.className = "celebrate-piece" + (kind.mode === "clap" ? " celebrate-clap" : "");
       piece.textContent = kind.emojis[Math.floor(Math.random() * kind.emojis.length)];
+      piece.setAttribute("role", "button");
+      piece.setAttribute("aria-label", "Tik om te laten knallen");
       const angle = Math.random() * Math.PI * 2;
       const dist = kind.mode === "clap" ? 18 + Math.random() * 30 : 60 + Math.random() * 170;
       const tx = Math.cos(angle) * dist;
@@ -376,10 +383,18 @@
       piece.style.setProperty("--ty", ty.toFixed(0) + "px");
       piece.style.setProperty("--rot", (Math.random() * 360 - 180).toFixed(0) + "deg");
       piece.style.setProperty("--dur", (0.75 + Math.random() * 0.5).toFixed(2) + "s");
-      piece.style.left = (46 + Math.random() * 8) + "%";
+      piece.style.left = originX + "%";
       piece.style.top = originY + "%";
       piece.style.fontSize = (1.1 + Math.random() * 0.9).toFixed(2) + "rem";
       piece.style.animationDelay = (Math.random() * 0.15).toFixed(2) + "s";
+      piece.addEventListener("click", function () {
+        piece.style.animation = "none";
+        void piece.offsetWidth;
+        piece.style.transition = "transform 0.22s ease, opacity 0.22s ease";
+        piece.style.transform = "translate(-50%, -50%) scale(1.9)";
+        piece.style.opacity = "0";
+        setTimeout(function () { piece.remove(); }, 230);
+      });
       layer.appendChild(piece);
     }
     document.body.appendChild(layer);
@@ -435,7 +450,7 @@
           el("span", { class: "stat-milestone" }, [milestoneNote(stats.streakCount || 0, STREAK_GOALS)])
         ]),
         el("div", { class: "stat-tile stat-answered" }, [
-          el("span", { class: "stat-icon", "aria-hidden": "true" }, ["✅"]),
+          el("span", { class: "stat-icon stat-check-badge", "aria-hidden": "true" }, [checkTickSVG()]),
           answeredValueEl,
           el("span", { class: "stat-label" }, ["vragen door jou beantwoord"]),
           el("span", { class: "stat-milestone" }, [milestoneNote(stats.totalAnswered || 0, ANSWERED_GOALS)])
@@ -969,7 +984,7 @@
                 if (!isRight) btn.classList.add("option-wrong");
                 feedback.textContent = isRight ? "Juist!" : "Niet juist. Juiste antwoord: " + q.correct;
                 feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
-                if (isRight) celebrate();
+                if (isRight) celebrate(btn);
                 showNext();
               }
             },
@@ -987,7 +1002,7 @@
           ])
         );
         const tfWrap = el("div", { class: "tf-buttons" });
-        function answerTF(choice) {
+        function answerTF(choice, btnEl) {
           if (answered) return;
           answered = true;
           const isRight = choice === q.isTrue;
@@ -997,11 +1012,11 @@
           feedback.textContent =
             (isRight ? "Juist! " : "Niet juist. ") + "Correct antwoord: " + q.correct + (q.isTrue ? "" : " (het voorstel klopte niet)");
           feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
-          if (isRight) celebrate();
+          if (isRight) celebrate(btnEl);
           showNext();
         }
-        tfWrap.appendChild(el("button", { class: "option-btn tf-btn", type: "button", onclick: () => answerTF(true) }, ["Juist"]));
-        tfWrap.appendChild(el("button", { class: "option-btn tf-btn", type: "button", onclick: () => answerTF(false) }, ["Fout"]));
+        tfWrap.appendChild(el("button", { class: "option-btn tf-btn", type: "button", onclick: (e) => answerTF(true, e.currentTarget) }, ["Juist"]));
+        tfWrap.appendChild(el("button", { class: "option-btn tf-btn", type: "button", onclick: (e) => answerTF(false, e.currentTarget) }, ["Fout"]));
         card.appendChild(tfWrap);
       } else {
         const input = el("input", {
@@ -1024,7 +1039,7 @@
           input.classList.add(isRight ? "input-correct" : "input-wrong");
           feedback.textContent = isRight ? "Juist!" : "Juiste antwoord: " + q.correct;
           feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
-          if (isRight) celebrate();
+          if (isRight) celebrate(submit);
           showNext();
         }
         submit.addEventListener("click", checkAnswer);
@@ -1127,6 +1142,7 @@
         tr.classList.add(isRight ? "row-correct" : "row-wrong");
         if (isRight) {
           correctCount++;
+          setTimeout(function () { celebrate(input); }, correctCount * 90);
         } else {
           tr.appendChild(el("td", { class: "table-correction" }, [row.correct]));
         }
@@ -1135,7 +1151,6 @@
       const pct = rows.length ? Math.round((correctCount / rows.length) * 100) : 0;
       feedback.textContent = correctCount + " van de " + rows.length + " juist (" + pct + "%).";
       feedback.className = "quiz-feedback " + (pct >= 70 ? "feedback-good" : "feedback-bad");
-      if (pct >= 70) celebrate();
       recordScore(topicId, correctCount, rows.length);
       if (window.PKCounter) window.PKCounter.bump(moduleId);
       actions.appendChild(

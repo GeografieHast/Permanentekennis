@@ -283,6 +283,20 @@ main {
 }
 .stat-tile { transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .stat-tile:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(2,46,62,0.14); }
+.stat-check-badge {
+  width: 1.6rem; height: 1.6rem;
+  border-radius: 7px;
+  background: linear-gradient(145deg, #7be3ad, #22b06a);
+  box-shadow: 0 2px 7px rgba(34,176,106,0.4);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  animation: pk-check-badge-bounce 2.6s ease-in-out infinite;
+}
+.stat-check-badge svg { width: 0.95rem; height: 0.95rem; }
+@keyframes pk-check-badge-bounce {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.1) rotate(-5deg); }
+}
 
 /* ---------- doelen (goals) ------------------------------------------------ */
 
@@ -829,6 +843,10 @@ main {
   position: absolute;
   transform: translate(-50%, -50%);
   animation: pk-celebrate-burst var(--dur, 0.9s) ease-out forwards;
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 6px;
+  line-height: 1;
 }
 @keyframes pk-celebrate-burst {
   0% { transform: translate(-50%, -50%) translate(0, 0) scale(0.5) rotate(0deg); opacity: 0; }
@@ -856,6 +874,7 @@ main {
   .hero-cloud,
   .hero-mascot,
   .stat-icon-pulse,
+  .stat-check-badge,
   .goal-item.goal-next .goal-check,
   .goal-item.goal-achieved .goal-check,
   .goal-item.goal-achieved .goal-check svg path,
