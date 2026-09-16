@@ -204,7 +204,31 @@
   function checkTickSVG() {
     const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     s.setAttribute("viewBox", "0 0 24 24");
-    s.innerHTML = '<path d="M4 12.5l5 5L20 6" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>';
+    s.innerHTML = '<path d="M4 12.5l5 5L20 6" pathLength="1" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>';
+    return s;
+  }
+  function flameIconSVG() {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 24 24");
+    s.innerHTML =
+      '<defs><linearGradient id="pkFlameGrad" x1="0" y1="1" x2="0" y2="0">' +
+      '<stop offset="0" stop-color="#c22630"/><stop offset="0.55" stop-color="#e5343c"/><stop offset="1" stop-color="#f0a63b"/>' +
+      '</linearGradient></defs>' +
+      '<path d="M12 2.2c1.4 2.6-1.6 4-1.9 6.8-.2 1.7.7 2.6 1.9 2.6 1.7 0 2.4-1.5 1.9-3-.3-.9-.8-1.3-.4-2.3 1.6 1.1 3.5 3.6 3.5 6.4a5 5 0 11-10 0c0-4.4 3.1-6.9 5-10.5z" fill="url(#pkFlameGrad)"/>' +
+      '<path d="M12 12.3c.5 1-.7 1.5-.7 2.7a1.8 1.8 0 003.6 0c0-1.5-.9-2-1.3-2.9.1 1-.5 1.2-.9.8-.5-.5.1-1-.7-.6z" fill="#F4E4C1" opacity="0.9"/>';
+    return s;
+  }
+  function globeIconSVG() {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 24 24");
+    s.innerHTML =
+      '<circle cx="12" cy="12" r="9.5" fill="#2F86C9"/>' +
+      '<path d="M4.6 8.2c2.3 1.5 4.6 1.9 8 1.3 3.2-.6 5.6-.4 7.3.6" fill="none" stroke="#fff" stroke-width="0.9" opacity="0.45"/>' +
+      '<path d="M4 15.6c2.5-1.2 5-1.6 8.4-1 3.1.5 5.6.6 7.7-.4" fill="none" stroke="#fff" stroke-width="0.9" opacity="0.45"/>' +
+      '<ellipse cx="12" cy="12" rx="3.6" ry="9.5" fill="none" stroke="#fff" stroke-width="0.9" opacity="0.35"/>' +
+      '<path d="M4.9 7.3c2 3 3 7.3 1.1 12" fill="#1F7A6C" opacity="0.92"/>' +
+      '<path d="M13.6 4.3c2.7 1 3.1 5.1 1.6 8.2 1.9 1 2.7 4.2 1 6.9" fill="#1F7A6C" opacity="0.92"/>' +
+      '<circle cx="12" cy="12" r="9.5" fill="none" stroke="#022E3E" stroke-width="0.6" opacity="0.25"/>';
     return s;
   }
 
@@ -391,7 +415,7 @@
     wrap.appendChild(
       el("section", { class: "stats-strip" }, [
         el("div", { class: "stat-tile stat-streak" }, [
-          el("span", { class: "stat-icon stat-icon-pulse", "aria-hidden": "true" }, ["🔥"]),
+          el("span", { class: "stat-icon stat-icon-pulse", "aria-hidden": "true" }, [flameIconSVG()]),
           streakValueEl,
           el("span", { class: "stat-label" }, [(stats.streakCount === 1 ? "dag" : "dagen") + " op rij geoefend"]),
           el("span", { class: "stat-milestone" }, [milestoneNote(stats.streakCount || 0, STREAK_GOALS)])
@@ -403,7 +427,7 @@
           el("span", { class: "stat-milestone" }, [milestoneNote(stats.totalAnswered || 0, ANSWERED_GOALS)])
         ]),
         el("div", { class: "stat-tile stat-global" }, [
-          el("span", { class: "stat-icon stat-icon-spin", "aria-hidden": "true" }, ["🌍"]),
+          el("span", { class: "stat-icon stat-icon-spin", "aria-hidden": "true" }, [globeIconSVG()]),
           globalValueEl,
           el("span", { class: "stat-label" }, ["keer geopend door iedereen samen"])
         ])
