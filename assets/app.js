@@ -588,8 +588,11 @@
 
   function masteryBar(pct) {
     const bar = el("div", { class: "mastery", title: pct != null ? pct + "% beste score" : "Nog niet geoefend" });
-    const fill = el("div", { class: "mastery-fill", style: "width:" + (pct || 0) + "%" });
+    const fill = el("div", { class: "mastery-fill", style: "width:0%" });
     bar.appendChild(fill);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { fill.style.width = (pct || 0) + "%"; });
+    });
     return bar;
   }
 
