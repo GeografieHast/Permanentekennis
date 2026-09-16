@@ -37,13 +37,22 @@ html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
   font-family: Verdana, Geneva, "DejaVu Sans", sans-serif;
-  background: var(--paper);
+  background-color: var(--paper);
   color: var(--ink);
   line-height: 1.55;
-  background-image: radial-gradient(var(--line-strong) 1.4px, transparent 1.4px);
-  background-size: 26px 26px;
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='170' height='170' viewBox='0 0 170 170'><g fill='none' stroke='%234e6572' stroke-width='1' opacity='0.4'><circle cx='85' cy='85' r='62'/><circle cx='85' cy='85' r='40'/><line x1='85' y1='10' x2='85' y2='160'/><line x1='10' y1='85' x2='160' y2='85'/><line x1='27' y1='27' x2='143' y2='143'/><line x1='143' y1='27' x2='27' y2='143'/></g><path d='M85 22 L93 85 L85 148 L77 85 Z' fill='%234e6572' opacity='0.3'/><path d='M22 85 L85 93 L148 85 L85 77 Z' fill='%234e6572' opacity='0.18'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='170' height='170' viewBox='0 0 170 170'><g fill='none' stroke='%234e6572' stroke-width='1' opacity='0.4'><circle cx='85' cy='85' r='62'/><circle cx='85' cy='85' r='40'/><line x1='85' y1='10' x2='85' y2='160'/><line x1='10' y1='85' x2='160' y2='85'/><line x1='27' y1='27' x2='143' y2='143'/><line x1='143' y1='27' x2='27' y2='143'/></g><path d='M85 22 L93 85 L85 148 L77 85 Z' fill='%234e6572' opacity='0.3'/><path d='M22 85 L85 93 L148 85 L85 77 Z' fill='%234e6572' opacity='0.18'/></svg>"),
+    radial-gradient(ellipse 900px 700px at 4% 2%, rgba(244, 228, 193, 0.55), transparent 60%),
+    radial-gradient(ellipse 900px 700px at 98% 100%, rgba(126, 200, 227, 0.32), transparent 60%),
+    repeating-radial-gradient(circle at 6% 98%, rgba(2,46,62,0.05) 0, rgba(2,46,62,0.05) 1px, transparent 1.4px, transparent 26px),
+    repeating-radial-gradient(circle at 96% 4%, rgba(2,46,62,0.045) 0, rgba(2,46,62,0.045) 1px, transparent 1.4px, transparent 30px),
+    linear-gradient(rgba(2,46,62,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(2,46,62,0.05) 1px, transparent 1px);
+  background-size: 170px 170px, 170px 170px, auto, auto, 620px 620px, 640px 640px, 44px 44px, 44px 44px;
+  background-position: calc(100% - 6px) 6px, 6px calc(100% - 6px), 0 0, 0 0, 0 0, 0 0, -1px -1px, -1px -1px;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat, repeat;
   background-attachment: fixed;
-  background-position: -1px -1px;
 }
 
 h1, h2, h3 {
