@@ -150,15 +150,62 @@
 
   /* ---------- mijlpalen (badges) ---------------------------------------------- */
 
-  const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
-  const ANSWERED_MILESTONES = [25, 50, 100, 250, 500, 1000];
-  function milestoneNote(value, list, singular, plural) {
-    const next = list.find((m) => m > value);
-    const achieved = value >= list[list.length - 1];
-    if (achieved) return "🏆 topscore behaald!";
-    const hasBadge = list.some((m) => m <= value);
-    const word = next === 1 ? singular : plural;
-    return (hasBadge ? "🏅 volgend doel: " : "🎯 doel: ") + next + " " + word;
+  const STREAK_GOALS = [
+    { at: 3, label: "Warm gedraaid", icon: "🔥" },
+    { at: 7, label: "Volle week", icon: "📅" },
+    { at: 14, label: "Twee weken sterk", icon: "💪" },
+    { at: 21, label: "Nieuwe gewoonte", icon: "🌱" },
+    { at: 30, label: "Maandmarathon", icon: "🗓️" },
+    { at: 45, label: "Anderhalve maand!", icon: "⛰️" },
+    { at: 60, label: "Twee maanden vol", icon: "🚀" },
+    { at: 100, label: "Eeuweling", icon: "💯" },
+    { at: 150, label: "Ontembaar", icon: "🦾" },
+    { at: 200, label: "Legende", icon: "👑" }
+  ];
+  const ANSWERED_GOALS = [
+    { at: 25, label: "Eerste verkenner", icon: "🧭" },
+    { at: 50, label: "Kaartlezer", icon: "🗺️" },
+    { at: 100, label: "Honderd raak!", icon: "🎯" },
+    { at: 200, label: "Grensverlegger", icon: "🌍" },
+    { at: 250, label: "Wegwijs", icon: "🚏" },
+    { at: 400, label: "Reisleider", icon: "🧳" },
+    { at: 500, label: "Halve duizend!", icon: "🏅" },
+    { at: 750, label: "Meesterbrein", icon: "🧠" },
+    { at: 1000, label: "Duizendknaller", icon: "🎉" },
+    { at: 1500, label: "Wereldkampioen", icon: "🏆" }
+  ];
+  function milestoneNote(value, goals) {
+    const next = goals.find(function (g) { return g.at > value; });
+    if (!next) return "🏆 topscore behaald!";
+    const hasBadge = goals.some(function (g) { return g.at <= value; });
+    return (hasBadge ? "🏅 volgend doel: " : "🎯 doel: ") + next.icon + " " + next.label;
+  }
+  function goalsList(value, goals, unitWord) {
+    const list = el("ul", { class: "goals-list" });
+    let nextMarked = false;
+    goals.forEach(function (g) {
+      const achieved = value >= g.at;
+      let state = "locked";
+      if (achieved) state = "achieved";
+      else if (!nextMarked) { state = "next"; nextMarked = true; }
+      list.appendChild(
+        el("li", { class: "goal-item goal-" + state }, [
+          el("span", { class: "goal-check", "aria-hidden": "true" }, [achieved ? checkTickSVG() : ""]),
+          el("span", { class: "goal-icon", "aria-hidden": "true" }, [g.icon]),
+          el("span", { class: "goal-text" }, [
+            el("strong", null, [g.label]),
+            el("span", { class: "goal-target" }, [g.at + " " + unitWord])
+          ])
+        ])
+      );
+    });
+    return list;
+  }
+  function checkTickSVG() {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 24 24");
+    s.innerHTML = '<path d="M4 12.5l5 5L20 6" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>';
+    return s;
   }
 
   /* ---------- data lookup ------------------------------------------------- */
@@ -347,16 +394,16 @@
           el("span", { class: "stat-icon stat-icon-pulse", "aria-hidden": "true" }, ["🔥"]),
           streakValueEl,
           el("span", { class: "stat-label" }, [(stats.streakCount === 1 ? "dag" : "dagen") + " op rij geoefend"]),
-          el("span", { class: "stat-milestone" }, [milestoneNote(stats.streakCount || 0, STREAK_MILESTONES, "dag", "dagen")])
+          el("span", { class: "stat-milestone" }, [milestoneNote(stats.streakCount || 0, STREAK_GOALS)])
         ]),
         el("div", { class: "stat-tile stat-answered" }, [
           el("span", { class: "stat-icon", "aria-hidden": "true" }, ["✅"]),
           answeredValueEl,
           el("span", { class: "stat-label" }, ["vragen door jou beantwoord"]),
-          el("span", { class: "stat-milestone" }, [milestoneNote(stats.totalAnswered || 0, ANSWERED_MILESTONES, "vraag", "vragen")])
+          el("span", { class: "stat-milestone" }, [milestoneNote(stats.totalAnswered || 0, ANSWERED_GOALS)])
         ]),
         el("div", { class: "stat-tile stat-global" }, [
-          el("span", { class: "stat-icon", "aria-hidden": "true" }, ["🌍"]),
+          el("span", { class: "stat-icon stat-icon-spin", "aria-hidden": "true" }, ["🌍"]),
           globalValueEl,
           el("span", { class: "stat-label" }, ["keer geopend door iedereen samen"])
         ])
@@ -365,6 +412,22 @@
     animateCount(streakValueEl, stats.streakCount || 0);
     animateCount(answeredValueEl, stats.totalAnswered || 0);
     fetchGlobalCounter(globalValueEl);
+
+    wrap.appendChild(
+      el("section", { class: "goals-panel" }, [
+        el("h3", null, ["🎯 Jouw doelen"]),
+        el("div", { class: "goals-grid" }, [
+          el("div", { class: "goals-col" }, [
+            el("h4", null, ["🔥 Reeks volhouden"]),
+            goalsList(stats.streakCount || 0, STREAK_GOALS, "dagen")
+          ]),
+          el("div", { class: "goals-col" }, [
+            el("h4", null, ["✅ Vragen beantwoord"]),
+            goalsList(stats.totalAnswered || 0, ANSWERED_GOALS, "vragen")
+          ])
+        ])
+      ])
+    );
 
     const grid = el("div", { class: "sheet-grid" });
     PK_DATA.modules.forEach((mod, i) => {
