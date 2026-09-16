@@ -541,22 +541,6 @@
     animateCount(answeredValueEl, stats.totalAnswered || 0);
     fetchGlobalCounter(globalValueEl);
 
-    wrap.appendChild(
-      el("section", { class: "goals-panel" }, [
-        el("h3", null, ["🎯 Jouw doelen"]),
-        el("div", { class: "goals-grid" }, [
-          el("div", { class: "goals-col" }, [
-            el("h4", null, ["🔥 Reeks volhouden"]),
-            goalsList(stats.streakCount || 0, STREAK_GOALS, "dagen")
-          ]),
-          el("div", { class: "goals-col" }, [
-            el("h4", null, ["✅ Vragen beantwoord"]),
-            goalsList(stats.totalAnswered || 0, ANSWERED_GOALS, "vragen")
-          ])
-        ])
-      ])
-    );
-
     const grid = el("div", { class: "sheet-grid" });
     PK_DATA.modules.forEach((mod, i) => {
       const count = mod.topics.length + mapGroupsFor(mod.id).length;
@@ -592,6 +576,22 @@
       });
     });
     wrap.appendChild(grid);
+
+    wrap.appendChild(
+      el("section", { class: "goals-panel" }, [
+        el("h3", null, ["🎯 Jouw doelen"]),
+        el("div", { class: "goals-grid" }, [
+          el("div", { class: "goals-col" }, [
+            el("h4", null, ["🔥 Reeks volhouden"]),
+            goalsList(stats.streakCount || 0, STREAK_GOALS, "dagen")
+          ]),
+          el("div", { class: "goals-col" }, [
+            el("h4", null, ["✅ Vragen beantwoord"]),
+            goalsList(stats.totalAnswered || 0, ANSWERED_GOALS, "vragen")
+          ])
+        ])
+      ])
+    );
 
     wrap.appendChild(
       el("section", { class: "legend-block" }, [
