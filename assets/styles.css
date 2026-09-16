@@ -281,16 +281,6 @@ main {
   transform-origin: 50% 90%;
   filter: drop-shadow(0 0 7px rgba(229, 52, 60, 0.55)) drop-shadow(0 0 3px rgba(240, 166, 59, 0.6));
 }
-.stat-global { perspective: 700px; }
-@keyframes pk-globe-spin {
-  from { transform: rotateY(0deg); }
-  to { transform: rotateY(360deg); }
-}
-.stat-icon-spin {
-  display: inline-block;
-  transform-style: preserve-3d;
-  animation: pk-globe-spin 6s linear infinite;
-}
 .stat-tile { transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .stat-tile:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(2,46,62,0.14); }
 
@@ -767,10 +757,6 @@ main {
 .study-hint { color: var(--ink-soft); font-size: 0.88rem; }
 .card-stage { display: flex; justify-content: center; margin: 10px 0 20px; perspective: 1200px; }
 
-@keyframes pk-flashcard-hint {
-  0%, 100% { transform: scale(1) rotate(0deg); }
-  50% { transform: scale(1.015) rotate(-0.6deg); }
-}
 .flashcard {
   width: min(100%, 480px);
   height: 220px;
@@ -780,8 +766,6 @@ main {
   cursor: pointer;
   font-family: inherit;
   transition: transform 0.15s ease;
-  animation: pk-flashcard-hint 2.2s ease-in-out 2;
-  animation-delay: 0.7s;
 }
 .flashcard:hover { transform: scale(1.015); }
 .flashcard-inner {
@@ -832,6 +816,34 @@ main {
 }
 .study-count { color: var(--ink-soft); font-size: 0.88rem; min-width: 4.5em; text-align: center; }
 
+/* ---------- viering bij juist antwoord -------------------------------------- */
+
+.celebrate-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+.celebrate-piece {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  animation: pk-celebrate-burst var(--dur, 0.9s) ease-out forwards;
+}
+@keyframes pk-celebrate-burst {
+  0% { transform: translate(-50%, -50%) translate(0, 0) scale(0.5) rotate(0deg); opacity: 0; }
+  12% { opacity: 1; }
+  100% { transform: translate(-50%, -50%) translate(var(--tx), var(--ty)) scale(1) rotate(var(--rot)); opacity: 0; }
+}
+.celebrate-piece.celebrate-clap { animation-name: pk-celebrate-clap; }
+@keyframes pk-celebrate-clap {
+  0% { transform: translate(-50%, -50%) translate(0, 0) scale(0.6); opacity: 0; }
+  20% { opacity: 1; transform: translate(-50%, -50%) translate(var(--tx), var(--ty)) scale(1.3); }
+  50% { transform: translate(-50%, -50%) translate(var(--tx), var(--ty)) scale(0.9); }
+  70% { transform: translate(-50%, -50%) translate(var(--tx), var(--ty)) scale(1.15); }
+  100% { transform: translate(-50%, -50%) translate(var(--tx), var(--ty)) scale(1); opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .flashcard-inner { transition: none; }
   .sheet-card, .mode-card { transition: none; }
@@ -844,7 +856,6 @@ main {
   .hero-cloud,
   .hero-mascot,
   .stat-icon-pulse,
-  .stat-icon-spin,
   .goal-item.goal-next .goal-check,
   .goal-item.goal-achieved .goal-check,
   .goal-item.goal-achieved .goal-check svg path,
