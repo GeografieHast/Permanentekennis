@@ -229,6 +229,7 @@
             if (!nameOk) btn.classList.add("option-wrong");
             feedback.textContent = nameOk ? "Juist!" : "Niet juist. Juiste antwoord: " + entry.term;
             feedback.className = "quiz-feedback " + (nameOk ? "feedback-good" : "feedback-bad");
+            if (nameOk && window.PKCelebrate) window.PKCelebrate(btn);
             updateHeader();
             maybeAskCapital();
           } }, [opt]);
@@ -255,6 +256,7 @@
               if (!capOk) b2.classList.add("option-wrong");
               capFeedback.textContent = capOk ? "Juist!" : "Juiste antwoord: " + entry.capital;
               capFeedback.className = "quiz-feedback " + (capOk ? "feedback-good" : "feedback-bad");
+              if (capOk && window.PKCelebrate) window.PKCelebrate(b2);
               updateHeader();
               showNext();
             } }, [opt]);
@@ -282,6 +284,7 @@
           totalFields++;
           if (nameOk) correctFields++;
           input.classList.add(nameOk ? "input-correct" : "input-wrong");
+          if (nameOk && window.PKCelebrate) window.PKCelebrate(input);
           let msg = nameOk ? "Juist!" : "Juiste antwoord: " + entry.term;
           if (capInput) {
             const capOk = norm(capInput.value) === norm(entry.capital);
@@ -289,6 +292,7 @@
             totalFields++;
             if (capOk) correctFields++;
             capInput.classList.add(capOk ? "input-correct" : "input-wrong");
+            if (capOk && window.PKCelebrate) window.PKCelebrate(capInput);
             if (!capOk) msg += " \u2014 Hoofdstad: " + entry.capital;
           }
           submit.disabled = true;

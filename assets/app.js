@@ -351,55 +351,130 @@
 
   /* ---------- viering bij een juist antwoord ---------------------------------- */
 
-  const CELEBRATIONS = [
-    { emojis: ["🎉", "🎊", "✨", "🟡", "🔴", "🔵", "🟢"], mode: "burst", count: 20 },
-    { emojis: ["🎆", "🎇", "✨"], mode: "burst", count: 14 },
-    { emojis: ["📯", "🎺", "🎉"], mode: "burst", count: 10 },
-    { emojis: ["👏"], mode: "clap", count: 7 }
-  ];
+  const CONFETTI_COLORS = ["#e5343c", "#f0a63b", "#1f7a6c", "#2f86c9", "#8452ad", "#ffffff", "#c9932e"];
+
+  function celebratePiece(layer, className, style, onClick) {
+    const piece = document.createElement("span");
+    piece.className = className;
+    Object.keys(style).forEach(function (k) { piece.style[k] = style[k]; });
+    piece.setAttribute("role", "button");
+    piece.setAttribute("aria-label", "Tik om te laten knallen");
+    piece.addEventListener("click", function () {
+      piece.style.animation = "none";
+      void piece.offsetWidth;
+      piece.style.transition = "transform 0.2s ease, opacity 0.2s ease";
+      piece.style.transform = "translate(-50%, -50%) scale(1.8)";
+      piece.style.opacity = "0";
+      setTimeout(function () { piece.remove(); }, 210);
+    });
+    if (onClick) piece.addEventListener("click", onClick);
+    layer.appendChild(piece);
+    return piece;
+  }
+
   function celebrate(originEl) {
     const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduceMotion) return;
-    const kind = CELEBRATIONS[Math.floor(Math.random() * CELEBRATIONS.length)];
+    const kind = ["confetti", "vuurwerk", "toeters", "applaus"][Math.floor(Math.random() * 4)];
     const layer = document.createElement("div");
     layer.className = "celebrate-layer";
-    let originX = 50, originY = kind.mode === "clap" ? 22 : 40;
+    let originX = 50, originY = 42;
     if (originEl && originEl.getBoundingClientRect) {
       const r = originEl.getBoundingClientRect();
       originX = ((r.left + r.width / 2) / window.innerWidth) * 100;
       originY = ((r.top + r.height / 2) / window.innerHeight) * 100;
     }
-    for (let i = 0; i < kind.count; i++) {
-      const piece = document.createElement("span");
-      piece.className = "celebrate-piece" + (kind.mode === "clap" ? " celebrate-clap" : "");
-      piece.textContent = kind.emojis[Math.floor(Math.random() * kind.emojis.length)];
-      piece.setAttribute("role", "button");
-      piece.setAttribute("aria-label", "Tik om te laten knallen");
-      const angle = Math.random() * Math.PI * 2;
-      const dist = kind.mode === "clap" ? 18 + Math.random() * 30 : 60 + Math.random() * 170;
-      const tx = Math.cos(angle) * dist;
-      const ty = kind.mode === "clap" ? Math.sin(angle) * dist * 0.6 : Math.sin(angle) * dist - 50;
-      piece.style.setProperty("--tx", tx.toFixed(0) + "px");
-      piece.style.setProperty("--ty", ty.toFixed(0) + "px");
-      piece.style.setProperty("--rot", (Math.random() * 360 - 180).toFixed(0) + "deg");
-      piece.style.setProperty("--dur", (0.75 + Math.random() * 0.5).toFixed(2) + "s");
-      piece.style.left = originX + "%";
-      piece.style.top = originY + "%";
-      piece.style.fontSize = (1.1 + Math.random() * 0.9).toFixed(2) + "rem";
-      piece.style.animationDelay = (Math.random() * 0.15).toFixed(2) + "s";
-      piece.addEventListener("click", function () {
-        piece.style.animation = "none";
-        void piece.offsetWidth;
-        piece.style.transition = "transform 0.22s ease, opacity 0.22s ease";
-        piece.style.transform = "translate(-50%, -50%) scale(1.9)";
-        piece.style.opacity = "0";
-        setTimeout(function () { piece.remove(); }, 230);
+
+    const flash = document.createElement("span");
+    flash.className = "celebrate-flash";
+    flash.style.left = originX + "%";
+    flash.style.top = originY + "%";
+    layer.appendChild(flash);
+
+    if (kind === "confetti") {
+      for (let i = 0; i < 30; i++) {
+        const color = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+        const angle = -Math.PI / 2 + (Math.random() * 1.4 - 0.7);
+        const power = 80 + Math.random() * 130;
+        const tx = Math.cos(angle) * power * 0.7;
+        const midY = Math.sin(angle) * power - 40;
+        const fallY = midY + 90 + Math.random() * 90;
+        const w = 5 + Math.random() * 5, h = 8 + Math.random() * 8;
+        celebratePiece(layer, "celebrate-confetti", {
+          left: originX + "%",
+          top: originY + "%",
+          width: w + "px",
+          height: h + "px",
+          background: color,
+          borderRadius: Math.random() < 0.4 ? "50%" : "2px"
+        }, null).style.cssText += ";--tx:" + tx.toFixed(0) + "px;--mty:" + midY.toFixed(0) + "px;--fty:" + fallY.toFixed(0) + "px;" +
+          "--rot1:" + (Math.random() * 360 - 180).toFixed(0) + "deg;--rot2:" + (540 + Math.random() * 360).toFixed(0) + "deg;" +
+          "--dur:" + (1.1 + Math.random() * 0.5).toFixed(2) + "s;animation-delay:" + (Math.random() * 0.18).toFixed(2) + "s;";
+      }
+    } else if (kind === "vuurwerk") {
+      const sparkColors = [CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)], "#ffffff", "#f0a63b"];
+      const rays = 22;
+      for (let i = 0; i < rays; i++) {
+        const angle = (i / rays) * Math.PI * 2;
+        const dist = 70 + Math.random() * 90;
+        const tx = Math.cos(angle) * dist;
+        const ty = Math.sin(angle) * dist;
+        const color = sparkColors[i % sparkColors.length];
+        celebratePiece(layer, "celebrate-spark", {
+          left: originX + "%",
+          top: originY + "%",
+          background: color,
+          boxShadow: "0 0 6px 1px " + color
+        }, null).style.cssText += ";--tx:" + tx.toFixed(0) + "px;--ty:" + ty.toFixed(0) + "px;--dur:" + (0.55 + Math.random() * 0.25).toFixed(2) + "s;";
+      }
+      ["🎆", "🎇"].forEach(function (em, i) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 40 + Math.random() * 30;
+        celebratePiece(layer, "celebrate-piece", {
+          left: originX + "%", top: originY + "%", fontSize: "1.6rem",
+          animationDelay: (i * 0.1) + "s"
+        }, null).textContent = em;
+        const last = layer.lastChild;
+        last.style.cssText += ";--tx:" + (Math.cos(angle) * dist).toFixed(0) + "px;--ty:" + (Math.sin(angle) * dist).toFixed(0) + "px;--rot:" + (Math.random() * 180 - 90).toFixed(0) + "deg;--dur:0.7s;";
       });
-      layer.appendChild(piece);
+    } else if (kind === "toeters") {
+      for (let i = 0; i < 14; i++) {
+        const color = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 55 + Math.random() * 110;
+        const tx = Math.cos(angle) * dist;
+        const ty = Math.sin(angle) * dist;
+        celebratePiece(layer, "celebrate-ribbon", {
+          left: originX + "%",
+          top: originY + "%",
+          background: "linear-gradient(90deg, " + color + ", transparent)"
+        }, null).style.cssText += ";--tx:" + tx.toFixed(0) + "px;--ty:" + ty.toFixed(0) + "px;--rot:" + (Math.random() * 720 - 360).toFixed(0) + "deg;--dur:" + (0.8 + Math.random() * 0.4).toFixed(2) + "s;animation-delay:" + (Math.random() * 0.12).toFixed(2) + "s;";
+      }
+      ["📯", "🎺", "🎉"].forEach(function (em) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 50 + Math.random() * 60;
+        const p = celebratePiece(layer, "celebrate-piece", { left: originX + "%", top: originY + "%", fontSize: "1.5rem" }, null);
+        p.textContent = em;
+        p.style.cssText += ";--tx:" + (Math.cos(angle) * dist).toFixed(0) + "px;--ty:" + (Math.sin(angle) * dist).toFixed(0) + "px;--rot:" + (Math.random() * 260 - 130).toFixed(0) + "deg;--dur:0.8s;";
+      });
+    } else {
+      for (let i = 0; i < 5; i++) {
+        const spread = (i - 2) * 26;
+        const p = celebratePiece(layer, "celebrate-clap", {
+          left: (originX + spread * 0.12) + "%",
+          top: (originY - 6) + "%",
+          fontSize: (1.3 + Math.random() * 0.5) + "rem",
+          animationDelay: (i * 0.06) + "s"
+        }, null);
+        p.textContent = "👏";
+        p.style.cssText += ";--tx:" + spread.toFixed(0) + "px;--ty:" + (-18 - Math.random() * 20).toFixed(0) + "px;--dur:0.9s;";
+      }
     }
+
     document.body.appendChild(layer);
-    setTimeout(function () { layer.remove(); }, 1600);
+    setTimeout(function () { layer.remove(); }, 1700);
   }
+  window.PKCelebrate = celebrate;
 
   /* ---------- HOME ---------------------------------------------------------- */
 
