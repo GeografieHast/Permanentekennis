@@ -275,8 +275,13 @@ main {
   0%, 100% { transform: scale(1) rotate(-2deg); }
   50% { transform: scale(1.12) rotate(2deg); }
 }
-.stat-icon-pulse { display: inline-block; animation: pk-flame-flicker 1.6s ease-in-out infinite; transform-origin: 50% 90%; }
-.stat-global { perspective: 300px; }
+.stat-icon-pulse {
+  display: inline-block;
+  animation: pk-flame-flicker 1.6s ease-in-out infinite;
+  transform-origin: 50% 90%;
+  filter: drop-shadow(0 0 7px rgba(229, 52, 60, 0.55)) drop-shadow(0 0 3px rgba(240, 166, 59, 0.6));
+}
+.stat-global { perspective: 700px; }
 @keyframes pk-globe-spin {
   from { transform: rotateY(0deg); }
   to { transform: rotateY(360deg); }
