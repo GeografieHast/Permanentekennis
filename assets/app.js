@@ -577,17 +577,25 @@
     const eersteGraadModules = PK_DATA.modules.filter((m) => EERSTE_GRAAD_IDS.indexOf(m.id) !== -1);
     const tweedeGraadModules = PK_DATA.modules.filter((m) => EERSTE_GRAAD_IDS.indexOf(m.id) === -1);
 
-    wrap.appendChild(el("h2", { class: "section-heading graad-heading" }, ["Kaartblad 1 en 2 — eerste graad"]));
-    wrap.appendChild(el("p", { class: "graad-note" }, ["Voor leerlingen van het eerste jaar geografie. Zit je in de tweede of derde graad? Dan kan je dit overslaan."]));
     const gridEerste = el("div", { class: "sheet-grid" });
     eersteGraadModules.forEach((mod, i) => gridEerste.appendChild(moduleCard(mod, i)));
-    wrap.appendChild(gridEerste);
+    wrap.appendChild(
+      el("section", { class: "graad-panel graad-panel-eerste" }, [
+        el("h2", { class: "section-heading graad-heading" }, ["Kaartblad 1 en 2 — eerste graad"]),
+        el("p", { class: "graad-note" }, ["Voor leerlingen van het eerste jaar geografie. Zit je in de tweede of derde graad? Dan kan je dit overslaan."]),
+        gridEerste
+      ])
+    );
 
-    wrap.appendChild(el("h2", { class: "section-heading graad-heading" }, ["Kaartblad 3 tot 9 — tweede en derde graad"]));
-    wrap.appendChild(el("p", { class: "graad-note" }, ["Dit is de stof die je doorheen de tweede en derde graad moet blijven kennen."]));
     const gridTweede = el("div", { class: "sheet-grid" });
     tweedeGraadModules.forEach((mod, i) => gridTweede.appendChild(moduleCard(mod, i)));
-    wrap.appendChild(gridTweede);
+    wrap.appendChild(
+      el("section", { class: "graad-panel graad-panel-tweede" }, [
+        el("h2", { class: "section-heading graad-heading" }, ["Kaartblad 3 tot 9 — tweede en derde graad"]),
+        el("p", { class: "graad-note" }, ["Dit is de stof die je doorheen de tweede en derde graad moet blijven kennen."]),
+        gridTweede
+      ])
+    );
 
     wrap.appendChild(
       el("section", { class: "goals-panel" }, [
@@ -1653,6 +1661,66 @@
     btnRow.appendChild(resetBtn);
     wrap.appendChild(btnRow);
 
+    wrap.appendChild(el("h2", { class: "section-heading" }, ["Meeste fouten — over alle onderdelen heen"]));
+    wrap.appendChild(
+      el("p", { class: "graad-note" }, [
+        "Los van bij welk kaartblad of onderdeel het hoort: dit specifieke land, hoofdstad, symbool of begrip gaat het vaakst fout. Enkel items met minstens 3 pogingen tellen mee, anders zegt 1 fout op 1 poging te weinig."
+      ])
+    );
+    const topStatus = el("p", { class: "study-hint" }, ["Bezig met ophalen…"]);
+    const topHolder = el("div", { class: "table-wrap" });
+    wrap.appendChild(topStatus);
+    wrap.appendChild(topHolder);
+
+    function topMistakesTable(list, emptyMsg) {
+      if (!list.length) return el("p", { class: "study-hint" }, [emptyMsg]);
+      const t = el("table", { class: "quiz-table teacher-table teacher-table-detail" });
+      t.appendChild(
+        el("thead", null, [el("tr", null, [
+          el("th", null, ["Item"]),
+          el("th", null, ["Onderdeel"]),
+          el("th", null, ["Pogingen"]),
+          el("th", null, ["Fouten"]),
+          el("th", null, ["Foutenpercentage"]),
+          el("th", null, ["Verschillende leerlingen"])
+        ])])
+      );
+      const tb = el("tbody");
+      list.forEach((it) => {
+        const pct = it.errorPct == null ? 0 : it.errorPct;
+        const cls = pct >= 50 ? "row-wrong" : pct >= 25 ? "row-warn" : pct === 0 ? "row-good" : "";
+        tb.appendChild(
+          el("tr", { class: cls }, [
+            el("td", null, [it.itemLabel]),
+            el("td", null, [it.onderdeelTitle]),
+            el("td", null, [String(it.attempts || 0)]),
+            el("td", null, [String(it.errors || 0)]),
+            el("td", null, [pct + "%"]),
+            el("td", null, [String(it.uniqueDevices || 0)])
+          ])
+        );
+      });
+      t.appendChild(tb);
+      return t;
+    }
+
+    function loadTop(force) {
+      topStatus.textContent = "Bezig met ophalen…";
+      topHolder.innerHTML = "";
+      window.PKAnalytics.fetchTopMistakes({ limit: 15, minAttempts: 3 }).then((res) => {
+        if (!res.consideredCount) {
+          topStatus.textContent = "Nog niet genoeg pogingen per item (minstens 3 per item nodig) om een top te tonen.";
+          return;
+        }
+        topStatus.textContent = "";
+        topHolder.appendChild(el("h3", null, ["🔺 Vaakst fout"]));
+        topHolder.appendChild(topMistakesTable(res.worst, "Geen items met fouten gevonden."));
+        topHolder.appendChild(el("h3", null, ["✅ Zit goed vast"]));
+        topHolder.appendChild(topMistakesTable(res.best, "Geen items gevonden."));
+      }).catch(() => { topStatus.textContent = "Kon de top niet ophalen."; });
+    }
+
+    wrap.appendChild(el("h2", { class: "section-heading" }, ["Per onderdeel"]));
     const status = el("p", { class: "study-hint" }, ["Bezig met ophalen…"]);
     const tableHolder = el("div", { class: "table-wrap" });
     wrap.appendChild(status);
@@ -1777,7 +1845,7 @@
         tableHolder.appendChild(table);
       }).catch(() => { status.textContent = "Kon de gegevens niet ophalen."; });
     }
-    refreshBtn.addEventListener("click", () => load(true));
+    refreshBtn.addEventListener("click", () => { load(true); loadTop(true); });
     resetBtn.addEventListener("click", () => {
       const sure = window.confirm(
         "Alle pogingen en fouten voor de hele klas/school op nul zetten? Dit kan niet ongedaan gemaakt worden."
@@ -1786,17 +1854,22 @@
       resetBtn.disabled = true;
       resetBtn.textContent = "Bezig met resetten…";
       status.textContent = "Bezig met resetten…";
+      topStatus.textContent = "Bezig met resetten…";
+      topHolder.innerHTML = "";
       window.PKAnalytics.resetAll().then(() => {
         resetBtn.disabled = false;
         resetBtn.textContent = "Pogingen resetten";
         load(true);
+        loadTop(true);
       }).catch(() => {
         resetBtn.disabled = false;
         resetBtn.textContent = "Pogingen resetten";
         status.textContent = "Resetten is niet gelukt. Probeer het straks opnieuw.";
+        topStatus.textContent = "";
       });
     });
     load(false);
+    loadTop(false);
 
     return wrap;
   }

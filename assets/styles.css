@@ -1496,8 +1496,17 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 }
 .quiz-live-streak-on { animation: pk-feedback-in 0.3s ease; }
 
-.graad-heading { margin-top: 30px; }
+.graad-panel {
+  margin-top: 30px;
+  padding: 20px 20px 24px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+}
+.graad-panel-eerste { background: rgba(47,134,201,0.06); border-color: rgba(47,134,201,0.25); }
+.graad-panel-tweede { background: rgba(31,122,108,0.06); border-color: rgba(31,122,108,0.25); }
+.graad-panel .graad-heading { margin-top: 0; }
 .graad-note { color: var(--ink-soft); font-size: 0.88rem; margin-top: -8px; }
+.graad-panel .sheet-grid { margin-top: 16px; }
 
 .level-chip {
   display: inline-block;

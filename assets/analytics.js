@@ -222,6 +222,47 @@
     });
   }
 
+  /* Eén globale top-fouten-lijst over ALLE onderdelen heen: niet per
+     kaartblad/onderdeel, maar rechtstreeks "dit specifieke land/begrip gaat
+     het vaakst fout", ongeacht bij welk onderdeel het hoort. Haalt daarvoor
+     het itemdetail op van elk onderdeel met minstens 1 poging (hergebruikt
+     fetchItemBreakdown, dus ook diezelfde 60s-cache per onderdeel), telt
+     dan alles samen en houdt enkel items met genoeg pogingen over — anders
+     komt 1 pech-poging (1 fout op 1 poging = 100%) bovenaan te staan terwijl
+     dat weinig zegt. */
+  function fetchTopMistakes(opts) {
+    const minAttempts = (opts && opts.minAttempts) || 3;
+    const limit = (opts && opts.limit) || 15;
+    return fetchOverview().then((rows) => {
+      const withAttempts = rows.filter((r) => r.reachable && r.attempts > 0);
+      return Promise.all(
+        withAttempts.map((r) =>
+          fetchItemBreakdown(r.id, r.kind).then((items) =>
+            items
+              .filter((it) => it.reachable && (it.attempts || 0) >= minAttempts)
+              .map((it) => ({
+                itemLabel: it.secondary ? it.label + " (" + it.secondary + ")" : it.label,
+                onderdeelTitle: r.title,
+                moduleTitle: r.moduleTitle,
+                attempts: it.attempts,
+                errors: it.errors,
+                errorPct: it.errorPct,
+                uniqueDevices: it.uniqueDevices
+              }))
+          )
+        )
+      ).then((lists) => {
+        const all = [].concat.apply([], lists);
+        all.sort((a, b) => (b.errorPct || 0) - (a.errorPct || 0) || (b.attempts || 0) - (a.attempts || 0));
+        return {
+          worst: all.slice(0, limit),
+          best: all.slice().sort((a, b) => (a.errorPct || 0) - (b.errorPct || 0) || (b.attempts || 0) - (a.attempts || 0)).slice(0, limit),
+          consideredCount: all.length
+        };
+      });
+    });
+  }
+
   /* ---------- alles op nul zetten (leerkrachtoverzicht) ---------------------- */
 
   function setToZero(key) {
@@ -259,6 +300,7 @@
     recordAnswer: recordAnswer,
     fetchOverview: fetchOverview,
     fetchItemBreakdown: fetchItemBreakdown,
+    fetchTopMistakes: fetchTopMistakes,
     resetAll: resetAll
   };
 })();

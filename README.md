@@ -81,6 +81,20 @@ volstaat: daarna onthoudt de browser dat dit toestel ontgrendeld is. Is de
 tellerdienst even niet bereikbaar, dan toont de pagina dat gewoon en kan
 je later opnieuw vernieuwen — de rest van de site blijft normaal werken.
 
+Bovenaan de leerkrachtpagina staat, los van de tabel per onderdeel, ook een
+lijst **"Meeste fouten — over alle onderdelen heen"**: de items met het
+hoogste foutenpercentage over de hele site, ongeacht bij welk kaartblad ze
+horen (en daaronder, ter vergelijking, de items die het best zitten). Enkel
+items met minstens 3 pogingen tellen mee, anders zou 1 pechpoging al
+bovenaan staan.
+
+Naast "↻ Vernieuwen" staat een knop **"Pogingen resetten"**. Die vraagt
+eerst een bevestiging en zet dan alle tellers (pogingen, fouten, en de
+schatting van verschillende toestellen) terug op nul, voor alle onderdelen
+en items samen. Handig bij het begin van een nieuw schooljaar of na een
+periode waarin je de teller even niet wil laten meetellen. Dit kan niet
+ongedaan gemaakt worden.
+
 **Let op bij een update vanaf een oudere versie:** de tellers zijn
 overgeschakeld van "één teller per heel kaartblad/onderdeel" naar "één
 teller per item", zodat het detail per land/symbool/begrip mogelijk werd.
