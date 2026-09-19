@@ -222,9 +222,43 @@
     });
   }
 
+  /* ---------- alles op nul zetten (leerkrachtoverzicht) ---------------------- */
+
+  function setToZero(key) {
+    return fetch(BASE + "set/" + key + "?value=0").catch(() => null);
+  }
+
+  /* Zet alle pogingen/fouten/uniek-tellers terug op nul, zowel per item als
+     per onderdeel. Wist ook de lokale caches zodat het overzicht meteen
+     leeg toont, in plaats van pas na de volgende minuut. Dit reset enkel de
+     tellers op de tellerdienst zelf: de "al geteld op dit toestel"-vlaggen
+     in de browser van leerlingen blijven staan, dus wie al meetelde voor de
+     reset, telt na de reset niet nog eens automatisch mee als "nieuw". */
+  function resetAll() {
+    const onderdelen = window.PKIndex ? window.PKIndex.all() : [];
+    const calls = [];
+    onderdelen.forEach((o) => {
+      calls.push(setToZero(attemptsKey(o.scope)), setToZero(errorsKey(o.scope)), setToZero(uniqKey(o.scope)));
+      const items = o.items || [];
+      items.forEach((it) => {
+        calls.push(setToZero(attemptsKey(it.id)), setToZero(errorsKey(it.id)), setToZero(uniqKey(it.id)));
+      });
+    });
+    try {
+      sessionStorage.removeItem(CACHE_KEY);
+      Object.keys(sessionStorage).forEach((k) => {
+        if (k.indexOf(ITEM_CACHE_KEY) === 0) sessionStorage.removeItem(k);
+      });
+    } catch (e) {
+      /* negeren */
+    }
+    return Promise.all(calls);
+  }
+
   window.PKAnalytics = {
     recordAnswer: recordAnswer,
     fetchOverview: fetchOverview,
-    fetchItemBreakdown: fetchItemBreakdown
+    fetchItemBreakdown: fetchItemBreakdown,
+    resetAll: resetAll
   };
 })();

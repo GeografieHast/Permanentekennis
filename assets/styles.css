@@ -1548,6 +1548,14 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 }
 
 /* ---------- leerkrachtoverzicht ---------- */
+.teacher-btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.btn-danger {
+  background: #fff;
+  border: 1px solid var(--red);
+  color: var(--red-dark);
+}
+.btn-danger:hover { background: var(--red); color: #fff; }
+.btn-danger:disabled { opacity: 0.6; cursor: default; }
 .view-teacher .teacher-table th, .view-teacher .teacher-table td { text-align: left; }
 .teacher-table tr.row-warn td { background: rgba(201,147,46,0.12); }
 .teacher-table tr.row-wrong td { background: rgba(229,52,60,0.12); }

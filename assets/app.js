@@ -1646,8 +1646,12 @@
       ])
     );
 
+    const btnRow = el("div", { class: "teacher-btn-row" });
     const refreshBtn = el("button", { class: "btn", type: "button" }, ["↻ Vernieuwen"]);
-    wrap.appendChild(refreshBtn);
+    const resetBtn = el("button", { class: "btn btn-danger", type: "button" }, ["Pogingen resetten"]);
+    btnRow.appendChild(refreshBtn);
+    btnRow.appendChild(resetBtn);
+    wrap.appendChild(btnRow);
 
     const status = el("p", { class: "study-hint" }, ["Bezig met ophalen…"]);
     const tableHolder = el("div", { class: "table-wrap" });
@@ -1774,6 +1778,24 @@
       }).catch(() => { status.textContent = "Kon de gegevens niet ophalen."; });
     }
     refreshBtn.addEventListener("click", () => load(true));
+    resetBtn.addEventListener("click", () => {
+      const sure = window.confirm(
+        "Alle pogingen en fouten voor de hele klas/school op nul zetten? Dit kan niet ongedaan gemaakt worden."
+      );
+      if (!sure) return;
+      resetBtn.disabled = true;
+      resetBtn.textContent = "Bezig met resetten…";
+      status.textContent = "Bezig met resetten…";
+      window.PKAnalytics.resetAll().then(() => {
+        resetBtn.disabled = false;
+        resetBtn.textContent = "Pogingen resetten";
+        load(true);
+      }).catch(() => {
+        resetBtn.disabled = false;
+        resetBtn.textContent = "Pogingen resetten";
+        status.textContent = "Resetten is niet gelukt. Probeer het straks opnieuw.";
+      });
+    });
     load(false);
 
     return wrap;
