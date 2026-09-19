@@ -114,8 +114,8 @@ bijgehouden wélke leerling iets fout had, enkel geteld hoe vaak elk item
 juist/fout beantwoord werd — via dezelfde gratis, accountloze tellerdienst
 die de site al gebruikt voor de bezoekersteller en de teller per
 kaartblad (`countapi.mileshilliard.com`). De pagina vraagt een wachtwoord
-(standaard **3500**, aan te passen in `assets/app.js` bij de variabele
-`_pkGateCode`, vlak boven `renderTeacher`) voor je de gegevens te zien
+(aan te passen in `assets/app.js` bij de variabele `_pkGateCode`, vlak
+boven `renderTeacher`) voor je de gegevens te zien
 krijgt — dit is enkel een drempeltje, geen echte beveiliging (dat kan niet
 op een statische GitHub Pages-site zonder server: elke waarde staat
 sowieso leesbaar in de broncode voor wie er met "Bekijk paginabron" naar
@@ -183,7 +183,7 @@ meteen welk deel voor hem/haar is:
 **Tweede en derde graad** (kaartblad 3-9):
 
 3. **Europese Unie** — de 27 lidstaten
-4. **Europa** — kandidaat-lidstaten, andere landen, alle 50 landen samen
+4. **Europa** — alle landen en hoofdsteden van Europa (50 landen)
 5. **Europese rivieren en gebergtes** — op de EU-kaart
 6. **Europa: water en reliëf** — zeeën, oceanen, rivieren, gebergte
 7. **Continenten & werelddelen** — en de oceanen/zeeën van de wereld

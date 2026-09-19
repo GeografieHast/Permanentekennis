@@ -187,7 +187,7 @@ window.PK_DATA = {
       topics: [
         {
           id: "europa-alle-hoofdsteden",
-          title: "Europa en hoofdsteden (alle 50 landen)",
+          title: "Landen en hoofdsteden van Europa",
           kind: "pair",
           promptLabel: "Land",
           answerLabel: "Hoofdstad",
