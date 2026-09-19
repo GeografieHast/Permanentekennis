@@ -56,11 +56,15 @@ Dit is bewust **geen volledig leerlingvolgsysteem**: er wordt nergens
 bijgehouden wélke leerling iets fout had, enkel een geteld totaal "pogingen"
 en "fouten" per onderdeel — via dezelfde gratis, accountloze tellerdienst
 die de site al gebruikt voor de bezoekersteller en de teller per
-kaartblad (`countapi.mileshilliard.com`). De pagina staat niet achter een
-wachtwoord (dat kan niet op een statische GitHub Pages-site); de link
-staat gewoon niet in het leerlingenmenu. Is de tellerdienst even niet
-bereikbaar, dan toont de pagina dat gewoon en kan je later opnieuw
-vernieuwen — de rest van de site blijft normaal werken.
+kaartblad (`countapi.mileshilliard.com`). De pagina vraagt een wachtwoord
+(standaard **3500**, aan te passen in `assets/app.js` bij `TEACHER_PASSWORD`)
+voor je de gegevens te zien krijgt — dit is enkel een drempeltje, geen
+echte beveiliging (dat kan niet op een statische GitHub Pages-site zonder
+server: het wachtwoord staat gewoon leesbaar in de broncode), maar het
+houdt nieuwsgierige leerlingen buiten. Eén keer invullen op een toestel
+volstaat: daarna onthoudt de browser dat dit toestel ontgrendeld is. Is de
+tellerdienst even niet bereikbaar, dan toont de pagina dat gewoon en kan
+je later opnieuw vernieuwen — de rest van de site blijft normaal werken.
 
 ## Bekijken zonder installatie
 
@@ -71,10 +75,17 @@ gebruikt), er is geen server of build-stap nodig.
 ## De 9 kaartbladen
 
 De site volgt dezelfde opbouw als je bundels, van de eigen leefomgeving
-naar de wereld:
+naar de wereld. Op de startpagina staan kaartblad 1-2 en kaartblad 3-9 in
+twee aparte rijen, met een korte uitleg erbij — zo weet elke leerling
+meteen welk deel voor hem/haar is:
+
+**Eerste graad** (kaartblad 1-2):
 
 1. **Hasselt** — de eigen leefruimte
 2. **België** — provincies, gewesten, rivieren, autowegen
+
+**Tweede en derde graad** (kaartblad 3-9):
+
 3. **Europese Unie** — de 27 lidstaten
 4. **Europa** — kandidaat-lidstaten, andere landen, alle 50 landen samen
 5. **Europese rivieren en gebergtes** — op de EU-kaart
@@ -82,6 +93,10 @@ naar de wereld:
 7. **Continenten & werelddelen** — en de oceanen/zeeën van de wereld
 8. **Landen & steden** — de 21 landen en steden uit de wereldbundel
 9. **Reliëf, rivieren & zeeën** — in de wereld
+
+Die indeling in twee groepen staat in `assets/app.js` bij
+`EERSTE_GRAAD_IDS` (in de functie `renderHome`) — daar kan je kaartbladen
+tussen de twee groepen verschuiven als je indeling ooit wijzigt.
 
 ## Wat zit erin?
 
@@ -91,16 +106,20 @@ tabeltoets — meestal ook omgekeerd (bv. hoofdstad → land).
 
 Daarnaast staat er bovenaan elk kaartblad een **kaartoefening op de
 echte, genummerde kaart uit de bundel** — exact dezelfde kaart als op
-papier, met dezelfde cijfers, letters en Romeinse cijfers. Er wordt
-nergens een eigen positie op de kaart "aangewezen" — de leerling zoekt
-het symbool zelf op de kaart op, precies zoals op een schriftelijke
-toets:
+papier, met dezelfde cijfers, letters en Romeinse cijfers:
 
 - **Kaart bekijken** — de kaart met de volledige legende ernaast, om
-  rustig in te studeren
+  rustig in te studeren. Hier wordt **niets** aangeduid: de leerling
+  zoekt zelf alle symbolen op, precies zoals bij het instuderen op
+  papier.
 - **Meerkeuze** — bij elk symbool: kies de juiste naam (en bij landen
-  ook de hoofdstad) uit vier opties
-- **Zelf typen** — hetzelfde, maar dan zelf typen in plaats van kiezen
+  ook de hoofdstad) uit vier opties. Het gevraagde symbool wordt met
+  een klein rood, zacht pulserend rondje **aangeduid op de kaart
+  zelf**, zodat een leerling het sneller terugvindt tussen tientallen
+  andere cijfers/letters — vooral handig bij de drukke kaarten (Europa
+  met 50 landen, de wereldkaart met 42 landen/steden).
+- **Zelf typen** — hetzelfde, met dezelfde aanduiding op de kaart, maar
+  dan zelf typen in plaats van kiezen.
 
 De legende komt rechtstreeks uit de antwoordtabellen van de bundel
 zelf, dus die klopt gegarandeerd met de kaart.
@@ -206,14 +225,30 @@ voortgangsbalkjes, ...) werkt er automatisch mee.
 **Kaartoefeningen** staan in `assets/mapdata.js`. Elk blokje verwijst
 naar een afbeelding in `assets/img/maps/` (de genummerde kaart, met de
 cijfers/letters gewoon zichtbaar op de afbeelding zelf) en een lijst
-`legend` met `{ key: "3", term: "Frankrijk", capital: "Parijs" }` voor
-elk symbool op die kaart. Er komen **geen pixelposities** aan te pas —
-dat is precies waarom deze opzet niet meer fout kan gaan staan zoals een
-eerdere versie met klikcoördinaten. Wil je een nieuwe kaart toevoegen
-(bv. een pagina uit een volgende bundel)? Zet een afbeelding van die
-kaart — mét de nummers/letters erop, zoals in de bundel — in
-`assets/img/maps/`, en maak een nieuw blokje met de bijhorende
-`legend`, overgenomen uit de antwoordtabel van de bundel.
+`legend` met `{ key: "3", term: "Frankrijk", capital: "Parijs", x: 25.0, y: 70.3 }`
+voor elk symbool op die kaart. De antwoorden zelf (`key`/`term`/
+`capital`) komen rechtstreeks uit de antwoordtabel van de bundel, dus
+die klopt gegarandeerd — er wordt nergens een klikbare kaart met eigen
+coördinaten gebruikt om te bepalen of iets juist is.
+
+De velden **`x`/`y`** zijn enkel voor het rondje dat tijdens meerkeuze/
+zelf-typen het gevraagde symbool aanduidt op de kaart (zie hierboven):
+percentages (0-100) vanaf respectievelijk de linker- en bovenrand van
+de afbeelding. Die zijn **met het oog geschat** door de kaartafbeelding
+te bekijken en de positie van elk cijfer/letter/Romeins cijfer in te
+schatten — niet pixel-perfect, vooral niet op de drukste kaarten
+(Europa met 50 landen, vooral de Balkan/Kaukasus-cluster, en de
+wereldkaart met 42 landen/steden). Staat een rondje net naast in plaats
+van op het symbool? Zoek het bijhorende `legend`-blokje op `key` op en
+schuif `x`/`y` een klein beetje bij (hoger % = verder naar
+rechts/onder). Ontbreken `x`/`y` bij een entry, dan wordt er gewoon geen
+rondje getoond voor dat symbool — de rest van de oefening blijft werken.
+
+Wil je een nieuwe kaart toevoegen (bv. een pagina uit een volgende
+bundel)? Zet een afbeelding van die kaart — mét de nummers/letters
+erop, zoals in de bundel — in `assets/img/maps/`, en maak een nieuw
+blokje met de bijhorende `legend`, overgenomen uit de antwoordtabel van
+de bundel (`x`/`y` toevoegen is optioneel).
 
 ## Techniek
 
@@ -244,7 +279,8 @@ Code-indeling in `assets/`:
 - `analytics.js` — de anonieme, samengetelde teller voor het
   leerkrachtoverzicht.
 - `mapquiz.js` — de kaartoefeningen (kaart bekijken, meerkeuze, zelf
-  typen).
+  typen), inclusief het rondje dat het gevraagde symbool aanduidt op
+  de kaart tijdens meerkeuze/zelf-typen.
 - `kaartblad-teller.js` — de bestaande "aantal leerlingen"-badge per
   kaartblad.
 - `app.js` — de rest van de site: routering, startpagina, leren/oefenen/

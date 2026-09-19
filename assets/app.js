@@ -539,45 +539,58 @@
       ])
     );
 
-    const grid = el("div", { class: "sheet-grid" });
-    PK_DATA.modules.forEach((mod, i) => {
+    function moduleCard(mod, i) {
       const onderdelen = mod.topics.length + mapGroupsFor(mod.id).length;
       const iconFn = MODULE_ICONS[mod.id] || compassSVG;
       const accent = MODULE_ACCENTS[i % MODULE_ACCENTS.length];
       const sum = moduleSummary(mod);
       const practFill = el("div", { class: "sheet-progress-fill fill-practiced", style: "width:0%" });
       const masterFill = el("div", { class: "sheet-progress-fill fill-mastered", style: "width:0%" });
-      grid.appendChild(
-        el("a", { class: "sheet-card " + accent, href: "#/module/" + mod.id, style: "--i:" + i }, [
-          el("span", { class: "sheet-stamp", "aria-hidden": "true" }, [(mod.label.match(/\d+/) || [""])[0]]),
-          el("div", { class: "sheet-icon-badge", "aria-hidden": "true" }, [iconFn()]),
-          el("span", { class: "sheet-label" }, [mod.label]),
-          el("h2", null, [mod.title]),
-          el("p", { class: "sheet-subtitle" }, [mod.subtitle]),
-          el("p", { class: "sheet-intro" }, [mod.intro]),
-          el("div", { class: "sheet-footer" }, [
-            el("span", { class: "sheet-meta" }, [onderdelen + " onderdelen · openen →"]),
-            el("div", { class: "sheet-progress sheet-progress-double" }, [practFill, masterFill]),
-            el("span", { class: "sheet-progress-label" }, [sum.masteredPct + "% beheerst · " + sum.practicedPct + "% geoefend"]),
-            window.PKCounter
-              ? el("img", {
-                  class: "sheet-counter",
-                  src: window.PKCounter.badgeUrl(mod.id, "leerlingen"),
-                  alt: "Aantal leerlingen dat hier al oefende",
-                  loading: "lazy"
-                })
-              : null
-          ])
+      const card = el("a", { class: "sheet-card " + accent, href: "#/module/" + mod.id, style: "--i:" + i }, [
+        el("span", { class: "sheet-stamp", "aria-hidden": "true" }, [(mod.label.match(/\d+/) || [""])[0]]),
+        el("div", { class: "sheet-icon-badge", "aria-hidden": "true" }, [iconFn()]),
+        el("span", { class: "sheet-label" }, [mod.label]),
+        el("h2", null, [mod.title]),
+        el("p", { class: "sheet-subtitle" }, [mod.subtitle]),
+        el("p", { class: "sheet-intro" }, [mod.intro]),
+        el("div", { class: "sheet-footer" }, [
+          el("span", { class: "sheet-meta" }, [onderdelen + " onderdelen · openen →"]),
+          el("div", { class: "sheet-progress sheet-progress-double" }, [practFill, masterFill]),
+          el("span", { class: "sheet-progress-label" }, [sum.masteredPct + "% beheerst · " + sum.practicedPct + "% geoefend"]),
+          window.PKCounter
+            ? el("img", {
+                class: "sheet-counter",
+                src: window.PKCounter.badgeUrl(mod.id, "leerlingen"),
+                alt: "Aantal leerlingen dat hier al oefende",
+                loading: "lazy"
+              })
+            : null
         ])
-      );
+      ]);
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
           practFill.style.width = sum.practicedPct + "%";
           masterFill.style.width = sum.masteredPct + "%";
         });
       });
-    });
-    wrap.appendChild(grid);
+      return card;
+    }
+
+    const EERSTE_GRAAD_IDS = ["hasselt", "belgie"];
+    const eersteGraadModules = PK_DATA.modules.filter((m) => EERSTE_GRAAD_IDS.indexOf(m.id) !== -1);
+    const tweedeGraadModules = PK_DATA.modules.filter((m) => EERSTE_GRAAD_IDS.indexOf(m.id) === -1);
+
+    wrap.appendChild(el("h2", { class: "section-heading graad-heading" }, ["Kaartblad 1 en 2 — eerste graad"]));
+    wrap.appendChild(el("p", { class: "graad-note" }, ["Voor leerlingen van het eerste jaar geografie. Zit je in de tweede of derde graad? Dan kan je dit overslaan."]));
+    const gridEerste = el("div", { class: "sheet-grid" });
+    eersteGraadModules.forEach((mod, i) => gridEerste.appendChild(moduleCard(mod, i)));
+    wrap.appendChild(gridEerste);
+
+    wrap.appendChild(el("h2", { class: "section-heading graad-heading" }, ["Kaartblad 3 tot 9 — tweede en derde graad"]));
+    wrap.appendChild(el("p", { class: "graad-note" }, ["Dit is de stof die je doorheen de tweede en derde graad moet blijven kennen."]));
+    const gridTweede = el("div", { class: "sheet-grid" });
+    tweedeGraadModules.forEach((mod, i) => gridTweede.appendChild(moduleCard(mod, i)));
+    wrap.appendChild(gridTweede);
 
     wrap.appendChild(
       el("section", { class: "goals-panel" }, [
@@ -1574,7 +1587,47 @@
 
   /* ---------- LEERKRACHTOVERZICHT --------------------------------------------- */
 
+  const TEACHER_PASSWORD = "3500";
+  const TEACHER_UNLOCK_KEY = "pk-teacher-unlocked";
+
+  function teacherUnlocked() {
+    try { return localStorage.getItem(TEACHER_UNLOCK_KEY) === "1"; } catch (e) { return false; }
+  }
+
   function renderTeacher() {
+    if (!teacherUnlocked()) return renderTeacherLogin();
+    return renderTeacherContent();
+  }
+
+  function renderTeacherLogin() {
+    const wrap = el("div", { class: "view view-teacher" });
+    wrap.appendChild(el("h1", null, ["Leerkrachtoverzicht"]));
+    wrap.appendChild(el("p", { class: "module-intro" }, ["Deze pagina is voor de leerkracht. Voer het wachtwoord in om verder te gaan."]));
+
+    const input = el("input", { class: "quiz-input", type: "password", autocomplete: "off", placeholder: "Wachtwoord" });
+    const submit = el("button", { class: "btn btn-primary", type: "button" }, ["Openen"]);
+    const errorEl = el("p", { class: "quiz-feedback feedback-bad" }, []);
+
+    function tryUnlock() {
+      if (input.value === TEACHER_PASSWORD) {
+        try { localStorage.setItem(TEACHER_UNLOCK_KEY, "1"); } catch (e) { /* privé-modus: dan telkens opnieuw invoeren */ }
+        render();
+      } else {
+        errorEl.textContent = "Dat wachtwoord klopt niet.";
+        input.value = "";
+        input.focus();
+      }
+    }
+    submit.addEventListener("click", tryUnlock);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") tryUnlock(); });
+
+    wrap.appendChild(el("div", { class: "quiz-input-row" }, [input, submit]));
+    wrap.appendChild(errorEl);
+    setTimeout(() => input.focus(), 0);
+    return wrap;
+  }
+
+  function renderTeacherContent() {
     const wrap = el("div", { class: "view view-teacher" });
     wrap.appendChild(el("h1", null, ["Leerkrachtoverzicht"]));
     wrap.appendChild(
@@ -1584,7 +1637,7 @@
     );
     wrap.appendChild(
       el("p", { class: "topic-note" }, [
-        "Dit is geen volledig leerlingvolgsysteem: er wordt nergens bijgehouden wélke leerling iets fout had, enkel een geteld totaal per onderdeel. Deze pagina staat niet achter een wachtwoord — de link is enkel niet zichtbaar voor leerlingen in het menu."
+        "Dit is geen volledig leerlingvolgsysteem: er wordt nergens bijgehouden wélke leerling iets fout had, enkel een geteld totaal per onderdeel. Dit wachtwoord is enkel een drempeltje — geen echte beveiliging (dit is een statische site zonder server), maar het houdt nieuwsgierige leerlingen buiten."
       ])
     );
 

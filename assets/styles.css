@@ -133,10 +133,13 @@ main {
   overflow: hidden;
   margin: 0 0 32px;
   background: var(--ink);
+  min-height: 260px;
 }
 .hero-media {
-  height: 260px;
+  position: absolute;
+  inset: 0;
   line-height: 0;
+  z-index: 0;
 }
 .hero-svg {
   width: 100%;
@@ -147,11 +150,11 @@ main {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 1;
   background: linear-gradient(0deg, rgba(2,46,62,0.88) 0%, rgba(2,46,62,0.32) 55%, rgba(2,46,62,0.08) 100%);
 }
 .hero-content {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
+  position: relative;
   z-index: 2;
   padding: 22px 26px 24px;
   color: #fff;
@@ -160,9 +163,21 @@ main {
 .hero-content h1 {
   color: #fff;
   font-size: 1.9rem;
-  display: inline-block;
-  border-bottom: 4px solid var(--red);
-  padding-bottom: 6px;
+  display: block;
+  max-width: 100%;
+  position: relative;
+  padding-bottom: 12px;
+  overflow-wrap: break-word;
+}
+.hero-content h1::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 64px;
+  height: 4px;
+  background: var(--red);
+  border-radius: 2px;
 }
 .hero-sub {
   max-width: 52ch;
@@ -1151,6 +1166,49 @@ tr.row-wrong .table-input { border-color: var(--red); background: #fbeaea; anima
 }
 .mapimg-zoom-btn:hover { background: var(--red); }
 
+/* marker die het gevraagde symbool aanduidt op de kaart tijdens het oefenen */
+.map-marker {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  margin-left: -16px;
+  margin-top: -16px;
+  pointer-events: none;
+  z-index: 5;
+}
+.map-marker-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 0 2px #fff, 0 2px 6px rgba(2,46,62,0.35);
+}
+.map-marker-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 32px;
+  height: 32px;
+  margin-left: -16px;
+  margin-top: -16px;
+  border-radius: 50%;
+  border: 2px solid var(--red);
+  animation: pk-marker-pulse 1.8s ease-out infinite;
+}
+@keyframes pk-marker-pulse {
+  0% { transform: scale(0.4); opacity: 0.9; }
+  70% { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-marker-ring { animation: none; opacity: 0.5; }
+}
+
 /* full-bleed kaart op smalle schermen: gebruikt de volledige breedte van het toestel */
 @media (max-width: 700px) {
   .mapimg-wrap {
@@ -1242,8 +1300,8 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   color: var(--ink-soft);
 }
 
-.hero-cta-row { margin-top: 14px; }
-.btn-hero { padding: 13px 24px; font-size: 1rem; }
+.hero-cta-row { margin-top: 30px; }
+.btn-hero { padding: 15px 28px; font-size: 1.05rem; }
 
 /* ---------- hoe werkt het (home) ---------- */
 .howitworks {
@@ -1431,6 +1489,9 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   font-size: 0.9rem;
 }
 .quiz-live-streak-on { animation: pk-feedback-in 0.3s ease; }
+
+.graad-heading { margin-top: 30px; }
+.graad-note { color: var(--ink-soft); font-size: 0.88rem; margin-top: -8px; }
 
 .level-chip {
   display: inline-block;

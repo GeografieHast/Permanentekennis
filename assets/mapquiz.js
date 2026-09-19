@@ -77,6 +77,22 @@
     return el("div", { class: "mapimg-wrap " + (cls || "") }, [img, zoomBtn]);
   }
 
+  /* Toont/verbergt een pulserende marker op de kaart bij het symbool dat
+     net gevraagd wordt, zodat leerlingen het sneller terugvinden tijdens
+     het oefenen. Niet gebruikt in "leer"-modus (daar moeten ze zelf zoeken). */
+  function setMapMarker(wrap, entry) {
+    const old = wrap.querySelector(".map-marker");
+    if (old) old.remove();
+    if (entry && typeof entry.x === "number" && typeof entry.y === "number") {
+      const marker = el("span", {
+        class: "map-marker",
+        style: "left:" + entry.x + "%; top:" + entry.y + "%;",
+        "aria-hidden": "true"
+      }, [el("span", { class: "map-marker-dot" }), el("span", { class: "map-marker-ring" })]);
+      wrap.appendChild(marker);
+    }
+  }
+
   /* ---------- bekijk-modus: kaart + volledige legende ---------------------- */
   function renderStudy(root, group) {
     root.innerHTML = "";
@@ -120,7 +136,8 @@
     root.appendChild(scoreEl);
     root.appendChild(streakEl);
     root.appendChild(progress);
-    root.appendChild(mapImage(group, "mapimg-wrap-quiz"));
+    const mapWrap = mapImage(group, "mapimg-wrap-quiz");
+    root.appendChild(mapWrap);
     const stage = el("div", { class: "quiz-card map-legend-card" });
     root.appendChild(stage);
 
@@ -196,11 +213,13 @@
           el("button", { class: "btn btn-primary", type: "button", onclick: () => runQuiz(root, group, kind) }, ["Nog een keer"]),
           el("a", { class: "btn", href: "#/kaart/" + group.moduleId + "/" + group.id + "/start" }, ["Terug"])
         ]));
+        setMapMarker(mapWrap, null);
         return;
       }
 
       answered = false;
       const entry = order[pos];
+      setMapMarker(mapWrap, entry);
       stage.appendChild(el("p", { class: "quiz-prompt map-prompt" }, ["Wat hoort bij symbool “" + entry.key + "” op de kaart?"]));
       stage.appendChild(masteryMeter(entry));
 
