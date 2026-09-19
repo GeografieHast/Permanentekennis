@@ -9,6 +9,59 @@ originele kaarten uit de bundel.
 **Inwonersaantallen en vlaggen staan er bewust niet in** — die hoeven
 leerlingen niet te kennen.
 
+## Een volledige leeromgeving, geen losse quizjes
+
+Elk onderdeel (elk "woordjes en feiten"-onderdeel én elke kaartoefening)
+volgt hetzelfde vaste pad:
+
+1. **Leren** — een rustig leesbaar overzicht (tabel, of de kaart met de
+   volledige legende) — geen druk, geen score.
+2. **Oefenen** — de aanbevolen "Oefenen"-oefening wordt per vraagje
+   automatisch moeilijker naarmate de leerling het beter kent: eerst
+   meerkeuze, dan juist/fout, en pas daarna zelf typen. Een fout antwoord
+   komt binnen dezelfde oefensessie vanzelf nog eens terug. Daarnaast
+   blijven de klassieke, vaste oefenvormen (meerkeuze, juist/fout,
+   invultoets, tabeltoets) gewoon beschikbaar onder "Andere oefenvormen".
+3. **Mijn fouten** — een knop die uitsluitend de vraagjes herhaalt die de
+   leerling recent fout had, per onderdeel én in één keer over alle
+   kaartbladen samen (`#/fouten`, ook een snelkoppeling op de startpagina).
+   Een vraagje verdwijnt pas uit de foutenbank als het weer juist beantwoord
+   wordt.
+4. **Test jezelf** — dezelfde vragen, maar zonder tussentijdse feedback:
+   je ziet pas op het einde wat juist en fout was, net als op een
+   schriftelijke toets. Nadien: score, overzicht van de fouten, en een knop
+   om meteen "Mijn fouten" te starten.
+5. **Onderhoud** — wat een leerling al **beheerst** (drie keer na elkaar
+   juist, zonder hulp), duikt na verloop van tijd vanzelf weer op: eerst na
+   1 dag, dan na 3, 7, 16, 35 en 90 dagen, telkens opnieuw zolang het juist
+   blijft. Eén fout tijdens onderhoud duwt een onderdeel terug naar
+   "moet geoefend worden". Bereikbaar via `#/onderhoud` en de snelkoppeling
+   op de startpagina (met een teller hoeveel er klaarstaat).
+
+Op de startpagina en bovenaan elk kaartblad/onderdeel zie je steeds twee
+aparte percentages: **% geoefend** (al minstens één keer geprobeerd) en
+**% beheerst** (drie keer na elkaar juist, zonder hulp) — dat is bewust
+niet hetzelfde.
+
+## Voor de leerkracht: welke onderdelen gaan vaak fout?
+
+Onderaan elke pagina staat een kleine link **"Voor leerkrachten"**
+(`#/leerkracht`). Die pagina toont, samengeteld over alle leerlingen en
+toestellen, per onderdeel hoeveel keer er geoefend is en welk percentage
+daarvan fout ging — gesorteerd van "gaat het meest fout" naar "zit goed
+vast". Zo zie je in één oogopslag waar je in de les nog even bij moet
+stilstaan.
+
+Dit is bewust **geen volledig leerlingvolgsysteem**: er wordt nergens
+bijgehouden wélke leerling iets fout had, enkel een geteld totaal "pogingen"
+en "fouten" per onderdeel — via dezelfde gratis, accountloze tellerdienst
+die de site al gebruikt voor de bezoekersteller en de teller per
+kaartblad (`countapi.mileshilliard.com`). De pagina staat niet achter een
+wachtwoord (dat kan niet op een statische GitHub Pages-site); de link
+staat gewoon niet in het leerlingenmenu. Is de tellerdienst even niet
+bereikbaar, dan toont de pagina dat gewoon en kan je later opnieuw
+vernieuwen — de rest van de site blijft normaal werken.
+
 ## Bekijken zonder installatie
 
 Dubbelklik gewoon op `index.html`. De site werkt volledig offline (de
@@ -167,15 +220,35 @@ kaart — mét de nummers/letters erop, zoals in de bundel — in
 Geen frameworks, geen build-stap, geen externe kaartendienst, geen
 klikcoördinaten: gewone HTML, CSS en JavaScript, met de kaartafbeeldingen
 gewoon als bestand meegeleverd — inclusief hun eigen ingedrukte cijfers
-en letters. De voortgang (beste score per onderdeel) wordt per toestel
-bewaard in de browser (`localStorage`) — er wordt niets naar een server
-gestuurd en er worden geen gegevens over leerlingen verzameld.
+en letters. De voortgang per vraagje (nieuw/in oefening/beheerst, wanneer
+het weer aan onderhoud toe is, wat in de foutenbank staat) wordt per
+toestel bewaard in de browser (`localStorage`) — er wordt niets naar een
+server gestuurd en er worden geen gegevens over individuele leerlingen
+verzameld.
 
-De enige uitzondering is de teller per kaartblad (zie hierboven): die
-stuurt, de eerste keer dat een toestel een oefening op dat kaartblad
-afrondt, enkel een "+1"-signaal naar hetzelfde gratis, accountloze
-tellerdienstje als de bezoekersteller — gekoppeld aan het kaartblad-id,
-geen naam, geen toestel-ID, geen enkel ander gegeven.
+De enige uitzondering is de teller per onderdeel/kaartblad (zie
+"Voor de leerkracht" hierboven): die stuurt, telkens een leerling een
+vraagje beantwoordt, een "+1"-signaal naar hetzelfde gratis, accountloze
+tellerdienstje als de bezoekersteller — twee tellers per onderdeel
+("pogingen" en "fouten"), geen naam, geen toestel-ID, geen enkel ander
+gegeven.
+
+Code-indeling in `assets/`:
+
+- `data.js`, `mapdata.js` — de leerinhoud (tekst-onderdelen en
+  kaartoefeningen), zoals voorheen.
+- `index.js` — bouwt één keer een lijst van alle onderdelen met hun
+  vraagjes, gebruikt door de andere bestanden.
+- `progress.js` — de "leermotor": per vraagje nieuw/leren/beheerst,
+  wanneer iets aan onderhoud toe is, en de foutenbank.
+- `analytics.js` — de anonieme, samengetelde teller voor het
+  leerkrachtoverzicht.
+- `mapquiz.js` — de kaartoefeningen (kaart bekijken, meerkeuze, zelf
+  typen).
+- `kaartblad-teller.js` — de bestaande "aantal leerlingen"-badge per
+  kaartblad.
+- `app.js` — de rest van de site: routering, startpagina, leren/oefenen/
+  fouten/testen/onderhoud, het leerkrachtoverzicht.
 
 ## Huisstijl Hast
 

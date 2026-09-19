@@ -1230,8 +1230,206 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   outline-offset: 2px;
 }
 
+/* ==========================================================================
+   Nieuw: volledige leeromgeving (leren/oefenen/fouten/testen/onderhoud)
+   ========================================================================== */
+
+.footer-teacher-link {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.hero-cta-row { margin-top: 14px; }
+.btn-hero { padding: 13px 24px; font-size: 1rem; }
+
+/* ---------- hoe werkt het (home) ---------- */
+.howitworks {
+  margin: 26px 0;
+  padding: 18px 20px;
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+.howitworks h3 { margin-bottom: 14px; }
+.howitworks-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
+.howitworks-step { text-align: left; }
+.howitworks-icon {
+  width: 34px; height: 34px;
+  padding: 7px;
+  border-radius: 9px;
+  background: var(--paper);
+  color: var(--teal);
+  margin-bottom: 8px;
+}
+.howitworks-step:nth-child(1) .howitworks-icon { color: var(--ink); background: rgba(2,46,62,0.08); }
+.howitworks-step:nth-child(2) .howitworks-icon { color: var(--teal); background: rgba(31,122,108,0.1); }
+.howitworks-step:nth-child(3) .howitworks-icon { color: var(--red); background: rgba(229,52,60,0.1); }
+.howitworks-step:nth-child(4) .howitworks-icon { color: var(--amber-dark); background: rgba(201,147,46,0.12); }
+.howitworks-step:nth-child(5) .howitworks-icon { color: var(--violet); background: rgba(132,82,173,0.12); }
+.howitworks-step strong { display: block; font-size: 0.92rem; margin-bottom: 2px; }
+.howitworks-step p { margin: 0; font-size: 0.82rem; color: var(--ink-soft); }
+
+/* ---------- mijn voortgang / snelkoppelingen (home) ---------- */
+.progress-panel {
+  margin: 22px 0;
+  padding: 18px 20px;
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+.progress-panel h3 { margin-bottom: 12px; }
+.progress-panel-bars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.module-bars { margin: 10px 0 18px; }
+.labeled-bar-head {
+  display: flex; justify-content: space-between;
+  font-size: 0.82rem; font-weight: bold; color: var(--ink-soft);
+  margin-bottom: 4px;
+}
+.labeled-bar-track {
+  height: 9px; border-radius: 999px; background: var(--line); overflow: hidden;
+}
+.labeled-bar-fill { height: 100%; border-radius: 999px; transition: width 0.8s cubic-bezier(.22,.9,.3,1); }
+.labeled-bar-fill.bar-practiced { background: var(--amber); }
+.labeled-bar-fill.bar-mastered { background: var(--teal); }
+
+.quick-links { display: flex; gap: 12px; flex-wrap: wrap; }
+.quick-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+  text-decoration: none;
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: bold;
+}
+.quick-link svg { width: 18px; height: 18px; }
+.quick-link-fouten { color: var(--red-dark); border-color: rgba(229,52,60,0.35); }
+.quick-link-onderhoud { color: var(--teal-dark); border-color: rgba(31,122,108,0.35); }
+.quick-link-count {
+  background: currentColor;
+  color: var(--card);
+  border-radius: 999px;
+  min-width: 22px;
+  padding: 1px 7px;
+  font-size: 0.78rem;
+  text-align: center;
+}
+.quick-link-empty { opacity: 0.55; }
+
+/* ---------- dubbele voortgangsbalk (geoefend + beheerst) ---------- */
+.sheet-progress-double { position: relative; height: 9px; background: rgba(2,46,62,0.08); }
+.sheet-progress-fill.fill-practiced { position: absolute; left: 0; top: 0; background: var(--amber); opacity: 0.55; }
+.sheet-progress-fill.fill-mastered { position: absolute; left: 0; top: 0; background: var(--teal); }
+
+.mastery-double { position: relative; }
+.mastery-fill.fill-practiced { position: absolute; left: 0; top: 0; background: var(--amber); opacity: 0.55; }
+.mastery-fill.fill-mastered { position: absolute; left: 0; top: 0; background: var(--teal); }
+
+/* ---------- voortgang-chips (onderdeel-hub) ---------- */
+.progress-summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 20px; }
+.progress-chip {
+  font-size: 0.8rem; font-weight: bold;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  color: var(--ink-soft);
+}
+.progress-chip.chip-mastered { color: var(--teal-dark); border-color: rgba(31,122,108,0.35); }
+.progress-chip.chip-practicing { color: var(--amber-dark); border-color: rgba(201,147,46,0.35); }
+.progress-chip.chip-due { color: var(--red-dark); border-color: rgba(229,52,60,0.35); }
+
+/* ---------- onderdeel-hub: leren / oefenen / fouten / testen ---------- */
+.stage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+.stage-card {
+  position: relative;
+  display: block;
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  padding: 18px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.stage-card:hover { transform: translateY(-4px); box-shadow: 0 10px 22px rgba(29,53,87,0.16); }
+.stage-num {
+  position: absolute; top: 12px; right: 14px;
+  font-size: 0.72rem; font-weight: bold;
+  color: var(--ink-soft);
+}
+.stage-icon {
+  width: 40px; height: 40px;
+  padding: 8px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  background: var(--paper);
+  color: var(--teal);
+}
+.stage-card:nth-child(1) .stage-icon { color: var(--ink); background: rgba(2,46,62,0.08); }
+.stage-card:nth-child(2) .stage-icon { color: var(--teal); background: rgba(31,122,108,0.1); }
+.stage-card:nth-child(3) .stage-icon { color: var(--red); background: rgba(229,52,60,0.1); }
+.stage-card:nth-child(4) .stage-icon { color: var(--amber-dark); background: rgba(201,147,46,0.12); }
+.stage-card p { font-size: 0.86rem; color: var(--ink-soft); margin: 0; }
+.stage-badge {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 0.78rem; font-weight: bold;
+  background: var(--red);
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.stage-badge-zero { background: var(--line); color: var(--ink-soft); }
+.small-heading { margin-top: 26px; }
+.mode-grid-compact { margin-top: 10px; }
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+.empty-state-icon { font-size: 2.4rem; margin-bottom: 10px; }
+
+.quiz-card-thumb {
+  display: block;
+  max-width: 220px;
+  max-height: 140px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  margin-bottom: 10px;
+}
+
+/* ---------- leerkrachtoverzicht ---------- */
+.view-teacher .teacher-table th, .view-teacher .teacher-table td { text-align: left; }
+.teacher-table tr.row-warn td { background: rgba(201,147,46,0.12); }
+.teacher-table tr.row-wrong td { background: rgba(229,52,60,0.12); }
+.teacher-table tfoot td { font-weight: bold; border-top: 2px solid var(--line-strong); }
+
 @media (max-width: 480px) {
   h1 { font-size: 1.4rem; }
   .quiz-card, .flashcard { padding: 16px; }
   .flashcard { height: 200px; }
+  .stage-grid { grid-template-columns: 1fr; }
 }

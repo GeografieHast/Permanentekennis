@@ -1,23 +1,18 @@
 /* ==========================================================================
    Permanente Kennis — app.js
-   Kleine, dependency-vrije studie-app: leerkaarten, meerkeuze en invultoets.
+   Volledige leeromgeving: Leren → Oefenen → Fouten opnieuw oefenen →
+   Testen → Onderhoud. Dependency-vrij (geen framework, geen build-stap).
    ========================================================================== */
 
 (function () {
   "use strict";
 
   const root = document.getElementById("app");
-  const PROGRESS_KEY = "pk-progress-v1";
 
   /* ---------- helpers ---------------------------------------------------- */
 
   function norm(str) {
-    return String(str || "")
-      .trim()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // strip accents
-      .replace(/\s+/g, " ");
+    return window.PKIndex.norm(str);
   }
 
   function shuffle(arr) {
@@ -56,97 +51,8 @@
     return node;
   }
 
-  function loadProgress() {
-    try {
-      return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {};
-    } catch (e) {
-      return {};
-    }
-  }
-  function saveProgress(p) {
-    try {
-      localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
-    } catch (e) {
-      /* privé-modus of vol geheugen: negeren, de app blijft werken */
-    }
-  }
-  function recordScore(topicId, correct, total) {
-    const p = loadProgress();
-    const prev = p[topicId] || { best: 0, attempts: 0 };
-    const pct = total ? Math.round((correct / total) * 100) : 0;
-    p[topicId] = {
-      best: Math.max(prev.best, pct),
-      attempts: prev.attempts + 1,
-      last: pct
-    };
-    saveProgress(p);
-    bumpStats(total);
-  }
-  function topicMastery(topicId) {
-    const p = loadProgress();
-    return p[topicId] ? p[topicId].best : null;
-  }
-
-  /* ---------- eigen statistieken: totaal beantwoord + studeer-streak --------- */
-
-  const STATS_KEY = "pk-stats-v1";
-  function todayStr() {
-    const d = new Date();
-    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-  }
-  function dayBefore(str) {
-    const d = new Date(str + "T00:00:00");
-    d.setDate(d.getDate() - 1);
-    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-  }
-  function loadStats() {
-    try {
-      return JSON.parse(localStorage.getItem(STATS_KEY)) || { totalAnswered: 0, streakCount: 0, lastDate: null };
-    } catch (e) {
-      return { totalAnswered: 0, streakCount: 0, lastDate: null };
-    }
-  }
-  function saveStats(s) {
-    try {
-      localStorage.setItem(STATS_KEY, JSON.stringify(s));
-    } catch (e) {
-      /* privé-modus of vol geheugen: negeren */
-    }
-  }
-  function bumpStats(total) {
-    const s = loadStats();
-    s.totalAnswered = (s.totalAnswered || 0) + (total || 0);
-    const today = todayStr();
-    if (s.lastDate !== today) {
-      s.streakCount = s.lastDate === dayBefore(today) ? (s.streakCount || 0) + 1 : 1;
-      s.lastDate = today;
-    }
-    saveStats(s);
-    return s;
-  }
-
-  /* ---------- gedeelde teller (bezoeken door iedereen samen) ----------------- */
-
-  const GLOBAL_COUNTER_KEY = "geografiehast-permanentekennis-bezoeken";
-  const GLOBAL_COUNTER_BASE = "https://countapi.mileshilliard.com/api/v1/";
-  function fetchGlobalCounter(el) {
-    let hitOnce = false;
-    try {
-      hitOnce = sessionStorage.getItem("pk-global-hit") === "1";
-    } catch (e) { /* privé-modus: telkens gewoon opvragen zonder te verhogen telt niet mee, maar app blijft werken */ }
-    const url = GLOBAL_COUNTER_BASE + (hitOnce ? "get/" : "hit/") + GLOBAL_COUNTER_KEY;
-    fetch(url)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data && data.value != null) {
-          el.textContent = Number(data.value).toLocaleString("nl-BE");
-          try { sessionStorage.setItem("pk-global-hit", "1"); } catch (e) { /* negeren */ }
-        } else {
-          el.textContent = "—";
-        }
-      })
-      .catch(() => { el.textContent = "—"; });
-  }
+  const Progress = window.PKProgress;
+  const Index = window.PKIndex;
 
   /* ---------- mijlpalen (badges) ---------------------------------------------- */
 
@@ -208,6 +114,29 @@
     return s;
   }
 
+  /* ---------- gedeelde teller (bezoeken door iedereen samen) ----------------- */
+
+  const GLOBAL_COUNTER_KEY = "geografiehast-permanentekennis-bezoeken";
+  const GLOBAL_COUNTER_BASE = "https://countapi.mileshilliard.com/api/v1/";
+  function fetchGlobalCounter(el2) {
+    let hitOnce = false;
+    try {
+      hitOnce = sessionStorage.getItem("pk-global-hit") === "1";
+    } catch (e) { /* privé-modus */ }
+    const url = GLOBAL_COUNTER_BASE + (hitOnce ? "get/" : "hit/") + GLOBAL_COUNTER_KEY;
+    fetch(url)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.value != null) {
+          el2.textContent = Number(data.value).toLocaleString("nl-BE");
+          try { sessionStorage.setItem("pk-global-hit", "1"); } catch (e) { /* negeren */ }
+        } else {
+          el2.textContent = "—";
+        }
+      })
+      .catch(() => { el2.textContent = "—"; });
+  }
+
   /* ---------- data lookup ------------------------------------------------- */
 
   function getModule(moduleId) {
@@ -224,19 +153,48 @@
   function topicTermPool(topic) {
     return topic.items.map((i) => i.term);
   }
+  function mapGroupsFor(moduleId) {
+    return (window.PK_MAPS ? window.PK_MAPS.groups : []).filter((g) => g.moduleId === moduleId);
+  }
+  function getMapGroup(groupId) {
+    return (window.PK_MAPS ? window.PK_MAPS.groups : []).find((g) => g.id === groupId);
+  }
+
+  /* ---------- voortgang per onderdeel (koppelt data ↔ progress.js) ----------- */
+
+  function topicItemIds(topic) {
+    return topic.items.map((it) => Index.topicItemId(topic.id, it));
+  }
+  function mapItemIds(group) {
+    return group.legend.map((e) => Index.mapItemId(group.id, e.key));
+  }
+  function topicSummary(topic) {
+    return Progress.summarize(topicItemIds(topic));
+  }
+  function mapSummary(group) {
+    return Progress.summarize(mapItemIds(group));
+  }
+  function moduleItemIds(mod) {
+    let ids = [];
+    mod.topics.forEach((t) => { ids = ids.concat(topicItemIds(t)); });
+    mapGroupsFor(mod.id).forEach((g) => { ids = ids.concat(mapItemIds(g)); });
+    return ids;
+  }
+  function moduleSummary(mod) {
+    return Progress.summarize(moduleItemIds(mod));
+  }
+  function allItemIds() {
+    let ids = [];
+    PK_DATA.modules.forEach((mod) => { ids = ids.concat(moduleItemIds(mod)); });
+    return ids;
+  }
 
   /* ---------- router ------------------------------------------------------- */
 
   function parseHash() {
     const h = location.hash.replace(/^#\/?/, "");
     const parts = h.split("/").filter(Boolean);
-    return {
-      view: parts[0] || "home",
-      moduleId: parts[1],
-      topicId: parts[2],
-      mode: parts[3],
-      reverse: parts[4] === "omgekeerd"
-    };
+    return { view: parts[0] || "home", p1: parts[1], p2: parts[2], p3: parts[3], p4: parts[4] };
   }
 
   function navigate(path) {
@@ -246,94 +204,102 @@
   window.addEventListener("hashchange", render);
   window.addEventListener("DOMContentLoaded", render);
 
-  function mapGroupsFor(moduleId) {
-    return (window.PK_MAPS ? window.PK_MAPS.groups : []).filter((g) => g.moduleId === moduleId);
-  }
-  function getMapGroup(groupId) {
-    return (window.PK_MAPS ? window.PK_MAPS.groups : []).find((g) => g.id === groupId);
-  }
-  function moduleMastery(mod) {
-    const scores = mod.topics.map((t) => topicMastery(t.id) || 0);
-    mapGroupsFor(mod.id).forEach((g) => {
-      const m = window.PKMapExercise ? window.PKMapExercise.mastery("map-" + g.id + "-mc") : null;
-      scores.push(m || 0);
-    });
-    if (!scores.length) return 0;
-    return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-  }
-
   function render() {
     if (window.PKMapExercise) window.PKMapExercise.cleanup();
     const r = parseHash();
     root.innerHTML = "";
     root.appendChild(el("div", { class: "crumbs" }, breadcrumbs(r)));
 
-    if (r.view === "home") root.appendChild(renderHome());
-    else if (r.view === "module" && r.moduleId && !r.topicId)
-      root.appendChild(renderModule(r.moduleId));
-    else if (r.view === "module" && r.moduleId && r.topicId && !r.mode)
-      root.appendChild(renderTopicIntro(r.moduleId, r.topicId));
-    else if (r.view === "module" && r.moduleId && r.topicId && r.mode === "kaarten")
-      root.appendChild(renderFlashcards(r.moduleId, r.topicId, r.reverse));
-    else if (r.view === "module" && r.moduleId && r.topicId && r.mode === "meerkeuze")
-      root.appendChild(renderQuiz(r.moduleId, r.topicId, "mc", r.reverse));
-    else if (r.view === "module" && r.moduleId && r.topicId && r.mode === "juistfout")
-      root.appendChild(renderQuiz(r.moduleId, r.topicId, "tf", r.reverse));
-    else if (r.view === "module" && r.moduleId && r.topicId && r.mode === "invultoets")
-      root.appendChild(renderQuiz(r.moduleId, r.topicId, "type", r.reverse));
-    else if (r.view === "module" && r.moduleId && r.topicId && r.mode === "tabel")
-      root.appendChild(renderTable(r.moduleId, r.topicId, r.reverse));
-    else if (r.view === "overhoring" && r.moduleId)
-      root.appendChild(renderModuleQuiz(r.moduleId));
-    else if (r.view === "kaart" && r.moduleId && r.topicId && r.mode) {
-      const group = getMapGroup(r.topicId);
-      if (group) renderMapView(r.moduleId, group, r.mode);
+    try {
+      if (r.view === "home") root.appendChild(renderHome());
+      else if (r.view === "module" && r.p1 && !r.p2) root.appendChild(renderModule(r.p1));
+      else if (r.view === "module" && r.p1 && r.p2 === "testen") root.appendChild(renderModuleTest(r.p1));
+      else if (r.view === "module" && r.p1 && r.p2 && !r.p3) root.appendChild(renderTopicHub(r.p1, r.p2));
+      else if (r.view === "module" && r.p1 && r.p2 && r.p3 === "leren" && r.p4 === "kaarten") root.appendChild(renderFlashcards(r.p1, r.p2));
+      else if (r.view === "module" && r.p1 && r.p2 && r.p3 === "leren") root.appendChild(renderLeren(r.p1, r.p2));
+      else if (r.view === "module" && r.p1 && r.p2 && r.p3 === "oefenen") root.appendChild(renderOefenen(r.p1, r.p2, r.p4));
+      else if (r.view === "module" && r.p1 && r.p2 && r.p3 === "fouten") root.appendChild(renderTopicFouten(r.p1, r.p2));
+      else if (r.view === "module" && r.p1 && r.p2 && r.p3 === "testen") root.appendChild(renderTopicTest(r.p1, r.p2));
+      else if (r.view === "kaart" && r.p1 && r.p2 && r.p3) renderMapView(r.p1, r.p2, r.p3);
+      else if (r.view === "fouten") root.appendChild(renderGlobalFouten());
+      else if (r.view === "onderhoud") root.appendChild(renderOnderhoud());
+      else if (r.view === "leerkracht") root.appendChild(renderTeacher());
       else root.appendChild(renderHome());
-    } else root.appendChild(renderHome());
+    } catch (err) {
+      console.error(err);
+      root.appendChild(renderHome());
+    }
 
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   }
 
-  function renderMapView(moduleId, group, mode) {
+  function renderMapView(moduleId, groupId, mode) {
     const wrap = el("div", { class: "view view-map" });
     root.appendChild(wrap);
+    const group = getMapGroup(groupId);
+    if (!group) { wrap.appendChild(renderHome()); return; }
     if (mode === "start") {
-      wrap.appendChild(el("h1", null, [group.title]));
-      wrap.appendChild(el("p", { class: "module-intro" }, ["Zoek het symbool op de echte kaart uit je bundel op."]));
-      if (group.note) wrap.appendChild(el("p", { class: "topic-note" }, [group.note]));
-      const base = "#/kaart/" + moduleId + "/" + group.id + "/";
-      const modes = el("div", { class: "mode-grid" });
-      modes.appendChild(modeCard(base + "leer", cardsIconSVG(), "Kaart bekijken", "Kaart met de volledige legende ernaast — rustig instuderen."));
-      modes.appendChild(modeCard(base + "mc", checkIconSVG(), "Meerkeuze", "Bij elk symbool: kies de juiste naam uit vier opties."));
-      modes.appendChild(modeCard(base + "typ", pencilIconSVG(), "Zelf typen", "Bij elk symbool: typ zelf de naam" + (group.secondaryLabel ? " en " + group.secondaryLabel.toLowerCase() : "") + "."));
-      wrap.appendChild(modes);
-      const m = window.PKMapExercise ? window.PKMapExercise.mastery("map-" + group.id + "-mc") : null;
-      if (m != null) wrap.appendChild(el("p", { class: "score-note" }, ["Je beste score bij meerkeuze: " + m + "%."]));
+      wrap.appendChild(renderMapHub(moduleId, group));
+      return;
+    }
+    if (mode === "fouten") {
+      renderOnderdeelFoutenSession(wrap, { kind: "map", group: group, moduleId: moduleId }, "#/kaart/" + moduleId + "/" + group.id + "/start");
+      return;
+    }
+    if (mode === "testen") {
+      renderOnderdeelTestSession(wrap, { kind: "map", group: group, moduleId: moduleId }, "#/kaart/" + moduleId + "/" + group.id + "/start");
       return;
     }
     window.PKMapExercise.render(wrap, group, mode);
   }
 
+  function renderMapHub(moduleId, group) {
+    const wrap = el("div", { class: "view view-onderdeel-hub" });
+    wrap.appendChild(el("h1", null, [group.title.replace(/^Kaartoefening:\s*/, "")]));
+    wrap.appendChild(el("p", { class: "module-intro" }, ["Zoek het symbool op de echte kaart uit je bundel op."]));
+    if (group.note) wrap.appendChild(el("p", { class: "topic-note" }, [group.note]));
+
+    const sum = mapSummary(group);
+    wrap.appendChild(progressSummaryBlock(sum));
+
+    const base = "#/kaart/" + moduleId + "/" + group.id + "/";
+    const stages = el("div", { class: "stage-grid" });
+    stages.appendChild(stageCard(base + "leer", "1", cardsIconSVG(), "Leren", "Kaart met de volledige legende ernaast — rustig instuderen.", null));
+    stages.appendChild(stageCard(base + "mc", "2", checkIconSVG(), "Oefenen — meerkeuze", "Bij elk symbool: kies de juiste naam uit vier opties.", null));
+    stages.appendChild(stageCard(base + "typ", "2", pencilIconSVG(), "Oefenen — zelf typen", "Bij elk symbool: typ zelf de naam" + (group.secondaryLabel ? " en " + group.secondaryLabel.toLowerCase() : "") + ".", null));
+    stages.appendChild(stageCard(base + "fouten", "3", retryIconSVG(), "Mijn fouten", "Herhaal enkel de symbolen die nog niet lukken.", sum.total ? Progress.retryList(mapItemIds(group)).length : 0));
+    stages.appendChild(stageCard(base + "testen", "4", testIconSVG(), "Test jezelf", "Alle symbolen na elkaar, zonder hulp — pas achteraf het resultaat.", null));
+    wrap.appendChild(stages);
+
+    return wrap;
+  }
+
   function breadcrumbs(r) {
     const parts = [el("a", { href: "#/home" }, ["Start"])];
     if (r.view === "home") return parts;
-    const mod = r.moduleId ? getModule(r.moduleId) : null;
-    if (mod) {
-      parts.push(el("span", { class: "sep" }, ["›"]));
-      parts.push(el("a", { href: "#/module/" + mod.id }, [mod.title]));
-    }
-    if (r.topicId) {
-      const topic = getTopic(r.moduleId, r.topicId);
-      if (topic) {
-        parts.push(el("span", { class: "sep" }, ["›"]));
-        parts.push(el("span", { class: "current" }, [topic.title]));
+    if (r.view === "fouten") { parts.push(sep(), el("span", { class: "current" }, ["Mijn fouten"])); return parts; }
+    if (r.view === "onderhoud") { parts.push(sep(), el("span", { class: "current" }, ["Onderhoud"])); return parts; }
+    if (r.view === "leerkracht") { parts.push(sep(), el("span", { class: "current" }, ["Leerkrachtoverzicht"])); return parts; }
+    const mod = r.p1 ? getModule(r.p1) : null;
+    if (r.view === "module" && mod) {
+      parts.push(sep(), el("a", { href: "#/module/" + mod.id }, [mod.title]));
+      if (r.p2 === "testen") parts.push(sep(), el("span", { class: "current" }, ["Test jezelf"]));
+      else if (r.p2) {
+        const topic = getTopic(r.p1, r.p2);
+        if (topic) parts.push(sep(), el("a", { href: "#/module/" + r.p1 + "/" + r.p2 }, [topic.title]));
+        if (r.p3 === "leren") parts.push(sep(), el("span", { class: "current" }, ["Leren"]));
+        else if (r.p3 === "oefenen") parts.push(sep(), el("span", { class: "current" }, ["Oefenen"]));
+        else if (r.p3 === "fouten") parts.push(sep(), el("span", { class: "current" }, ["Mijn fouten"]));
+        else if (r.p3 === "testen") parts.push(sep(), el("span", { class: "current" }, ["Test jezelf"]));
       }
-    } else if (r.view === "overhoring" && mod) {
-      parts.push(el("span", { class: "sep" }, ["›"]));
-      parts.push(el("span", { class: "current" }, ["Grote overhoring"]));
+    } else if (r.view === "kaart" && mod) {
+      const group = r.p2 ? getMapGroup(r.p2) : null;
+      parts.push(sep(), el("a", { href: "#/module/" + mod.id }, [mod.title]));
+      if (group) parts.push(sep(), el("span", { class: "current" }, [group.title.replace(/^Kaartoefening:\s*/, "")]));
     }
     return parts;
   }
+  function sep() { return el("span", { class: "sep" }, ["›"]); }
 
   function animateCount(target, end) {
     const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -500,22 +466,26 @@
         el("div", { class: "hero-content" }, [
           el("h1", null, ["Permanente Kennis"]),
           el("p", { class: "hero-sub" }, [
-            "Aardrijkskunde: studeer je referentiekaarten in met leerkaarten, meerkeuzevragen, invultoetsen en echte kaartoefeningen."
+            "Wat je hier leert, moet je heel het jaar (en daarna) blijven kennen. Daarom oefen je hier niet één keer, maar volg je telkens hetzelfde pad: leren, oefenen, fouten wegwerken, jezelf testen — en af en toe opnieuw onderhouden, zodat het echt blijft hangen."
           ]),
           el("div", { class: "hero-badges" }, [
             el("span", { class: "hero-badge badge-red" }, ["🧭 9 kaartbladen"]),
             el("span", { class: "hero-badge badge-teal" }, ["🗺️ echte bundelkaarten"]),
             el("span", { class: "hero-badge badge-amber" }, ["📶 werkt offline"])
+          ]),
+          el("div", { class: "hero-cta-row" }, [
+            el("a", { class: "btn btn-primary btn-hero", href: nextStepHref() }, ["Start met oefenen →"])
           ])
         ])
       ])
     );
 
-    const stats = loadStats();
+    wrap.appendChild(howItWorksStrip());
+
+    const stats = Progress.loadStats();
     const streakValueEl = el("span", { class: "stat-value" }, ["0"]);
     const answeredValueEl = el("span", { class: "stat-value" }, ["0"]);
     const globalValueEl = el("span", { class: "stat-value" }, ["…"]);
-    const globeIconEl = el("span", { class: "stat-icon", "aria-hidden": "true" }, ["🌍"]);
     wrap.appendChild(
       el("section", { class: "stats-strip" }, [
         el("div", { class: "stat-tile stat-streak" }, [
@@ -531,7 +501,7 @@
           el("span", { class: "stat-milestone" }, [milestoneNote(stats.totalAnswered || 0, ANSWERED_GOALS)])
         ]),
         el("div", { class: "stat-tile stat-global" }, [
-          globeIconEl,
+          el("span", { class: "stat-icon", "aria-hidden": "true" }, ["🌍"]),
           globalValueEl,
           el("span", { class: "stat-label" }, ["keer geopend door iedereen samen"])
         ])
@@ -541,13 +511,42 @@
     animateCount(answeredValueEl, stats.totalAnswered || 0);
     fetchGlobalCounter(globalValueEl);
 
+    /* Mijn voortgang: fouten + onderhoud vlot bereikbaar */
+    const allIds = allItemIds();
+    const retryCount = Progress.retryList(allIds).length;
+    const dueCount = Progress.dueForMaintenance(allIds).length;
+    const globalSum = Progress.summarize(allIds);
+
+    wrap.appendChild(
+      el("section", { class: "progress-panel" }, [
+        el("h3", null, ["📈 Mijn voortgang"]),
+        el("div", { class: "progress-panel-bars" }, [
+          labeledBar("Geoefend", globalSum.practicedPct, "bar-practiced"),
+          labeledBar("Beheerst", globalSum.masteredPct, "bar-mastered")
+        ]),
+        el("div", { class: "quick-links" }, [
+          el("a", { class: "quick-link quick-link-fouten" + (retryCount ? "" : " quick-link-empty"), href: "#/fouten" }, [
+            retryIconSVG(),
+            el("span", null, ["Mijn fouten"]),
+            el("span", { class: "quick-link-count" }, [retryCount ? String(retryCount) : "0"])
+          ]),
+          el("a", { class: "quick-link quick-link-onderhoud" + (dueCount ? "" : " quick-link-empty"), href: "#/onderhoud" }, [
+            maintenanceIconSVG(),
+            el("span", null, ["Onderhoud"]),
+            el("span", { class: "quick-link-count" }, [dueCount ? String(dueCount) : "0"])
+          ])
+        ])
+      ])
+    );
+
     const grid = el("div", { class: "sheet-grid" });
     PK_DATA.modules.forEach((mod, i) => {
-      const count = mod.topics.length + mapGroupsFor(mod.id).length;
+      const onderdelen = mod.topics.length + mapGroupsFor(mod.id).length;
       const iconFn = MODULE_ICONS[mod.id] || compassSVG;
       const accent = MODULE_ACCENTS[i % MODULE_ACCENTS.length];
-      const pct = moduleMastery(mod);
-      const progressFill = el("div", { class: "sheet-progress-fill", style: "width:0%" });
+      const sum = moduleSummary(mod);
+      const practFill = el("div", { class: "sheet-progress-fill fill-practiced", style: "width:0%" });
+      const masterFill = el("div", { class: "sheet-progress-fill fill-mastered", style: "width:0%" });
       grid.appendChild(
         el("a", { class: "sheet-card " + accent, href: "#/module/" + mod.id, style: "--i:" + i }, [
           el("span", { class: "sheet-stamp", "aria-hidden": "true" }, [(mod.label.match(/\d+/) || [""])[0]]),
@@ -557,9 +556,9 @@
           el("p", { class: "sheet-subtitle" }, [mod.subtitle]),
           el("p", { class: "sheet-intro" }, [mod.intro]),
           el("div", { class: "sheet-footer" }, [
-            el("span", { class: "sheet-meta" }, [count + " onderdelen · openen →"]),
-            el("div", { class: "sheet-progress", title: pct + "% onder de knie" }, [progressFill]),
-            el("span", { class: "sheet-progress-label" }, [pct + "% onder de knie"]),
+            el("span", { class: "sheet-meta" }, [onderdelen + " onderdelen · openen →"]),
+            el("div", { class: "sheet-progress sheet-progress-double" }, [practFill, masterFill]),
+            el("span", { class: "sheet-progress-label" }, [sum.masteredPct + "% beheerst · " + sum.practicedPct + "% geoefend"]),
             window.PKCounter
               ? el("img", {
                   class: "sheet-counter",
@@ -572,7 +571,10 @@
         ])
       );
       requestAnimationFrame(function () {
-        requestAnimationFrame(function () { progressFill.style.width = pct + "%"; });
+        requestAnimationFrame(function () {
+          practFill.style.width = sum.practicedPct + "%";
+          masterFill.style.width = sum.masteredPct + "%";
+        });
       });
     });
     wrap.appendChild(grid);
@@ -593,33 +595,43 @@
       ])
     );
 
-    wrap.appendChild(
-      el("section", { class: "legend-block" }, [
-        el("div", { class: "legend-heading" }, [
-          el("div", { class: "legend-mascot", "aria-hidden": "true" }, [mascotGlobeSVG()]),
-          el("h3", null, ["Hoe werkt het?"])
-        ]),
-        el("div", { class: "legend-row" }, [
-          legendItem(mapPinIconSVG(), "Kaartoefening", "De echte, genummerde kaart uit je bundel — zeg wat elk symbool is."),
-          legendItem(cardsIconSVG(), "Leerkaarten", "Klik een kaart om en toont het antwoord."),
-          legendItem(checkIconSVG(), "Meerkeuze", "Kies het juiste antwoord uit vier opties."),
-          legendItem(tfIconSVG(), "Juist of fout", "Beoordeel een voorgesteld antwoord, net als bij juist/fout-vragen."),
-          legendItem(pencilIconSVG(), "Invultoets", "Typ het antwoord zelf, net als op een toets."),
-          legendItem(tableIconSVG(), "Tabeltoets", "Vul de volledige tabel in en verbeter in één keer.")
-        ]),
-        el("p", { class: "legend-note" }, [
-          "Bij de meeste onderdelen kan je ook omgekeerd oefenen — bv. hoofdstad → land in plaats van land → hoofdstad."
-        ])
-      ])
-    );
-
     return wrap;
   }
 
-  function legendItem(icon, title, text) {
-    return el("div", { class: "legend-item" }, [
-      el("div", { class: "legend-icon" }, [icon]),
-      el("div", null, [el("strong", null, [title]), el("p", null, [text])])
+  function nextStepHref() {
+    // eerste kaartblad dat nog niet 100% beheerst is, anders het eerste kaartblad
+    const target = PK_DATA.modules.find((m) => moduleSummary(m).masteredPct < 100);
+    return "#/module/" + (target || PK_DATA.modules[0]).id;
+  }
+
+  function labeledBar(label, pct, cls) {
+    const fill = el("div", { class: "labeled-bar-fill " + cls, style: "width:0%" });
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { fill.style.width = pct + "%"; });
+    });
+    return el("div", { class: "labeled-bar" }, [
+      el("div", { class: "labeled-bar-head" }, [el("span", null, [label]), el("span", null, [pct + "%"])]),
+      el("div", { class: "labeled-bar-track" }, [fill])
+    ]);
+  }
+
+  function howItWorksStrip() {
+    const steps = [
+      { icon: cardsIconSVG(), title: "1. Leren", text: "Bekijk de kaart of het overzicht rustig, zonder druk." },
+      { icon: checkIconSVG(), title: "2. Oefenen", text: "Oefen met oplopende moeilijkheid. Fouten komen vanzelf terug." },
+      { icon: retryIconSVG(), title: "3. Mijn fouten", text: "Herhaal gericht net dat wat nog niet lukt." },
+      { icon: testIconSVG(), title: "4. Test jezelf", text: "Zonder hulp, zoals op een echte toets." },
+      { icon: maintenanceIconSVG(), title: "5. Onderhoud", text: "Wat je al kende, komt later vanzelf terug." }
+    ];
+    return el("section", { class: "howitworks" }, [
+      el("h3", null, ["Hoe werkt het?"]),
+      el("div", { class: "howitworks-row" }, steps.map((s) =>
+        el("div", { class: "howitworks-step" }, [
+          el("div", { class: "howitworks-icon" }, [s.icon]),
+          el("strong", null, [s.title]),
+          el("p", null, [s.text])
+        ])
+      ))
     ]);
   }
 
@@ -644,21 +656,28 @@
       );
     }
 
+    const modSum = moduleSummary(mod);
+    wrap.appendChild(
+      el("div", { class: "progress-panel-bars module-bars" }, [
+        labeledBar("Geoefend", modSum.practicedPct, "bar-practiced"),
+        labeledBar("Beheerst", modSum.masteredPct, "bar-mastered")
+      ])
+    );
+
     const mapGroups = mapGroupsFor(moduleId);
     if (mapGroups.length) {
       wrap.appendChild(el("h2", { class: "section-heading" }, ["Kaartoefeningen"]));
       const mapList = el("div", { class: "topic-list" });
       mapGroups.forEach((g) => {
-        const m = window.PKMapExercise ? window.PKMapExercise.mastery("map-" + g.id + "-mc") : null;
-        const count = g.legend ? g.legend.length : 0;
+        const sum = mapSummary(g);
         mapList.appendChild(
           el("a", { class: "topic-row", href: "#/kaart/" + moduleId + "/" + g.id + "/start" }, [
             el("div", { class: "topic-kind-dot kind-map", "aria-hidden": "true" }, []),
             el("div", { class: "topic-row-main" }, [
               el("h3", null, [g.title.replace(/^Kaartoefening:\s*/, "")]),
-              el("p", null, [count + " plaatsen op de kaart" + (m != null ? " · beste score " + m + "%" : "")])
+              el("p", null, [g.legend.length + " plaatsen op de kaart · " + sum.masteredPct + "% beheerst"])
             ]),
-            masteryBar(m)
+            dualMasteryBar(sum)
           ])
         );
       });
@@ -668,120 +687,103 @@
 
     const list = el("div", { class: "topic-list" });
     mod.topics.forEach((topic) => {
-      const mastery = topicMastery(topic.id);
+      const sum = topicSummary(topic);
       const row = el("a", { class: "topic-row", href: "#/module/" + moduleId + "/" + topic.id }, [
         el("div", { class: "topic-kind-dot kind-" + topic.kind, "aria-hidden": "true" }, []),
         el("div", { class: "topic-row-main" }, [
           el("h3", null, [topic.title]),
-          el("p", null, [topic.items.length + " items" + (mastery != null ? " · beste score " + mastery + "%" : "")])
+          el("p", null, [topic.items.length + " items · " + sum.masteredPct + "% beheerst"])
         ]),
-        masteryBar(mastery)
+        dualMasteryBar(sum)
       ]);
       list.appendChild(row);
     });
     wrap.appendChild(list);
 
     wrap.appendChild(
-      el("a", { class: "btn btn-primary big-cta", href: "#/overhoring/" + moduleId }, [
-        "Grote overhoring — mix van alle onderdelen"
+      el("a", { class: "btn btn-primary big-cta", href: "#/module/" + moduleId + "/testen" }, [
+        "Test jezelf — hele kaartblad door elkaar"
       ])
     );
 
     return wrap;
   }
 
-  function masteryBar(pct) {
-    const bar = el("div", { class: "mastery", title: pct != null ? pct + "% beste score" : "Nog niet geoefend" });
-    const fill = el("div", { class: "mastery-fill", style: "width:0%" });
-    bar.appendChild(fill);
+  function dualMasteryBar(sum) {
+    const bar = el("div", { class: "mastery mastery-double", title: sum.masteredPct + "% beheerst, " + sum.practicedPct + "% geoefend" });
+    const practFill = el("div", { class: "mastery-fill fill-practiced", style: "width:0%" });
+    const masterFill = el("div", { class: "mastery-fill fill-mastered", style: "width:0%" });
+    bar.appendChild(practFill);
+    bar.appendChild(masterFill);
     requestAnimationFrame(function () {
-      requestAnimationFrame(function () { fill.style.width = (pct || 0) + "%"; });
+      requestAnimationFrame(function () {
+        practFill.style.width = sum.practicedPct + "%";
+        masterFill.style.width = sum.masteredPct + "%";
+      });
     });
     return bar;
   }
 
-  /* ---------- TOPIC INTRO ---------------------------------------------------- */
+  function progressSummaryBlock(sum) {
+    const parts = [
+      el("span", { class: "progress-chip chip-new" }, [(sum.total - sum.seen) + " nog te leren"]),
+      el("span", { class: "progress-chip chip-practicing" }, [sum.practicing + " in oefening"]),
+      el("span", { class: "progress-chip chip-mastered" }, [sum.mastered + " beheerst"])
+    ];
+    if (sum.due) parts.push(el("span", { class: "progress-chip chip-due" }, [sum.due + " toe aan onderhoud"]));
+    return el("div", { class: "progress-summary" }, parts);
+  }
 
-  function renderTopicIntro(moduleId, topicId) {
+  /* ---------- TOPIC HUB (Leren / Oefenen / Fouten / Testen) ------------------ */
+
+  function renderTopicHub(moduleId, topicId) {
     const topic = getTopic(moduleId, topicId);
-    const wrap = el("div", { class: "view view-topic-intro" });
+    const wrap = el("div", { class: "view view-onderdeel-hub" });
     wrap.appendChild(el("h1", null, [topic.title]));
 
-    const canReverse = topic.kind === "pair";
-    const descFor = (reverse) =>
+    const descText =
       topic.kind === "category"
         ? "Herken je tot welke soort elke naam behoort? (" + topic.categories.join(", ") + ")"
-        : reverse
-        ? topic.answerLabel + " → " + topic.promptLabel
         : topic.promptLabel + " → " + topic.answerLabel;
+    wrap.appendChild(el("p", { class: "module-intro" }, [descText]));
+    if (topic.note) wrap.appendChild(el("p", { class: "topic-note" }, [topic.note]));
 
-    const descEl = el("p", { class: "module-intro" }, [descFor(false)]);
-    wrap.appendChild(descEl);
+    const sum = topicSummary(topic);
+    wrap.appendChild(progressSummaryBlock(sum));
 
-    if (topic.note) {
-      wrap.appendChild(el("p", { class: "topic-note" }, [topic.note]));
+    const retryCount = Progress.retryList(topicItemIds(topic)).length;
+    const base = "#/module/" + moduleId + "/" + topicId + "/";
+    const stages = el("div", { class: "stage-grid" });
+    stages.appendChild(stageCard(base + "leren", "1", cardsIconSVG(), "Leren", "Overzicht van alle antwoorden, rustig instuderen.", null));
+    stages.appendChild(stageCard(base + "oefenen/adaptief", "2", checkIconSVG(), "Oefenen", "Oplopende moeilijkheid, fouten komen vanzelf terug.", null));
+    stages.appendChild(stageCard(base + "fouten", "3", retryIconSVG(), "Mijn fouten", "Herhaal enkel wat nog niet lukt.", retryCount));
+    stages.appendChild(stageCard(base + "testen", "4", testIconSVG(), "Test jezelf", "Zonder hulp — resultaat pas op het einde.", null));
+    wrap.appendChild(stages);
+
+    wrap.appendChild(el("h3", { class: "section-heading small-heading" }, ["Andere oefenvormen"]));
+    const modes = el("div", { class: "mode-grid mode-grid-compact" });
+    modes.appendChild(modeCard(base + "oefenen/meerkeuze", checkIconSVG(), "Meerkeuze", "Kies telkens het juiste antwoord uit vier opties."));
+    modes.appendChild(modeCard(base + "oefenen/juistfout", tfIconSVG(), "Juist of fout", "Beoordeel of het voorgestelde antwoord klopt."));
+    if (topic.allowTyping !== false) {
+      modes.appendChild(modeCard(base + "oefenen/invultoets", pencilIconSVG(), "Invultoets", "Typ het antwoord zelf."));
+      modes.appendChild(modeCard(base + "oefenen/tabel", tableIconSVG(), "Tabeltoets", "Vul de hele tabel in en verbeter in één keer."));
     }
-
-    let reverse = false;
-
-    if (canReverse) {
-      const toggle = el("div", { class: "direction-toggle", role: "group", "aria-label": "Oefenrichting" });
-      const btnNormal = el(
-        "button",
-        { class: "dir-btn dir-btn-active", type: "button", onclick: () => setDir(false) },
-        [topic.promptLabel + " → " + topic.answerLabel]
-      );
-      const btnReverse = el(
-        "button",
-        { class: "dir-btn", type: "button", onclick: () => setDir(true) },
-        [topic.answerLabel + " → " + topic.promptLabel]
-      );
-      toggle.appendChild(btnNormal);
-      toggle.appendChild(btnReverse);
-      wrap.appendChild(toggle);
-
-      function setDir(v) {
-        reverse = v;
-        descEl.textContent = descFor(reverse);
-        btnNormal.classList.toggle("dir-btn-active", !reverse);
-        btnReverse.classList.toggle("dir-btn-active", reverse);
-        updateModeLinks();
-      }
-    }
-
-    const modes = el("div", { class: "mode-grid" });
     wrap.appendChild(modes);
 
-    function updateModeLinks() {
-      modes.innerHTML = "";
-      const suffix = reverse ? "/omgekeerd" : "";
-      const base = "#/module/" + moduleId + "/" + topicId + "/";
-      modes.appendChild(
-        modeCard(base + "kaarten" + suffix, cardsIconSVG(), "Leerkaarten", "Rustig instuderen: kaart tonen, kaart omdraaien.")
-      );
-      modes.appendChild(
-        modeCard(base + "meerkeuze" + suffix, checkIconSVG(), "Meerkeuze", "Kies telkens het juiste antwoord uit vier opties.")
-      );
-      modes.appendChild(
-        modeCard(base + "juistfout" + suffix, tfIconSVG(), "Juist of fout", "Beoordeel of het voorgestelde antwoord klopt.")
-      );
-      if (topic.allowTyping !== false) {
-        modes.appendChild(
-          modeCard(base + "invultoets" + suffix, pencilIconSVG(), "Invultoets", "Typ het antwoord zelf — hoofdletters en accenten maken niet uit.")
-        );
-        modes.appendChild(
-          modeCard(base + "tabel" + suffix, tableIconSVG(), "Tabeltoets", "Vul de hele tabel in en verbeter in één keer, zoals op papier.")
-        );
-      }
-    }
-    updateModeLinks();
-
-    const mastery = topicMastery(topicId);
-    if (mastery != null) {
-      wrap.appendChild(el("p", { class: "score-note" }, ["Je beste score op deze onderdeel tot nu toe: " + mastery + "%."]));
-    }
-
     return wrap;
+  }
+
+  function stageCard(href, num, icon, title, text, badge) {
+    const children = [
+      el("span", { class: "stage-num", "aria-hidden": "true" }, [num]),
+      el("div", { class: "stage-icon" }, [icon]),
+      el("h3", null, [title]),
+      el("p", null, [text])
+    ];
+    if (badge != null) {
+      children.push(el("span", { class: "stage-badge" + (badge ? "" : " stage-badge-zero") }, [String(badge)]));
+    }
+    return el("a", { class: "stage-card", href: href }, children);
   }
 
   function modeCard(href, icon, title, text) {
@@ -792,7 +794,45 @@
     ]);
   }
 
-  /* ---------- FLASHCARDS ------------------------------------------------------ */
+  /* ---------- LEREN (leer-/overzichtspagina) ---------------------------------- */
+
+  function renderLeren(moduleId, topicId) {
+    const topic = getTopic(moduleId, topicId);
+    const wrap = el("div", { class: "view view-leren" });
+    wrap.appendChild(el("h1", null, [topic.title]));
+    wrap.appendChild(
+      el("p", { class: "module-intro" }, [
+        "Lees dit overzicht eerst rustig door. Daarna ga je oefenen."
+      ])
+    );
+    if (topic.note) wrap.appendChild(el("p", { class: "topic-note" }, [topic.note]));
+
+    const frontLabel = topic.kind === "category" ? "Naam" : topic.promptLabel;
+    const backLabel = topic.kind === "category" ? "Soort" : topic.answerLabel;
+
+    const tableWrap = el("div", { class: "table-wrap" });
+    const table = el("table", { class: "quiz-table" });
+    table.appendChild(el("thead", null, [el("tr", null, [el("th", null, [frontLabel]), el("th", null, [backLabel])])]));
+    const tbody = el("tbody");
+    topic.items.forEach((item) => {
+      const back = topic.kind === "category" ? item.category : item.answer;
+      tbody.appendChild(el("tr", null, [el("td", { class: "table-term" }, [item.term]), el("td", null, [back])]));
+    });
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    wrap.appendChild(tableWrap);
+
+    wrap.appendChild(
+      el("div", { class: "quiz-actions" }, [
+        el("a", { class: "btn", href: "#/module/" + moduleId + "/" + topicId + "/leren/kaarten" }, ["Liever als leerkaarten? →"]),
+        el("a", { class: "btn btn-primary", href: "#/module/" + moduleId + "/" + topicId + "/oefenen/adaptief" }, ["Klaar — ga oefenen →"])
+      ])
+    );
+
+    return wrap;
+  }
+
+  /* ---------- FLASHCARDS (binnen Leren, optioneel) ---------------------------- */
 
   function faceFor(topic, item, reverse) {
     if (topic.kind === "category") {
@@ -804,13 +844,13 @@
     return { front: item.term, back: item.answer, frontLabel: topic.promptLabel, backLabel: topic.answerLabel };
   }
 
-  function renderFlashcards(moduleId, topicId, reverse) {
+  function renderFlashcards(moduleId, topicId) {
     const topic = getTopic(moduleId, topicId);
     const order = shuffle(topic.items.map((_, i) => i));
     let pos = 0;
 
     const wrap = el("div", { class: "view view-study" });
-    wrap.appendChild(el("h1", null, [topic.title + (reverse ? " (omgekeerd)" : "")]));
+    wrap.appendChild(el("h1", null, [topic.title]));
     wrap.appendChild(el("p", { class: "study-hint" }, ["Klik op de kaart om het antwoord te zien."]));
 
     const progress = el("div", { class: "progress-dots" });
@@ -826,7 +866,7 @@
       progress.innerHTML = "";
       const idx = order[pos];
       const item = topic.items[idx];
-      const face = faceFor(topic, item, reverse);
+      const face = faceFor(topic, item, false);
 
       order.forEach((_, i) => {
         progress.appendChild(el("span", { class: "dot" + (i === pos ? " dot-active" : "") }));
@@ -859,10 +899,8 @@
             class: "btn btn-primary",
             type: "button",
             onclick: () => {
-              if (pos < order.length - 1) {
-                pos++;
-                draw();
-              } else {
+              if (pos < order.length - 1) { pos++; draw(); }
+              else {
                 order.splice(0, order.length, ...shuffle(topic.items.map((_, i) => i)));
                 pos = 0;
                 draw();
@@ -875,10 +913,13 @@
     }
 
     draw();
+    wrap.appendChild(
+      el("a", { class: "btn btn-primary big-cta", href: "#/module/" + moduleId + "/" + topicId + "/oefenen/adaptief" }, ["Klaar — ga oefenen →"])
+    );
     return wrap;
   }
 
-  /* ---------- QUIZ (meerkeuze / juist-fout / invultoets) ------------------------------------ */
+  /* ---------- vraag-opbouw (meerkeuze / juist-fout / typen) ------------------- */
 
   function buildQuestion(topic, item, reverse) {
     if (topic.kind === "category") {
@@ -926,44 +967,152 @@
     };
   }
 
-  function renderQuiz(moduleId, topicId, kind, reverse) {
+  function pickAdaptiveKind(progressId, allowTyping) {
+    const st = Progress.getItem(progressId);
+    if (st.streak <= 0) return "mc";
+    if (st.streak === 1) return "tf";
+    return allowTyping === false ? "mc" : "type";
+  }
+
+  /* ---------- OEFENEN (per onderdeel: adaptief of een vaste modus) ------------ */
+
+  function renderOefenen(moduleId, topicId, variant) {
     const topic = getTopic(moduleId, topicId);
-    return runQuiz({
-      title: topic.title + (reverse ? " (omgekeerd)" : ""),
+    if (variant === "tabel") return renderTable(moduleId, topicId);
+    const ids = topicItemIds(topic);
+
+    let kind = variant; // "adaptief" | "meerkeuze" | "juistfout" | "invultoets"
+    const kindMap = { meerkeuze: "mc", juistfout: "tf", invultoets: "type" };
+
+    const entries = topic.items.map((item, i) => ({
+      item: item,
+      progressId: ids[i]
+    }));
+
+    return runSession({
+      title: topic.title + (variant === "adaptief" ? " — oefenen" : ""),
       backHref: "#/module/" + moduleId + "/" + topicId,
-      items: shuffle(topic.items),
-      questionFor: (item) => (kind === "tf" ? buildTF(topic, item, reverse) : buildQuestion(topic, item, reverse)),
-      kind: kind,
-      onFinish: (correct, total) => {
-        recordScore(topicId, correct, total);
-        if (window.PKCounter) window.PKCounter.bump(moduleId);
-      }
+      entries: shuffle(entries),
+      mode: "practice",
+      onderdeelScope: "t:" + topic.id,
+      kindFor: (entry) => (kind === "adaptief" ? pickAdaptiveKind(entry.progressId, topic.allowTyping) : kindMap[kind] || "mc"),
+      buildFor: (entry, k) => (k === "tf" ? buildTF(topic, entry.item, false) : buildQuestion(topic, entry.item, false)),
+      itemTitle: () => topic.title,
+      onModuleTouch: () => { if (window.PKCounter) window.PKCounter.bump(moduleId); }
     });
   }
 
-  function renderModuleQuiz(moduleId) {
-    const mod = getModule(moduleId);
-    const pool = [];
-    mod.topics.forEach((topic) => {
-      topic.items.forEach((item) => pool.push({ topic, item }));
-    });
-    const items = shuffle(pool).slice(0, Math.min(20, pool.length));
-
-    return runQuiz({
-      title: "Grote overhoring — " + mod.title,
-      backHref: "#/module/" + moduleId,
-      items: items,
-      questionFor: (entry) => buildQuestion(entry.topic, entry.item),
-      kind: "mc",
-      onFinish: () => {
-        if (window.PKCounter) window.PKCounter.bump(moduleId);
-      }
-    });
+  function renderTopicFouten(moduleId, topicId) {
+    const topic = getTopic(moduleId, topicId);
+    const wrap = el("div", { class: "view view-quiz" });
+    renderOnderdeelFoutenSession(wrap, { kind: "topic", topic: topic, moduleId: moduleId }, "#/module/" + moduleId + "/" + topicId);
+    return wrap;
   }
 
-  function runQuiz(cfg) {
+  function renderTopicTest(moduleId, topicId) {
+    const topic = getTopic(moduleId, topicId);
+    const wrap = el("div", { class: "view view-quiz" });
+    renderOnderdeelTestSession(wrap, { kind: "topic", topic: topic, moduleId: moduleId }, "#/module/" + moduleId + "/" + topicId);
+    return wrap;
+  }
+
+  function renderOnderdeelFoutenSession(wrap, ref, backHref) {
+    const entries = ref.kind === "topic" ? topicEntries(ref.topic) : mapEntries(ref.group);
+    const retryIds = new Set(Progress.retryList(entries.map((e) => e.progressId)));
+    const filtered = entries.filter((e) => retryIds.has(e.progressId));
+    const scope = ref.kind === "topic" ? "t:" + ref.topic.id : "m:" + ref.group.id;
+    const title = (ref.kind === "topic" ? ref.topic.title : ref.group.title.replace(/^Kaartoefening:\s*/, "")) + " — mijn fouten";
+
+    if (!filtered.length) {
+      wrap.appendChild(el("h1", null, [title]));
+      wrap.appendChild(nothingToRetryBlock(backHref));
+      return;
+    }
+
+    const sessionNode = runSession({
+      title: title,
+      backHref: backHref,
+      entries: shuffle(filtered),
+      mode: "practice",
+      onderdeelScope: scope,
+      kindFor: (entry) => (ref.kind === "topic" ? pickAdaptiveKind(entry.progressId, ref.topic.allowTyping) : "mc"),
+      buildFor: (entry, k) =>
+        ref.kind === "topic"
+          ? k === "tf" ? buildTF(ref.topic, entry.item, false) : buildQuestion(ref.topic, entry.item, false)
+          : buildMapQuestion(ref.group, entry.item, k),
+      onModuleTouch: () => { if (window.PKCounter) window.PKCounter.bump(ref.moduleId); }
+    });
+    wrap.appendChild(sessionNode);
+  }
+
+  function nothingToRetryBlock(backHref) {
+    return el("div", { class: "empty-state" }, [
+      el("div", { class: "empty-state-icon" }, ["🎉"]),
+      el("p", null, ["Niets te herhalen — hier staan momenteel geen fouten open."]),
+      el("a", { class: "btn btn-primary", href: backHref }, ["Terug"])
+    ]);
+  }
+
+  function renderOnderdeelTestSession(wrap, ref, backHref) {
+    const entries = ref.kind === "topic" ? topicEntries(ref.topic) : mapEntries(ref.group);
+    const scope = ref.kind === "topic" ? "t:" + ref.topic.id : "m:" + ref.group.id;
+    const title = (ref.kind === "topic" ? ref.topic.title : ref.group.title.replace(/^Kaartoefening:\s*/, "")) + " — test jezelf";
+    const sessionNode = runSession({
+      title: title,
+      backHref: backHref,
+      entries: shuffle(entries),
+      mode: "test",
+      onderdeelScope: scope,
+      kindFor: () => "mc",
+      buildFor: (entry) =>
+        ref.kind === "topic" ? buildQuestion(ref.topic, entry.item, false) : buildMapQuestion(ref.group, entry.item, "mc"),
+      onModuleTouch: () => { if (window.PKCounter) window.PKCounter.bump(ref.moduleId); }
+    });
+    wrap.appendChild(sessionNode);
+  }
+
+  function topicEntries(topic) {
+    const ids = topicItemIds(topic);
+    return topic.items.map((item, i) => ({ item: item, progressId: ids[i] }));
+  }
+  function mapEntries(group) {
+    const ids = mapItemIds(group);
+    return group.legend.map((entry, i) => ({ item: entry, progressId: ids[i] }));
+  }
+
+  function buildMapQuestion(group, entry, kind) {
+    const allTerms = group.legend.map((e) => e.term);
+    if (kind === "tf") {
+      const isTrue = Math.random() < 0.5;
+      const shown = isTrue ? entry.term : sample(allTerms, 1, entry.term)[0] || entry.term;
+      return {
+        prompt: "Symbool " + entry.key + " op de kaart",
+        promptLabel: "Kaartoefening: " + group.title.replace(/^Kaartoefening:\s*/, ""),
+        statementLabel: "Naam",
+        statement: shown,
+        isTrue: isTrue,
+        correct: entry.term,
+        image: group.image
+      };
+    }
+    const distractors = sample(allTerms, 3, entry.term);
+    return {
+      prompt: "Symbool " + entry.key + " op de kaart",
+      promptLabel: "Kaartoefening: " + group.title.replace(/^Kaartoefening:\s*/, ""),
+      correct: entry.term,
+      options: shuffle([entry.term, ...distractors]),
+      image: group.image
+    };
+  }
+
+  /* ---------- Generieke sessierunner (oefenen / fouten / test / onderhoud) ---- */
+
+  function runSession(cfg) {
     const wrap = el("div", { class: "view view-quiz" });
     wrap.appendChild(el("h1", null, [cfg.title]));
+    if (cfg.mode === "test") {
+      wrap.appendChild(el("p", { class: "topic-note" }, ["Testmodus: je ziet pas op het einde of je antwoorden juist waren."]));
+    }
 
     const scoreEl = el("p", { class: "quiz-score" }, []);
     const progress = el("div", { class: "progress-dots" });
@@ -973,102 +1122,109 @@
     wrap.appendChild(progress);
     wrap.appendChild(stage);
 
+    const queue = cfg.entries.slice();
+    const originalTotal = queue.length;
     let pos = 0;
     let correctCount = 0;
+    let doneCount = 0;
     let answered = false;
-    const total = cfg.items.length;
-    const missedTitles = [];
+    const missed = [];
+    const seenRequeue = new Map();
+
+    function currentEntryTitle(entry) {
+      return cfg.itemTitle ? cfg.itemTitle(entry) : cfg.title;
+    }
 
     function updateHeader() {
-      scoreEl.textContent = "Score: " + correctCount + " / " + Math.min(pos, total) + (pos >= total ? " · klaar" : "");
+      scoreEl.textContent = cfg.mode === "test"
+        ? "Vraag " + Math.min(pos + 1, queue.length) + " / " + originalTotal
+        : "Score: " + correctCount + " / " + doneCount + (pos >= queue.length ? " · klaar" : "");
       progress.innerHTML = "";
-      cfg.items.forEach((_, i) => {
+      const shown = Math.min(queue.length, 30);
+      for (let i = 0; i < shown; i++) {
         let cls = "dot";
         if (i < pos) cls += " dot-done";
         if (i === pos) cls += " dot-active";
         progress.appendChild(el("span", { class: cls }));
-      });
+      }
+    }
+
+    function recordAndAdvance(entry, isCorrect) {
+      Progress.recordAnswer(entry.progressId, isCorrect);
+      window.PKAnalytics && window.PKAnalytics.recordAnswer(cfg.onderdeelScope, isCorrect);
+      doneCount++;
+      if (isCorrect) correctCount++;
+      else missed.push(entry);
+      if (cfg.mode === "practice" && !isCorrect) {
+        const n = seenRequeue.get(entry) || 0;
+        if (n < 2) {
+          seenRequeue.set(entry, n + 1);
+          const insertAt = Math.min(queue.length, pos + 2 + Math.floor(Math.random() * 3));
+          queue.splice(insertAt, 0, entry);
+        }
+      }
     }
 
     function finish() {
-      cfg.onFinish(correctCount, total);
-      const pct = total ? Math.round((correctCount / total) * 100) : 0;
+      cfg.onModuleTouch && cfg.onModuleTouch();
+      const pct = doneCount ? Math.round((correctCount / doneCount) * 100) : 0;
       stage.innerHTML = "";
       const msg =
-        pct >= 90 ? "\uD83C\uDF89 Uitstekend, dit zit goed vast." : pct >= 70 ? "\uD83D\uDC4D Goed bezig — nog even bijschaven." : "\uD83C\uDF31 Blijf oefenen, je gaat vooruit.";
+        pct >= 90 ? "🎉 Uitstekend, dit zit goed vast." : pct >= 70 ? "👍 Goed bezig — nog even bijschaven." : "🌱 Blijf oefenen, je gaat vooruit.";
       const result = el("div", { class: "quiz-result" }, [
         el("p", { class: "result-big" }, [pct + "%"]),
-        el("p", { class: "result-msg" }, [msg + " (" + correctCount + " van de " + total + " juist)"])
+        el("p", { class: "result-msg" }, [msg + " (" + correctCount + " van de " + doneCount + " juist)"])
       ]);
+      const missedTitles = [...new Set(missed.map((m) => promptTextOf(m)))];
       if (missedTitles.length) {
         const list = el("ul", { class: "missed-list" });
-        [...new Set(missedTitles)].forEach((t) => list.appendChild(el("li", null, [t])));
+        missedTitles.forEach((t) => list.appendChild(el("li", null, [t])));
         result.appendChild(el("p", { class: "missed-heading" }, ["Nog eens bekijken:"]));
         result.appendChild(list);
       }
       const actions = el("div", { class: "quiz-actions" });
+      if (missed.length) {
+        actions.appendChild(el("a", { class: "btn btn-primary", href: cfg.foutenHref || cfg.backHref }, ["Oefen mijn fouten opnieuw →"]));
+      }
       actions.appendChild(
-        el("button", { class: "btn btn-primary", type: "button", onclick: () => { pos = 0; correctCount = 0; missedTitles.length = 0; answered = false; draw(); } }, [
-          "Nog een keer"
-        ])
+        el("button", { class: "btn", type: "button", onclick: () => {
+          queue.length = 0;
+          Array.prototype.push.apply(queue, shuffle(cfg.entries));
+          pos = 0; correctCount = 0; doneCount = 0; missed.length = 0; answered = false;
+          draw();
+        } }, ["Nog een keer"])
       );
       actions.appendChild(el("a", { class: "btn", href: cfg.backHref }, ["Terug"]));
       result.appendChild(actions);
       stage.appendChild(result);
     }
 
+    function promptTextOf(entry) {
+      const k = cfg.kindFor(entry);
+      const q = cfg.buildFor(entry, k);
+      return q.prompt || currentEntryTitle(entry);
+    }
+
     function draw() {
       updateHeader();
       stage.innerHTML = "";
 
-      if (pos >= total) {
-        finish();
-        return;
-      }
+      if (pos >= queue.length) { finish(); return; }
 
       answered = false;
-      const entry = cfg.items[pos];
-      const q = cfg.questionFor(entry);
-      const topicTitle = entry.topic ? entry.topic.title : cfg.title;
+      const entry = queue[pos];
+      const kind = cfg.kindFor(entry);
+      const q = cfg.buildFor(entry, kind);
+      const reveal = cfg.mode === "test" ? "end" : "immediate";
 
-      const card = el("div", { class: "quiz-card" }, [
-        el("span", { class: "flashcard-label" }, [q.promptLabel]),
-        el("p", { class: "quiz-prompt" }, [q.prompt])
-      ]);
+      const card = el("div", { class: "quiz-card" }, []);
+      if (q.image) card.appendChild(el("img", { src: q.image, alt: "", class: "quiz-card-thumb" }));
+      card.appendChild(el("span", { class: "flashcard-label" }, [q.promptLabel]));
+      card.appendChild(el("p", { class: "quiz-prompt" }, [q.prompt]));
 
       const feedback = el("p", { class: "quiz-feedback", "aria-live": "polite" });
 
-      if (cfg.kind === "mc") {
-        const optionsWrap = el("div", { class: "quiz-options" });
-        q.options.forEach((opt) => {
-          const btn = el(
-            "button",
-            {
-              class: "option-btn",
-              type: "button",
-              onclick: () => {
-                if (answered) return;
-                answered = true;
-                const isRight = opt === q.correct;
-                if (isRight) correctCount++;
-                else missedTitles.push(topicTitle);
-                Array.from(optionsWrap.children).forEach((b) => {
-                  b.disabled = true;
-                  if (b.textContent === q.correct) b.classList.add("option-correct");
-                });
-                if (!isRight) btn.classList.add("option-wrong");
-                feedback.textContent = isRight ? "Juist!" : "Niet juist. Juiste antwoord: " + q.correct;
-                feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
-                if (isRight) celebrate(btn);
-                showNext();
-              }
-            },
-            [opt]
-          );
-          optionsWrap.appendChild(btn);
-        });
-        card.appendChild(optionsWrap);
-      } else if (cfg.kind === "tf") {
+      if (kind === "tf") {
         card.appendChild(
           el("p", { class: "tf-statement" }, [
             el("span", { class: "flashcard-label" }, [q.statementLabel]),
@@ -1081,27 +1237,20 @@
           if (answered) return;
           answered = true;
           const isRight = choice === q.isTrue;
-          if (isRight) correctCount++;
-          else missedTitles.push(topicTitle);
           Array.from(tfWrap.children).forEach((b) => (b.disabled = true));
-          feedback.textContent =
-            (isRight ? "Juist! " : "Niet juist. ") + "Correct antwoord: " + q.correct + (q.isTrue ? "" : " (het voorstel klopte niet)");
-          feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
-          if (isRight) celebrate(btnEl);
+          if (reveal === "immediate") {
+            feedback.textContent = (isRight ? "Juist! " : "Niet juist. ") + "Correct antwoord: " + q.correct + (q.isTrue ? "" : " (het voorstel klopte niet)");
+            feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
+            if (isRight) celebrate(btnEl);
+          }
+          recordAndAdvance(entry, isRight);
           showNext();
         }
         tfWrap.appendChild(el("button", { class: "option-btn tf-btn", type: "button", onclick: (e) => answerTF(true, e.currentTarget) }, ["Juist"]));
         tfWrap.appendChild(el("button", { class: "option-btn tf-btn", type: "button", onclick: (e) => answerTF(false, e.currentTarget) }, ["Fout"]));
         card.appendChild(tfWrap);
-      } else {
-        const input = el("input", {
-          class: "quiz-input",
-          type: "text",
-          autocomplete: "off",
-          autocapitalize: "off",
-          spellcheck: "false",
-          placeholder: "Typ je antwoord…"
-        });
+      } else if (kind === "type") {
+        const input = el("input", { class: "quiz-input", type: "text", autocomplete: "off", autocapitalize: "off", spellcheck: "false", placeholder: "Typ je antwoord…" });
         const submit = el("button", { class: "btn btn-primary", type: "button" }, ["Controleer"]);
         function checkAnswer() {
           if (answered) return;
@@ -1109,21 +1258,43 @@
           const isRight = norm(input.value) === norm(q.correct);
           input.disabled = true;
           submit.disabled = true;
-          if (isRight) correctCount++;
-          else missedTitles.push(topicTitle);
-          input.classList.add(isRight ? "input-correct" : "input-wrong");
-          feedback.textContent = isRight ? "Juist!" : "Juiste antwoord: " + q.correct;
-          feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
-          if (isRight) celebrate(submit);
+          if (reveal === "immediate") {
+            input.classList.add(isRight ? "input-correct" : "input-wrong");
+            feedback.textContent = isRight ? "Juist!" : "Juiste antwoord: " + q.correct;
+            feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
+            if (isRight) celebrate(submit);
+          }
+          recordAndAdvance(entry, isRight);
           showNext();
         }
         submit.addEventListener("click", checkAnswer);
-        input.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") checkAnswer();
-        });
+        input.addEventListener("keydown", (e) => { if (e.key === "Enter") checkAnswer(); });
         const row = el("div", { class: "quiz-input-row" }, [input, submit]);
         card.appendChild(row);
         setTimeout(() => input.focus(), 0);
+      } else {
+        const optionsWrap = el("div", { class: "quiz-options" });
+        q.options.forEach((opt) => {
+          const btn = el("button", { class: "option-btn", type: "button", onclick: () => {
+            if (answered) return;
+            answered = true;
+            const isRight = opt === q.correct;
+            Array.from(optionsWrap.children).forEach((b) => {
+              b.disabled = true;
+              if (reveal === "immediate" && b.textContent === q.correct) b.classList.add("option-correct");
+            });
+            if (reveal === "immediate") {
+              if (!isRight) btn.classList.add("option-wrong");
+              feedback.textContent = isRight ? "Juist!" : "Niet juist. Juiste antwoord: " + q.correct;
+              feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
+              if (isRight) celebrate(btn);
+            }
+            recordAndAdvance(entry, isRight);
+            showNext();
+          } }, [opt]);
+          optionsWrap.appendChild(btn);
+        });
+        card.appendChild(optionsWrap);
       }
 
       card.appendChild(feedback);
@@ -1131,19 +1302,10 @@
       card.appendChild(nextHolder);
 
       function showNext() {
-        const isLast = pos === total - 1;
-        const btn = el(
-          "button",
-          {
-            class: "btn btn-primary",
-            type: "button",
-            onclick: () => {
-              pos++;
-              draw();
-            }
-          },
-          [isLast ? "Resultaat bekijken →" : "Volgende vraag →"]
-        );
+        if (reveal !== "immediate") { pos++; draw(); return; } // testmodus: meteen door, geen tussenstop
+        const isLast = pos === queue.length - 1;
+        const btn = el("button", { class: "btn btn-primary", type: "button", onclick: () => { pos++; draw(); } },
+          [isLast ? "Resultaat bekijken →" : "Volgende vraag →"]);
         nextHolder.appendChild(btn);
         btn.focus();
       }
@@ -1155,45 +1317,148 @@
     return wrap;
   }
 
-  /* ---------- TABELTOETS (vul de hele tabel in) ------------------------------------ */
+  /* ---------- MODULE TEST (hele kaartblad, gemengd) --------------------------- */
 
-  function renderTable(moduleId, topicId, reverse) {
-    const topic = getTopic(moduleId, topicId);
-    const items = shuffle(topic.items);
-    const wrap = el("div", { class: "view view-table" });
-    wrap.appendChild(el("h1", null, [topic.title + (reverse ? " (omgekeerd)" : "")]));
+  function renderModuleTest(moduleId) {
+    const mod = getModule(moduleId);
+    const wrap = el("div", { class: "view view-quiz" });
+    let entries = [];
+    mod.topics.forEach((topic) => {
+      topicEntries(topic).forEach((e) => entries.push({ kind: "topic", topic: topic, item: e.item, progressId: e.progressId }));
+    });
+    mapGroupsFor(moduleId).forEach((group) => {
+      mapEntries(group).forEach((e) => entries.push({ kind: "map", group: group, item: e.item, progressId: e.progressId }));
+    });
+    entries = shuffle(entries).slice(0, Math.min(24, entries.length));
+
+    const sessionNode = runSession({
+      title: "Test jezelf — " + mod.title,
+      backHref: "#/module/" + moduleId,
+      entries: entries,
+      mode: "test",
+      onderdeelScope: "module:" + moduleId,
+      kindFor: () => "mc",
+      buildFor: (entry) => (entry.kind === "topic" ? buildQuestion(entry.topic, entry.item, false) : buildMapQuestion(entry.group, entry.item, "mc")),
+      itemTitle: (entry) => (entry.kind === "topic" ? entry.topic.title : entry.group.title),
+      onModuleTouch: () => { if (window.PKCounter) window.PKCounter.bump(moduleId); }
+    });
+    wrap.appendChild(sessionNode);
+    return wrap;
+  }
+
+  /* ---------- GLOBAAL: Mijn fouten & Onderhoud (over alle kaartbladen) -------- */
+
+  function collectAllEntries() {
+    let entries = [];
+    PK_DATA.modules.forEach((mod) => {
+      mod.topics.forEach((topic) => {
+        topicEntries(topic).forEach((e) => entries.push({ kind: "topic", moduleId: mod.id, topic: topic, item: e.item, progressId: e.progressId }));
+      });
+      mapGroupsFor(mod.id).forEach((group) => {
+        mapEntries(group).forEach((e) => entries.push({ kind: "map", moduleId: mod.id, group: group, item: e.item, progressId: e.progressId }));
+      });
+    });
+    return entries;
+  }
+
+  function renderGlobalFouten() {
+    const wrap = el("div", { class: "view view-quiz" });
+    const all = collectAllEntries();
+    const retryIds = new Set(Progress.retryList(all.map((e) => e.progressId)));
+    const filtered = all.filter((e) => retryIds.has(e.progressId));
+
+    wrap.appendChild(el("h1", null, ["Mijn fouten"]));
+    wrap.appendChild(el("p", { class: "module-intro" }, ["Alle vragen die je onlangs fout had, uit al je kaartbladen samen — net zolang tot ze weer lukken."]));
+
+    if (!filtered.length) {
+      wrap.appendChild(nothingToRetryBlock("#/home"));
+      return wrap;
+    }
+
+    const sessionNode = runSession({
+      title: "Mijn fouten (" + filtered.length + ")",
+      backHref: "#/home",
+      entries: shuffle(filtered),
+      mode: "practice",
+      onderdeelScope: "global-fouten",
+      kindFor: (entry) => (entry.kind === "topic" ? pickAdaptiveKind(entry.progressId, entry.topic.allowTyping) : "mc"),
+      buildFor: (entry, k) =>
+        entry.kind === "topic" ? (k === "tf" ? buildTF(entry.topic, entry.item, false) : buildQuestion(entry.topic, entry.item, false)) : buildMapQuestion(entry.group, entry.item, k),
+      itemTitle: (entry) => (entry.kind === "topic" ? entry.topic.title : entry.group.title)
+    });
+    wrap.appendChild(sessionNode);
+    return wrap;
+  }
+
+  function renderOnderhoud() {
+    const wrap = el("div", { class: "view view-quiz" });
+    const all = collectAllEntries();
+    const dueIds = new Set(Progress.dueForMaintenance(all.map((e) => e.progressId)));
+    const filtered = all.filter((e) => dueIds.has(e.progressId));
+
+    wrap.appendChild(el("h1", null, ["Onderhoud"]));
     wrap.appendChild(
-      el("p", { class: "study-hint" }, ["Vul zoveel mogelijk in en klik dan op \u201cVerbeteren\u201d — net als bij een schriftelijke toets."])
+      el("p", { class: "module-intro" }, [
+        "Dit heb je al eerder onder de knie gekregen. Om het echt te blijven kennen, komt het van tijd tot tijd terug — precies wat permanente kennis is."
+      ])
     );
 
-    const frontLabel = topic.kind === "category" ? "Naam" : reverse ? topic.answerLabel : topic.promptLabel;
-    const backLabel = topic.kind === "category" ? "Soort" : reverse ? topic.promptLabel : topic.answerLabel;
+    if (!filtered.length) {
+      wrap.appendChild(
+        el("div", { class: "empty-state" }, [
+          el("div", { class: "empty-state-icon" }, ["📅"]),
+          el("p", null, ["Nu even niets te onderhouden. Kom later terug — beheerste onderdelen komen vanzelf terug wanneer het weer tijd is."]),
+          el("a", { class: "btn btn-primary", href: "#/home" }, ["Terug naar start"])
+        ])
+      );
+      return wrap;
+    }
 
-    const rows = items.map((item) => {
-      const face = faceFor(topic, item, reverse);
-      return { front: face.front, correct: face.back };
+    const sessionNode = runSession({
+      title: "Onderhoud (" + filtered.length + ")",
+      backHref: "#/home",
+      entries: shuffle(filtered),
+      mode: "practice",
+      onderdeelScope: "global-onderhoud",
+      kindFor: (entry) => (entry.kind === "topic" ? pickAdaptiveKind(entry.progressId, entry.topic.allowTyping) : "mc"),
+      buildFor: (entry, k) =>
+        entry.kind === "topic" ? (k === "tf" ? buildTF(entry.topic, entry.item, false) : buildQuestion(entry.topic, entry.item, false)) : buildMapQuestion(entry.group, entry.item, k),
+      itemTitle: (entry) => (entry.kind === "topic" ? entry.topic.title : entry.group.title)
+    });
+    wrap.appendChild(sessionNode);
+    return wrap;
+  }
+
+  /* ---------- TABELTOETS (vul de hele tabel in) ------------------------------------ */
+
+  function renderTable(moduleId, topicId) {
+    const topic = getTopic(moduleId, topicId);
+    const ids = topicItemIds(topic);
+    const items = topic.items.map((item, i) => ({ item: item, progressId: ids[i] }));
+    const order = shuffle(items);
+    const wrap = el("div", { class: "view view-table" });
+    wrap.appendChild(el("h1", null, [topic.title]));
+    wrap.appendChild(
+      el("p", { class: "study-hint" }, ["Vul zoveel mogelijk in en klik dan op “Verbeteren” — net als bij een schriftelijke toets."])
+    );
+
+    const frontLabel = topic.kind === "category" ? "Naam" : topic.promptLabel;
+    const backLabel = topic.kind === "category" ? "Soort" : topic.answerLabel;
+
+    const rows = order.map((entry) => {
+      const face = faceFor(topic, entry.item, false);
+      return { front: face.front, correct: face.back, progressId: entry.progressId };
     });
 
     const tableWrap = el("div", { class: "table-wrap" });
     const table = el("table", { class: "quiz-table" });
-    table.appendChild(
-      el("thead", null, [el("tr", null, [el("th", null, [frontLabel]), el("th", null, [backLabel])])])
-    );
+    table.appendChild(el("thead", null, [el("tr", null, [el("th", null, [frontLabel]), el("th", null, [backLabel])])]));
     const tbody = el("tbody");
     const inputs = [];
     rows.forEach((row, i) => {
-      const input = el("input", {
-        class: "quiz-input table-input",
-        type: "text",
-        autocomplete: "off",
-        autocapitalize: "off",
-        spellcheck: "false"
-      });
+      const input = el("input", { class: "quiz-input table-input", type: "text", autocomplete: "off", autocapitalize: "off", spellcheck: "false" });
       inputs.push(input);
-      const tr = el("tr", { id: "row-" + i }, [
-        el("td", { class: "table-term" }, [row.front]),
-        el("td", null, [input])
-      ]);
+      const tr = el("tr", { id: "row-" + i }, [el("td", { class: "table-term" }, [row.front]), el("td", null, [input])]);
       tbody.appendChild(tr);
     });
     table.appendChild(tbody);
@@ -1215,6 +1480,8 @@
         const isRight = norm(input.value) === norm(row.correct);
         input.disabled = true;
         tr.classList.add(isRight ? "row-correct" : "row-wrong");
+        Progress.recordAnswer(row.progressId, isRight);
+        window.PKAnalytics && window.PKAnalytics.recordAnswer("t:" + topic.id, isRight);
         if (isRight) {
           correctCount++;
           setTimeout(function () { celebrate(input); }, correctCount * 90);
@@ -1226,12 +1493,93 @@
       const pct = rows.length ? Math.round((correctCount / rows.length) * 100) : 0;
       feedback.textContent = correctCount + " van de " + rows.length + " juist (" + pct + "%).";
       feedback.className = "quiz-feedback " + (pct >= 70 ? "feedback-good" : "feedback-bad");
-      recordScore(topicId, correctCount, rows.length);
       if (window.PKCounter) window.PKCounter.bump(moduleId);
-      actions.appendChild(
-        el("a", { class: "btn", href: "#/module/" + moduleId + "/" + topicId }, ["Terug"])
-      );
+      actions.appendChild(el("a", { class: "btn", href: "#/module/" + moduleId + "/" + topicId }, ["Terug"]));
     });
+
+    return wrap;
+  }
+
+  /* ---------- LEERKRACHTOVERZICHT --------------------------------------------- */
+
+  function renderTeacher() {
+    const wrap = el("div", { class: "view view-teacher" });
+    wrap.appendChild(el("h1", null, ["Leerkrachtoverzicht"]));
+    wrap.appendChild(
+      el("p", { class: "module-intro" }, [
+        "Anoniem, samengeteld over alle leerlingen en toestellen: hoeveel keer er per onderdeel geoefend is, en hoeveel procent daarvan fout ging. Zo zie je snel waar de klas nog moeite mee heeft."
+      ])
+    );
+    wrap.appendChild(
+      el("p", { class: "topic-note" }, [
+        "Dit is geen volledig leerlingvolgsysteem: er wordt nergens bijgehouden wélke leerling iets fout had, enkel een geteld totaal per onderdeel. Deze pagina staat niet achter een wachtwoord — de link is enkel niet zichtbaar voor leerlingen in het menu."
+      ])
+    );
+
+    const refreshBtn = el("button", { class: "btn", type: "button" }, ["↻ Vernieuwen"]);
+    wrap.appendChild(refreshBtn);
+
+    const status = el("p", { class: "study-hint" }, ["Bezig met ophalen…"]);
+    const tableHolder = el("div", { class: "table-wrap" });
+    wrap.appendChild(status);
+    wrap.appendChild(tableHolder);
+
+    function load(force) {
+      status.textContent = "Bezig met ophalen…";
+      tableHolder.innerHTML = "";
+      window.PKAnalytics.fetchOverview(force).then((rows) => {
+        const reachableRows = rows.filter((r) => r.reachable && r.attempts > 0);
+        if (!reachableRows.length) {
+          status.textContent = rows.some((r) => r.reachable)
+            ? "Nog geen enkele oefening geteld — kom later terug."
+            : "De tellerdienst is nu niet bereikbaar. Probeer het straks opnieuw.";
+          return;
+        }
+        status.textContent = reachableRows.length + " onderdelen met minstens 1 poging.";
+        const sorted = reachableRows.slice().sort((a, b) => (b.errorPct || 0) - (a.errorPct || 0));
+        const table = el("table", { class: "quiz-table teacher-table" });
+        table.appendChild(
+          el("thead", null, [el("tr", null, [
+            el("th", null, ["Onderdeel"]),
+            el("th", null, ["Kaartblad"]),
+            el("th", null, ["Pogingen"]),
+            el("th", null, ["Fouten"]),
+            el("th", null, ["Foutenpercentage"])
+          ])])
+        );
+        const tbody = el("tbody");
+        let totalAttempts = 0, totalErrors = 0;
+        sorted.forEach((r) => {
+          totalAttempts += r.attempts || 0;
+          totalErrors += r.errors || 0;
+          const pct = r.errorPct == null ? 0 : r.errorPct;
+          const cls = pct >= 50 ? "row-wrong" : pct >= 25 ? "row-warn" : "";
+          tbody.appendChild(
+            el("tr", { class: cls }, [
+              el("td", null, [r.title]),
+              el("td", null, [r.moduleTitle]),
+              el("td", null, [String(r.attempts || 0)]),
+              el("td", null, [String(r.errors || 0)]),
+              el("td", null, [pct + "%"])
+            ])
+          );
+        });
+        table.appendChild(tbody);
+        const totalPct = totalAttempts ? Math.round((totalErrors / totalAttempts) * 100) : 0;
+        table.appendChild(
+          el("tfoot", null, [el("tr", null, [
+            el("td", null, ["Totaal"]),
+            el("td", null, [""]),
+            el("td", null, [String(totalAttempts)]),
+            el("td", null, [String(totalErrors)]),
+            el("td", null, [totalPct + "%"])
+          ])])
+        );
+        tableHolder.appendChild(table);
+      }).catch(() => { status.textContent = "Kon de gegevens niet ophalen."; });
+    }
+    refreshBtn.addEventListener("click", () => load(true));
+    load(false);
 
     return wrap;
   }
@@ -1382,23 +1730,6 @@
       '</g>';
     return s;
   }
-  function mascotGlobeSVG() {
-    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    s.setAttribute("viewBox", "0 0 120 120");
-    s.innerHTML =
-      '<g transform="translate(4,2)">' +
-      '<path d="M20 96 H92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>' +
-      '<path d="M56 96 V74" stroke="currentColor" stroke-width="5"/>' +
-      '<path d="M40 74 H72 L68 60 H44 Z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/>' +
-      '<path d="M20 30 A38 30 0 0 1 96 22" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>' +
-      '<circle cx="56" cy="38" r="34" fill="#F4E4C1" stroke="currentColor" stroke-width="5"/>' +
-      '<path d="M28 26 Q38 16 50 20 T70 27" fill="none" stroke="#1F7A6C" stroke-width="6" stroke-linecap="round"/>' +
-      '<path d="M32 46 Q42 38 54 45 T76 50" fill="none" stroke="#1F7A6C" stroke-width="6" stroke-linecap="round" opacity="0.75"/>' +
-      '<circle cx="46" cy="34" r="3.4" fill="currentColor"/><circle cx="66" cy="34" r="3.4" fill="currentColor"/>' +
-      '<path d="M46 48 Q56 55 66 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>' +
-      '</g>';
-    return s;
-  }
   function svgIcon(paths) {
     const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     s.setAttribute("viewBox", "0 0 24 24");
@@ -1435,10 +1766,24 @@
         '<line x1="12" y1="4" x2="12" y2="20" stroke="currentColor" stroke-width="1.6"/>'
     );
   }
-  function mapPinIconSVG() {
+  function retryIconSVG() {
     return svgIcon(
-      '<path d="M12 21s7-7.1 7-12a7 7 0 10-14 0c0 4.9 7 12 7 12z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>' +
-        '<circle cx="12" cy="9" r="2.4" fill="currentColor"/>'
+      '<path d="M4 12a8 8 0 1 1 2.6 5.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>' +
+        '<path d="M4 17.5V13h4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>'
+    );
+  }
+  function testIconSVG() {
+    return svgIcon(
+      '<rect x="5" y="3" width="14" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/>' +
+        '<path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'
+    );
+  }
+  function maintenanceIconSVG() {
+    return svgIcon(
+      '<rect x="3" y="5" width="18" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/>' +
+        '<path d="M3 9h18" stroke="currentColor" stroke-width="1.6"/>' +
+        '<path d="M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' +
+        '<path d="M12 12v3l2 1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'
     );
   }
 })();

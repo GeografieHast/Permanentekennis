@@ -5,23 +5,18 @@
    papier) en zegt wat het is. Geen klikcoördinaten — dus geen risico dat
    de kaart een verkeerde plaats "aanwijst". De legende komt rechtstreeks
    uit de antwoordtabellen van de bundel.
-   Modi: "bekijk" (kaart + volledige legende, om te studeren),
-   "meerkeuze" (per symbool kiezen uit 4 opties),
-   "typ" (per symbool zelf typen).
+   Modi: "leer" (kaart + volledige legende, om te studeren),
+   "mc" (meerkeuze per symbool), "typ" (zelf typen per symbool).
+   Voortgang per symbool loopt via progress.js (window.PKProgress), net als
+   de tekst-onderdelen in app.js — zo tellen kaartoefeningen gewoon mee voor
+   "beheerst"/"onderhoud" en de leerkrachtteller.
    ========================================================================== */
 
 (function () {
   "use strict";
 
-  const PROGRESS_KEY = "pk-progress-v1";
-
   function norm(str) {
-    return String(str || "")
-      .trim()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, " ");
+    return window.PKIndex.norm(str);
   }
   function shuffle(arr) {
     const a = arr.slice();
@@ -49,58 +44,6 @@
     return node;
   }
 
-  function loadProgress() {
-    try { return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}; }
-    catch (e) { return {}; }
-  }
-  function saveProgress(p) {
-    try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(p)); }
-    catch (e) { /* geen opslag beschikbaar */ }
-  }
-  function recordScore(id, correct, total) {
-    const p = loadProgress();
-    const prev = p[id] || { best: 0, attempts: 0 };
-    const pct = total ? Math.round((correct / total) * 100) : 0;
-    p[id] = { best: Math.max(prev.best, pct), attempts: prev.attempts + 1, last: pct };
-    saveProgress(p);
-    bumpStats(total);
-  }
-  function mastery(id) {
-    const p = loadProgress();
-    return p[id] ? p[id].best : null;
-  }
-
-  /* ---------- gedeelde statistieken (zelfde sleutel als app.js) -------------- */
-
-  const STATS_KEY = "pk-stats-v1";
-  function todayStr() {
-    const d = new Date();
-    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-  }
-  function dayBefore(str) {
-    const d = new Date(str + "T00:00:00");
-    d.setDate(d.getDate() - 1);
-    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-  }
-  function loadStats() {
-    try { return JSON.parse(localStorage.getItem(STATS_KEY)) || { totalAnswered: 0, streakCount: 0, lastDate: null }; }
-    catch (e) { return { totalAnswered: 0, streakCount: 0, lastDate: null }; }
-  }
-  function saveStats(s) {
-    try { localStorage.setItem(STATS_KEY, JSON.stringify(s)); }
-    catch (e) { /* negeren */ }
-  }
-  function bumpStats(total) {
-    const s = loadStats();
-    s.totalAnswered = (s.totalAnswered || 0) + (total || 0);
-    const today = todayStr();
-    if (s.lastDate !== today) {
-      s.streakCount = s.lastDate === dayBefore(today) ? (s.streakCount || 0) + 1 : 1;
-      s.lastDate = today;
-    }
-    saveStats(s);
-  }
-
   function closeLightbox(overlay, onKey) {
     overlay.remove();
     document.removeEventListener("keydown", onKey);
@@ -113,7 +56,7 @@
     const closeBtn = el("button", {
       class: "map-lightbox-close", type: "button", "aria-label": "Sluiten",
       onclick: () => closeLightbox(overlay, onKey)
-    }, ["\u2715 Sluiten"]);
+    }, ["✕ Sluiten"]);
     overlay.appendChild(closeBtn);
     overlay.appendChild(img);
     overlay.addEventListener("click", (e) => { if (e.target === overlay) closeLightbox(overlay, onKey); });
@@ -130,17 +73,17 @@
     const zoomBtn = el("button", {
       class: "mapimg-zoom-btn", type: "button", "aria-label": "Kaart vergroten",
       onclick: () => openLightbox(group.image, group.title)
-    }, ["\uD83D\uDD0D Vergroten"]);
+    }, ["🔍 Vergroten"]);
     return el("div", { class: "mapimg-wrap " + (cls || "") }, [img, zoomBtn]);
   }
 
   /* ---------- bekijk-modus: kaart + volledige legende ---------------------- */
   function renderStudy(root, group) {
     root.innerHTML = "";
-    root.appendChild(el("h1", null, [group.title]));
+    root.appendChild(el("h1", null, [group.title.replace(/^Kaartoefening:\s*/, "")]));
     root.appendChild(
       el("p", { class: "module-intro" }, [
-        "Zoek elk symbool op de kaart op en overloop de legende hieronder."
+        "Zoek elk symbool op de kaart op en overloop de legende hieronder. Daarna ga je oefenen."
       ])
     );
     if (group.note) root.appendChild(el("p", { class: "topic-note" }, [group.note]));
@@ -154,17 +97,21 @@
     const tbody = el("tbody");
     group.legend.forEach((e) => {
       const cells = [el("td", { class: "table-term" }, [e.key]), el("td", null, [e.term])];
-      if (hasSecondary) cells.push(el("td", null, [e.capital || "\u2014"]));
+      if (hasSecondary) cells.push(el("td", null, [e.capital || "—"]));
       tbody.appendChild(el("tr", null, cells));
     });
     table.appendChild(tbody);
     root.appendChild(el("div", { class: "table-wrap" }, [table]));
+
+    const actions = el("div", { class: "quiz-actions" });
+    actions.appendChild(el("a", { class: "btn btn-primary", href: "#/kaart/" + group.moduleId + "/" + group.id + "/mc" }, ["Klaar — ga oefenen →"]));
+    root.appendChild(actions);
   }
 
   /* ---------- meerkeuze / typ ------------------------------------------------ */
-  function runQuiz(root, group, kind, onFinish) {
+  function runQuiz(root, group, kind) {
     root.innerHTML = "";
-    root.appendChild(el("h1", null, [group.title]));
+    root.appendChild(el("h1", null, [group.title.replace(/^Kaartoefening:\s*/, "")]));
     if (group.note) root.appendChild(el("p", { class: "topic-note" }, [group.note]));
 
     const scoreEl = el("p", { class: "quiz-score" });
@@ -179,6 +126,10 @@
     const hasSecondary = !!group.secondaryLabel && order.some((e) => e.capital);
     let pos = 0, correctFields = 0, totalFields = 0, answered = false;
 
+    function progressIdFor(entry) {
+      return window.PKIndex.mapItemId(group.id, entry.key);
+    }
+
     function updateHeader() {
       scoreEl.textContent = "Score: " + correctFields + " / " + totalFields;
       progress.innerHTML = "";
@@ -190,26 +141,32 @@
       });
     }
 
+    function record(entry, isRight) {
+      window.PKProgress.recordAnswer(progressIdFor(entry), isRight);
+      if (window.PKAnalytics) window.PKAnalytics.recordAnswer("m:" + group.id, isRight);
+    }
+
     function draw() {
       updateHeader();
       stage.innerHTML = "";
 
       if (pos >= order.length) {
         const pct = totalFields ? Math.round((correctFields / totalFields) * 100) : 0;
-        const emoji = pct >= 90 ? "\uD83C\uDF89 " : pct >= 70 ? "\uD83D\uDC4D " : "\uD83C\uDF31 ";
-        onFinish(correctFields, totalFields);
+        const emoji = pct >= 90 ? "🎉 " : pct >= 70 ? "👍 " : "🌱 ";
+        if (window.PKCounter) window.PKCounter.bump(group.moduleId);
         stage.className = "quiz-result";
         stage.appendChild(el("p", { class: "result-big" }, [pct + "%"]));
         stage.appendChild(el("p", { class: "result-msg" }, [emoji + correctFields + " van de " + totalFields + " juist"]));
         stage.appendChild(el("div", { class: "quiz-actions" }, [
-          el("button", { class: "btn btn-primary", type: "button", onclick: () => runQuiz(root, group, kind, onFinish) }, ["Nog een keer"])
+          el("button", { class: "btn btn-primary", type: "button", onclick: () => runQuiz(root, group, kind) }, ["Nog een keer"]),
+          el("a", { class: "btn", href: "#/kaart/" + group.moduleId + "/" + group.id + "/start" }, ["Terug"])
         ]));
         return;
       }
 
       answered = false;
       const entry = order[pos];
-      stage.appendChild(el("p", { class: "quiz-prompt map-prompt" }, ["Wat hoort bij symbool \u201c" + entry.key + "\u201d op de kaart?"]));
+      stage.appendChild(el("p", { class: "quiz-prompt map-prompt" }, ["Wat hoort bij symbool “" + entry.key + "” op de kaart?"]));
 
       if (kind === "mc") {
         const allTerms = group.legend.map((e) => e.term);
@@ -230,6 +187,7 @@
             feedback.textContent = nameOk ? "Juist!" : "Niet juist. Juiste antwoord: " + entry.term;
             feedback.className = "quiz-feedback " + (nameOk ? "feedback-good" : "feedback-bad");
             if (nameOk && window.PKCelebrate) window.PKCelebrate(btn);
+            record(entry, nameOk);
             updateHeader();
             maybeAskCapital();
           } }, [opt]);
@@ -286,6 +244,7 @@
           input.classList.add(nameOk ? "input-correct" : "input-wrong");
           if (nameOk && window.PKCelebrate) window.PKCelebrate(input);
           let msg = nameOk ? "Juist!" : "Juiste antwoord: " + entry.term;
+          record(entry, nameOk);
           if (capInput) {
             const capOk = norm(capInput.value) === norm(entry.capital);
             capInput.disabled = true;
@@ -293,7 +252,7 @@
             if (capOk) correctFields++;
             capInput.classList.add(capOk ? "input-correct" : "input-wrong");
             if (capOk && window.PKCelebrate) window.PKCelebrate(capInput);
-            if (!capOk) msg += " \u2014 Hoofdstad: " + entry.capital;
+            if (!capOk) msg += " — Hoofdstad: " + entry.capital;
           }
           submit.disabled = true;
           feedback.textContent = msg;
@@ -314,7 +273,7 @@
       function showNext() {
         const isLast = pos === order.length - 1;
         const btn = el("button", { class: "btn btn-primary", type: "button", onclick: () => { pos++; draw(); } },
-          [isLast ? "Resultaat bekijken \u2192" : "Volgende \u2192"]);
+          [isLast ? "Resultaat bekijken →" : "Volgende →"]);
         stage.appendChild(btn);
         btn.focus();
       }
@@ -325,17 +284,9 @@
 
   window.PKMapExercise = {
     cleanup: function () {},
-    mastery: mastery,
     render: function (root, group, mode) {
       if (mode === "leer") renderStudy(root, group);
-      else if (mode === "mc") runQuiz(root, group, "mc", (c, t) => {
-        recordScore("map-" + group.id + "-mc", c, t);
-        if (window.PKCounter) window.PKCounter.bump(group.moduleId);
-      });
-      else runQuiz(root, group, "typ", (c, t) => {
-        recordScore("map-" + group.id + "-typ", c, t);
-        if (window.PKCounter) window.PKCounter.bump(group.moduleId);
-      });
+      else runQuiz(root, group, mode === "typ" ? "typ" : "mc");
     }
   };
 })();
