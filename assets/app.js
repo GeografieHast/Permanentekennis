@@ -1115,10 +1115,12 @@
     }
 
     const scoreEl = el("p", { class: "quiz-score" }, []);
+    const streakEl = el("p", { class: "quiz-live-streak" }, []);
     const progress = el("div", { class: "progress-dots" });
     const stage = el("div", { class: "quiz-stage" });
 
     wrap.appendChild(scoreEl);
+    wrap.appendChild(streakEl);
     wrap.appendChild(progress);
     wrap.appendChild(stage);
 
@@ -1128,6 +1130,9 @@
     let correctCount = 0;
     let doneCount = 0;
     let answered = false;
+    let liveStreak = 0;
+    let bestLiveStreak = 0;
+    let newlyMasteredCount = 0;
     const missed = [];
     const seenRequeue = new Map();
 
@@ -1139,6 +1144,13 @@
       scoreEl.textContent = cfg.mode === "test"
         ? "Vraag " + Math.min(pos + 1, queue.length) + " / " + originalTotal
         : "Score: " + correctCount + " / " + doneCount + (pos >= queue.length ? " · klaar" : "");
+      if (cfg.mode === "practice" && liveStreak >= 2) {
+        streakEl.textContent = "🔥 " + liveStreak + " op rij juist!";
+        streakEl.className = "quiz-live-streak quiz-live-streak-on";
+      } else {
+        streakEl.textContent = "";
+        streakEl.className = "quiz-live-streak";
+      }
       progress.innerHTML = "";
       const shown = Math.min(queue.length, 30);
       for (let i = 0; i < shown; i++) {
@@ -1150,11 +1162,20 @@
     }
 
     function recordAndAdvance(entry, isCorrect) {
-      Progress.recordAnswer(entry.progressId, isCorrect);
+      const beforeStage = Progress.stageOf(entry.progressId);
+      const updated = Progress.recordAnswer(entry.progressId, isCorrect);
       window.PKAnalytics && window.PKAnalytics.recordAnswer(cfg.onderdeelScope, isCorrect);
       doneCount++;
-      if (isCorrect) correctCount++;
-      else missed.push(entry);
+      if (isCorrect) {
+        correctCount++;
+        liveStreak++;
+        bestLiveStreak = Math.max(bestLiveStreak, liveStreak);
+      } else {
+        liveStreak = 0;
+        missed.push(entry);
+      }
+      const justMastered = beforeStage !== "mastered" && updated.stage === "mastered";
+      if (justMastered) newlyMasteredCount++;
       if (cfg.mode === "practice" && !isCorrect) {
         const n = seenRequeue.get(entry) || 0;
         if (n < 2) {
@@ -1163,6 +1184,49 @@
           queue.splice(insertAt, 0, entry);
         }
       }
+      updateHeader();
+      return { isCorrect: isCorrect, justMastered: justMastered, item: updated };
+    }
+
+    function applyFeedback(feedbackEl, outcome, correctText, focusEl) {
+      if (outcome.justMastered) {
+        feedbackEl.textContent = "⭐ Beheerst! Dit zit er nu goed in.";
+        feedbackEl.className = "quiz-feedback feedback-mastered";
+        celebrate(focusEl);
+        setTimeout(() => celebrate(focusEl), 220);
+      } else if (outcome.isCorrect) {
+        feedbackEl.textContent = "Juist!";
+        feedbackEl.className = "quiz-feedback feedback-good";
+        celebrate(focusEl);
+      } else {
+        feedbackEl.textContent = correctText;
+        feedbackEl.className = "quiz-feedback feedback-bad";
+      }
+    }
+
+    function levelChip(kind) {
+      const map = {
+        mc: { text: "🟢 Meerkeuze", cls: "level-easy" },
+        tf: { text: "🟡 Juist of fout", cls: "level-mid" },
+        type: { text: "🔴 Zelf typen", cls: "level-hard" }
+      };
+      const info = map[kind] || map.mc;
+      return el("span", { class: "level-chip " + info.cls }, [info.text]);
+    }
+
+    function masteryMeter(entry) {
+      if (cfg.mode !== "practice") return null;
+      const st = Progress.getItem(entry.progressId);
+      if (st.stage === "mastered") {
+        return el("p", { class: "mastery-meter mastery-meter-done" }, ["⭐ Al beheerst — dit is onderhoud."]);
+      }
+      const need = Progress.MASTER_STREAK;
+      const dots = [];
+      for (let i = 0; i < need; i++) {
+        dots.push(el("span", { class: "meter-dot" + (i < st.streak ? " meter-dot-on" : "") }));
+      }
+      const label = st.streak > 0 ? "nog " + (need - st.streak) + "x juist voor beheerst" : "op weg naar beheerst";
+      return el("p", { class: "mastery-meter" }, [el("span", { class: "meter-dots" }, dots), el("span", null, [" " + label])]);
     }
 
     function finish() {
@@ -1175,6 +1239,16 @@
         el("p", { class: "result-big" }, [pct + "%"]),
         el("p", { class: "result-msg" }, [msg + " (" + correctCount + " van de " + doneCount + " juist)"])
       ]);
+      if (newlyMasteredCount > 0) {
+        result.appendChild(
+          el("p", { class: "result-mastered-banner" }, [
+            "🌟 " + newlyMasteredCount + (newlyMasteredCount === 1 ? " vraagje" : " vraagjes") + " deze keer onder de knie gekregen!"
+          ])
+        );
+      }
+      if (bestLiveStreak >= 5) {
+        result.appendChild(el("p", { class: "result-streak-banner" }, ["🔥 Beste reeks deze sessie: " + bestLiveStreak + " op rij juist."]));
+      }
       const missedTitles = [...new Set(missed.map((m) => promptTextOf(m)))];
       if (missedTitles.length) {
         const list = el("ul", { class: "missed-list" });
@@ -1191,6 +1265,7 @@
           queue.length = 0;
           Array.prototype.push.apply(queue, shuffle(cfg.entries));
           pos = 0; correctCount = 0; doneCount = 0; missed.length = 0; answered = false;
+          liveStreak = 0; bestLiveStreak = 0; newlyMasteredCount = 0;
           draw();
         } }, ["Nog een keer"])
       );
@@ -1219,8 +1294,11 @@
 
       const card = el("div", { class: "quiz-card" }, []);
       if (q.image) card.appendChild(el("img", { src: q.image, alt: "", class: "quiz-card-thumb" }));
+      if (cfg.mode === "practice") card.appendChild(levelChip(kind));
       card.appendChild(el("span", { class: "flashcard-label" }, [q.promptLabel]));
       card.appendChild(el("p", { class: "quiz-prompt" }, [q.prompt]));
+      const meter = masteryMeter(entry);
+      if (meter) card.appendChild(meter);
 
       const feedback = el("p", { class: "quiz-feedback", "aria-live": "polite" });
 
@@ -1238,12 +1316,10 @@
           answered = true;
           const isRight = choice === q.isTrue;
           Array.from(tfWrap.children).forEach((b) => (b.disabled = true));
+          const outcome = recordAndAdvance(entry, isRight);
           if (reveal === "immediate") {
-            feedback.textContent = (isRight ? "Juist! " : "Niet juist. ") + "Correct antwoord: " + q.correct + (q.isTrue ? "" : " (het voorstel klopte niet)");
-            feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
-            if (isRight) celebrate(btnEl);
+            applyFeedback(feedback, outcome, "Niet juist. Correct antwoord: " + q.correct + (q.isTrue ? "" : " (het voorstel klopte niet)"), btnEl);
           }
-          recordAndAdvance(entry, isRight);
           showNext();
         }
         tfWrap.appendChild(el("button", { class: "option-btn tf-btn", type: "button", onclick: (e) => answerTF(true, e.currentTarget) }, ["Juist"]));
@@ -1258,13 +1334,11 @@
           const isRight = norm(input.value) === norm(q.correct);
           input.disabled = true;
           submit.disabled = true;
+          const outcome = recordAndAdvance(entry, isRight);
           if (reveal === "immediate") {
             input.classList.add(isRight ? "input-correct" : "input-wrong");
-            feedback.textContent = isRight ? "Juist!" : "Juiste antwoord: " + q.correct;
-            feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
-            if (isRight) celebrate(submit);
+            applyFeedback(feedback, outcome, "Juiste antwoord: " + q.correct, submit);
           }
-          recordAndAdvance(entry, isRight);
           showNext();
         }
         submit.addEventListener("click", checkAnswer);
@@ -1283,13 +1357,11 @@
               b.disabled = true;
               if (reveal === "immediate" && b.textContent === q.correct) b.classList.add("option-correct");
             });
+            if (!isRight && reveal === "immediate") btn.classList.add("option-wrong");
+            const outcome = recordAndAdvance(entry, isRight);
             if (reveal === "immediate") {
-              if (!isRight) btn.classList.add("option-wrong");
-              feedback.textContent = isRight ? "Juist!" : "Niet juist. Juiste antwoord: " + q.correct;
-              feedback.className = "quiz-feedback " + (isRight ? "feedback-good" : "feedback-bad");
-              if (isRight) celebrate(btn);
+              applyFeedback(feedback, outcome, "Niet juist. Juiste antwoord: " + q.correct, btn);
             }
-            recordAndAdvance(entry, isRight);
             showNext();
           } }, [opt]);
           optionsWrap.appendChild(btn);

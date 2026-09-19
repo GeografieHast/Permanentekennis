@@ -115,8 +115,10 @@
     if (group.note) root.appendChild(el("p", { class: "topic-note" }, [group.note]));
 
     const scoreEl = el("p", { class: "quiz-score" });
+    const streakEl = el("p", { class: "quiz-live-streak" });
     const progress = el("div", { class: "progress-dots" });
     root.appendChild(scoreEl);
+    root.appendChild(streakEl);
     root.appendChild(progress);
     root.appendChild(mapImage(group, "mapimg-wrap-quiz"));
     const stage = el("div", { class: "quiz-card map-legend-card" });
@@ -125,6 +127,7 @@
     const order = shuffle(group.legend);
     const hasSecondary = !!group.secondaryLabel && order.some((e) => e.capital);
     let pos = 0, correctFields = 0, totalFields = 0, answered = false;
+    let liveStreak = 0, bestLiveStreak = 0, newlyMasteredCount = 0;
 
     function progressIdFor(entry) {
       return window.PKIndex.mapItemId(group.id, entry.key);
@@ -132,6 +135,13 @@
 
     function updateHeader() {
       scoreEl.textContent = "Score: " + correctFields + " / " + totalFields;
+      if (liveStreak >= 2) {
+        streakEl.textContent = "🔥 " + liveStreak + " op rij juist!";
+        streakEl.className = "quiz-live-streak quiz-live-streak-on";
+      } else {
+        streakEl.textContent = "";
+        streakEl.className = "quiz-live-streak";
+      }
       progress.innerHTML = "";
       order.forEach((_, i) => {
         let cls = "dot";
@@ -142,8 +152,25 @@
     }
 
     function record(entry, isRight) {
-      window.PKProgress.recordAnswer(progressIdFor(entry), isRight);
+      const id = progressIdFor(entry);
+      const beforeStage = window.PKProgress.stageOf(id);
+      const updated = window.PKProgress.recordAnswer(id, isRight);
       if (window.PKAnalytics) window.PKAnalytics.recordAnswer("m:" + group.id, isRight);
+      if (isRight) { liveStreak++; bestLiveStreak = Math.max(bestLiveStreak, liveStreak); }
+      else liveStreak = 0;
+      const justMastered = beforeStage !== "mastered" && updated.stage === "mastered";
+      if (justMastered) newlyMasteredCount++;
+      return justMastered;
+    }
+
+    function masteryMeter(entry) {
+      const st = window.PKProgress.getItem(progressIdFor(entry));
+      if (st.stage === "mastered") return el("p", { class: "mastery-meter mastery-meter-done" }, ["⭐ Al beheerst — dit is onderhoud."]);
+      const need = window.PKProgress.MASTER_STREAK;
+      const dots = [];
+      for (let i = 0; i < need; i++) dots.push(el("span", { class: "meter-dot" + (i < st.streak ? " meter-dot-on" : "") }));
+      const label = st.streak > 0 ? "nog " + (need - st.streak) + "x juist voor beheerst" : "op weg naar beheerst";
+      return el("p", { class: "mastery-meter" }, [el("span", { class: "meter-dots" }, dots), el("span", null, [" " + label])]);
     }
 
     function draw() {
@@ -157,6 +184,14 @@
         stage.className = "quiz-result";
         stage.appendChild(el("p", { class: "result-big" }, [pct + "%"]));
         stage.appendChild(el("p", { class: "result-msg" }, [emoji + correctFields + " van de " + totalFields + " juist"]));
+        if (newlyMasteredCount > 0) {
+          stage.appendChild(el("p", { class: "result-mastered-banner" }, [
+            "🌟 " + newlyMasteredCount + (newlyMasteredCount === 1 ? " symbool" : " symbolen") + " deze keer onder de knie gekregen!"
+          ]));
+        }
+        if (bestLiveStreak >= 5) {
+          stage.appendChild(el("p", { class: "result-streak-banner" }, ["🔥 Beste reeks deze sessie: " + bestLiveStreak + " op rij juist."]));
+        }
         stage.appendChild(el("div", { class: "quiz-actions" }, [
           el("button", { class: "btn btn-primary", type: "button", onclick: () => runQuiz(root, group, kind) }, ["Nog een keer"]),
           el("a", { class: "btn", href: "#/kaart/" + group.moduleId + "/" + group.id + "/start" }, ["Terug"])
@@ -167,6 +202,7 @@
       answered = false;
       const entry = order[pos];
       stage.appendChild(el("p", { class: "quiz-prompt map-prompt" }, ["Wat hoort bij symbool “" + entry.key + "” op de kaart?"]));
+      stage.appendChild(masteryMeter(entry));
 
       if (kind === "mc") {
         const allTerms = group.legend.map((e) => e.term);
@@ -184,10 +220,16 @@
             if (nameOk) correctFields++;
             Array.from(optWrap.children).forEach((b) => { b.disabled = true; if (b.textContent === entry.term) b.classList.add("option-correct"); });
             if (!nameOk) btn.classList.add("option-wrong");
-            feedback.textContent = nameOk ? "Juist!" : "Niet juist. Juiste antwoord: " + entry.term;
-            feedback.className = "quiz-feedback " + (nameOk ? "feedback-good" : "feedback-bad");
-            if (nameOk && window.PKCelebrate) window.PKCelebrate(btn);
-            record(entry, nameOk);
+            const justMastered = record(entry, nameOk);
+            if (justMastered) {
+              feedback.textContent = "⭐ Beheerst! Dit zit er nu goed in.";
+              feedback.className = "quiz-feedback feedback-mastered";
+              if (window.PKCelebrate) { window.PKCelebrate(btn); setTimeout(() => window.PKCelebrate(btn), 220); }
+            } else {
+              feedback.textContent = nameOk ? "Juist!" : "Niet juist. Juiste antwoord: " + entry.term;
+              feedback.className = "quiz-feedback " + (nameOk ? "feedback-good" : "feedback-bad");
+              if (nameOk && window.PKCelebrate) window.PKCelebrate(btn);
+            }
             updateHeader();
             maybeAskCapital();
           } }, [opt]);
@@ -242,9 +284,10 @@
           totalFields++;
           if (nameOk) correctFields++;
           input.classList.add(nameOk ? "input-correct" : "input-wrong");
-          if (nameOk && window.PKCelebrate) window.PKCelebrate(input);
-          let msg = nameOk ? "Juist!" : "Juiste antwoord: " + entry.term;
-          record(entry, nameOk);
+          const justMastered = record(entry, nameOk);
+          let msg = justMastered ? "⭐ Beheerst! Dit zit er nu goed in." : nameOk ? "Juist!" : "Juiste antwoord: " + entry.term;
+          if (justMastered && window.PKCelebrate) { window.PKCelebrate(input); setTimeout(() => window.PKCelebrate(input), 220); }
+          else if (nameOk && window.PKCelebrate) window.PKCelebrate(input);
           if (capInput) {
             const capOk = norm(capInput.value) === norm(entry.capital);
             capInput.disabled = true;
@@ -256,7 +299,7 @@
           }
           submit.disabled = true;
           feedback.textContent = msg;
-          feedback.className = "quiz-feedback " + (nameOk ? "feedback-good" : "feedback-bad");
+          feedback.className = "quiz-feedback " + (justMastered ? "feedback-mastered" : nameOk ? "feedback-good" : "feedback-bad");
           updateHeader();
           showNext();
         }

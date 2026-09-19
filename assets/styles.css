@@ -1031,6 +1031,7 @@ main {
 .quiz-feedback { min-height: 1.4em; font-size: 0.94rem; font-weight: bold; }
 .feedback-good { color: var(--correct); animation: pk-feedback-in 0.3s ease; }
 .feedback-bad { color: var(--red); animation: pk-feedback-in 0.3s ease; }
+.feedback-mastered { color: var(--amber-dark); animation: pk-feedback-in 0.3s ease; font-size: 1.02rem; }
 
 .quiz-next-holder { margin-top: 6px; }
 
@@ -1419,6 +1420,64 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   border-radius: 8px;
   border: 1px solid var(--line-strong);
   margin-bottom: 10px;
+}
+
+/* ---------- levend gevoel tijdens het oefenen: reeks + beheersingsmeter ---------- */
+.quiz-live-streak {
+  min-height: 1.2em;
+  font-weight: bold;
+  color: var(--amber-dark);
+  margin: -4px 0 8px;
+  font-size: 0.9rem;
+}
+.quiz-live-streak-on { animation: pk-feedback-in 0.3s ease; }
+
+.level-chip {
+  display: inline-block;
+  font-size: 0.74rem;
+  font-weight: bold;
+  padding: 2px 10px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+  background: var(--paper);
+  color: var(--ink-soft);
+}
+.level-chip.level-easy { color: var(--teal-dark); background: rgba(31,122,108,0.12); }
+.level-chip.level-mid { color: var(--amber-dark); background: rgba(201,147,46,0.14); }
+.level-chip.level-hard { color: var(--red-dark); background: rgba(229,52,60,0.12); }
+
+.mastery-meter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 4px;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+.mastery-meter-done { color: var(--teal-dark); font-weight: bold; }
+.meter-dots { display: inline-flex; gap: 4px; }
+.meter-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--line);
+  display: inline-block;
+}
+.meter-dot-on { background: var(--teal); }
+
+.result-mastered-banner {
+  margin-top: 4px;
+  padding: 10px 14px;
+  background: rgba(201,147,46,0.14);
+  border: 1px solid rgba(201,147,46,0.4);
+  border-radius: 8px;
+  color: var(--amber-dark);
+  font-weight: bold;
+  font-size: 0.92rem;
+}
+.result-streak-banner {
+  margin-top: 8px;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  font-weight: bold;
 }
 
 /* ---------- leerkrachtoverzicht ---------- */
