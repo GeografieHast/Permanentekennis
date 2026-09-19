@@ -135,8 +135,18 @@
 
   /* ---------- opvragen voor het leerkrachtoverzicht -------------------------- */
 
+  /* fetch() met een timeout: zonder dit kan een trage/onbereikbare
+     tellerdienst het leerkrachtoverzicht lang op "Bezig met ophalen…"
+     laten hangen in plaats van gewoon netjes "niet bereikbaar" te tonen. */
+  function fetchWithTimeout(url, ms) {
+    if (typeof AbortController === "undefined") return fetch(url);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ms || 6000);
+    return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+  }
+
   function fetchCount(key) {
-    return fetch(BASE + "get/" + key)
+    return fetchWithTimeout(BASE + "get/" + key, 6000)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => (data && typeof data.value === "number" ? data.value : 0))
       .catch(() => null); // null = niet bereikbaar, onderscheiden van 0 = wel bereikbaar, nog niets geteld
@@ -266,7 +276,7 @@
   /* ---------- alles op nul zetten (leerkrachtoverzicht) ---------------------- */
 
   function setToZero(key) {
-    return fetch(BASE + "set/" + key + "?value=0").catch(() => null);
+    return fetchWithTimeout(BASE + "set/" + key + "?value=0", 6000).catch(() => null);
   }
 
   /* Zet alle pogingen/fouten/uniek-tellers terug op nul, zowel per item als

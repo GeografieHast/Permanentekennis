@@ -255,7 +255,7 @@
               feedback.className = "quiz-feedback feedback-mastered";
               if (window.PKCelebrate) { window.PKCelebrate(btn); setTimeout(() => window.PKCelebrate(btn), 220); }
             } else {
-              feedback.textContent = nameOk ? "Juist!" : "Niet juist. Juiste antwoord: " + entry.term;
+              feedback.textContent = nameOk ? "Juist!" : "❌ Fout — het juiste antwoord is " + entry.term;
               feedback.className = "quiz-feedback " + (nameOk ? "feedback-good" : "feedback-bad");
               if (nameOk && window.PKCelebrate) window.PKCelebrate(btn);
             }
@@ -283,7 +283,7 @@
               if (capOk) correctFields++;
               Array.from(capWrap.children).forEach((b) => { b.disabled = true; if (b.textContent === entry.capital) b.classList.add("option-correct"); });
               if (!capOk) b2.classList.add("option-wrong");
-              capFeedback.textContent = capOk ? "Juist!" : "Juiste antwoord: " + entry.capital;
+              capFeedback.textContent = capOk ? "Juist!" : "❌ Fout — het juiste antwoord is " + entry.capital;
               capFeedback.className = "quiz-feedback " + (capOk ? "feedback-good" : "feedback-bad");
               if (capOk && window.PKCelebrate) window.PKCelebrate(b2);
               updateHeader();
@@ -314,7 +314,7 @@
           if (nameOk) correctFields++;
           input.classList.add(nameOk ? "input-correct" : "input-wrong");
           const justMastered = record(entry, nameOk);
-          let msg = justMastered ? "⭐ Beheerst! Dit zit er nu goed in." : nameOk ? "Juist!" : "Juiste antwoord: " + entry.term;
+          let msg = justMastered ? "⭐ Beheerst! Dit zit er nu goed in." : nameOk ? "Juist!" : "❌ Fout — het juiste antwoord is " + entry.term;
           if (justMastered && window.PKCelebrate) { window.PKCelebrate(input); setTimeout(() => window.PKCelebrate(input), 220); }
           else if (nameOk && window.PKCelebrate) window.PKCelebrate(input);
           if (capInput) {

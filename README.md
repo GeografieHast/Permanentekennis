@@ -29,8 +29,12 @@ volgt hetzelfde vaste pad:
    wordt.
 4. **Test jezelf** — dezelfde vragen, maar zonder tussentijdse feedback:
    je ziet pas op het einde wat juist en fout was, net als op een
-   schriftelijke toets. Nadien: score, overzicht van de fouten, en een knop
-   om meteen "Mijn fouten" te starten.
+   schriftelijke toets. Nadien: score, en per gemiste vraag niet enkel
+   wát je fout had maar ook meteen het **juiste antwoord** ernaast, plus
+   een knop om meteen "Mijn fouten" te starten. Bij Leren/Oefenen/Mijn
+   fouten (waar wél tussentijdse feedback is) staat bij een fout antwoord
+   altijd kort en duidelijk "❌ Fout — het juiste antwoord is ..." — nooit
+   enkel "fout" zonder het juiste antwoord erbij.
 5. **Onderhoud** — wat een leerling al **beheerst** (drie keer na elkaar
    juist, zonder hulp), duikt na verloop van tijd vanzelf weer op: eerst na
    1 dag, dan na 3, 7, 16, 35 en 90 dagen, telkens opnieuw zolang het juist
@@ -42,6 +46,44 @@ Op de startpagina en bovenaan elk kaartblad/onderdeel zie je steeds twee
 aparte percentages: **% geoefend** (al minstens één keer geprobeerd) en
 **% beheerst** (drie keer na elkaar juist, zonder hulp) — dat is bewust
 niet hetzelfde.
+
+Op elk kaartblad-onderdeel en elke kaartoefening staan de stappen Leren →
+Oefenen → Mijn fouten → Test jezelf nu als een **stepper** naast elkaar
+(genummerd, met een verbindingslijn op een breed scherm), niet als een
+rij gelijkwaardige knoppen. De stap die op dat moment het meeste zin
+heeft om als volgende te doen — op basis van wat je al probeerde, hoeveel
+er beheerst is en of er nog open fouten staan — krijgt een opvallend
+label **"Begin hier →"**, zodat je nooit zelf hoeft te bedenken waar te
+starten.
+
+### Startpagina: opgeruimder, met "Ga verder" en meer nadruk op Onderhoud
+
+De startpagina toont voortaan alleen het essentiële meteen: de hero, een
+knop **"Ga verder waar je gebleven was"** (zodra je ooit een onderdeel
+opende — zie hieronder), de twee kaartblad-groepen (eerste graad /
+tweede en derde graad), en een prominente **Onderhoud**-kaart. Cijfers,
+"Hoe werkt het" en je eigen doelen/mijlpalen staan achter een
+uitklapper ("📊 Hoe werkt het, en hoe sta ik ervoor?") onderaan — leuk
+om te bekijken, maar niet iets wat elke keer opnieuw in de weg moet
+staan.
+
+De **Onderhoud**-kaart kreeg bewust het meeste gewicht van de hele
+startpagina (naast "Ga verder"): een grote kaart met uitleg waarom
+onderhoud nuttig is, en een tellertje dat zacht pulseert zodra er iets
+klaarstaat. Dat is bewust een grotere kaart dan "Mijn fouten" ernaast —
+Onderhoud is pedagogisch het onderdeel dat er echt voor zorgt dat kennis
+*permanent* blijft, en verdiende dus meer aandacht dan voorheen (toen
+het een klein, even groot pilletje was als "Mijn fouten").
+
+### "Ga verder waar je gebleven was"
+
+De site onthoudt, telkens je een kaartblad-onderdeel of een
+kaartoefening opent (in eender welke stap: leren, oefenen, mijn fouten
+of test jezelf), waar je was — in `localStorage`, per toestel, net als
+de rest van je voortgang. Op de startpagina verschijnt daardoor, zodra
+dat ooit gebeurde, een knop die rechtstreeks teruglinkt, met erbij wát
+het was (bv. "Hoofdsteden EU — Oefenen"). Zo hoef je na een onderbreking
+niet opnieuw te zoeken naar waar je gebleven was.
 
 ## Voor de leerkracht: welke onderdelen — en welke items — gaan vaak fout?
 
@@ -72,21 +114,38 @@ bijgehouden wélke leerling iets fout had, enkel geteld hoe vaak elk item
 juist/fout beantwoord werd — via dezelfde gratis, accountloze tellerdienst
 die de site al gebruikt voor de bezoekersteller en de teller per
 kaartblad (`countapi.mileshilliard.com`). De pagina vraagt een wachtwoord
-(standaard **3500**, aan te passen in `assets/app.js` bij `TEACHER_PASSWORD`)
-voor je de gegevens te zien krijgt — dit is enkel een drempeltje, geen
-echte beveiliging (dat kan niet op een statische GitHub Pages-site zonder
-server: het wachtwoord staat gewoon leesbaar in de broncode), maar het
-houdt nieuwsgierige leerlingen buiten. Eén keer invullen op een toestel
-volstaat: daarna onthoudt de browser dat dit toestel ontgrendeld is. Is de
-tellerdienst even niet bereikbaar, dan toont de pagina dat gewoon en kan
-je later opnieuw vernieuwen — de rest van de site blijft normaal werken.
+(standaard **3500**, aan te passen in `assets/app.js` bij de variabele
+`_pkGateCode`, vlak boven `renderTeacher`) voor je de gegevens te zien
+krijgt — dit is enkel een drempeltje, geen echte beveiliging (dat kan niet
+op een statische GitHub Pages-site zonder server: elke waarde staat
+sowieso leesbaar in de broncode voor wie er met "Bekijk paginabron" naar
+zoekt, ongeacht hoe de variabele heet), maar het houdt nieuwsgierige
+leerlingen buiten. Eén keer invullen op een toestel volstaat: daarna
+onthoudt de browser dat dit toestel ontgrendeld is. Is de tellerdienst
+even niet bereikbaar, dan toont de pagina dat gewoon (dankzij een timeout
+van 6 seconden op elke aanroep naar de tellerdienst hangt de pagina nooit
+lang op "Bezig met ophalen…") en kan je later opnieuw vernieuwen — de
+rest van de site blijft normaal werken.
+
+Bovenaan de tabel per onderdeel staan nu ook een paar **samenvattende
+cijfers** in het groot (aantal onderdelen met data, totaal aantal
+pogingen, gemiddeld foutenpercentage, aantal onderdelen met ≥ 50%
+fout) — zodat je in één oogopslag weet hoe de klas er globaal voorstaat,
+vóór je in de tabel zelf duikt. De tabel **"Per onderdeel"** is bovendien
+sorteerbaar: klik op eender welke kolomkop (Onderdeel, Kaartblad,
+Pogingen, Fouten, Foutenpercentage, Verschillende leerlingen) om erop te
+sorteren, nog eens klikken keert de volgorde om.
 
 Bovenaan de leerkrachtpagina staat, los van de tabel per onderdeel, ook een
 lijst **"Meeste fouten — over alle onderdelen heen"**: de items met het
 hoogste foutenpercentage over de hele site, ongeacht bij welk kaartblad ze
 horen (en daaronder, ter vergelijking, de items die het best zitten). Enkel
 items met minstens 3 pogingen tellen mee, anders zou 1 pechpoging al
-bovenaan staan.
+bovenaan staan. Naast die titel staat een knop **"🔎 Projecteren"**: die
+opent de top-10 "meeste fouten" in het groot, met weinig andere ruis
+eromheen — handig om letterlijk op het scherm/bord te tonen tijdens de
+les. Sluiten kan met de knop, met Escape, of door naast de kaart te
+klikken.
 
 Naast "↻ Vernieuwen" staat een knop **"Pogingen resetten"**. Die vraagt
 eerst een bevestiging en zet dan alle tellers (pogingen, fouten, en de

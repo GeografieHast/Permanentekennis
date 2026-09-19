@@ -29,6 +29,18 @@
     return shuffle(pool).slice(0, n);
   }
 
+  /* fetch() met een timeout: zonder dit kan een trage/onbereikbare
+     tellerdienst de pagina lang in "Bezig met ophalen…" laten hangen.
+     Gebruikt AbortController waar beschikbaar, valt anders gewoon terug
+     op een gewone fetch() (oudere browser: dan geen timeout, maar de site
+     blijft wel werken). */
+  function fetchWithTimeout(url, ms) {
+    if (typeof AbortController === "undefined") return fetch(url);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ms || 6000);
+    return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+  }
+
   function el(tag, attrs, children) {
     const node = document.createElement(tag);
     if (attrs) {
@@ -124,7 +136,7 @@
       hitOnce = sessionStorage.getItem("pk-global-hit") === "1";
     } catch (e) { /* privé-modus */ }
     const url = GLOBAL_COUNTER_BASE + (hitOnce ? "get/" : "hit/") + GLOBAL_COUNTER_KEY;
-    fetch(url)
+    fetchWithTimeout(url, 6000)
       .then((r) => r.json())
       .then((data) => {
         if (data && data.value != null) {
@@ -201,12 +213,63 @@
     location.hash = path;
   }
 
+  /* ---------- "Ga verder waar je gebleven was" (startpagina) ------------ */
+
+  const LAST_VISIT_KEY = "pk-last-visited-v1";
+
+  function saveLastVisited(href, label) {
+    try {
+      localStorage.setItem(LAST_VISIT_KEY, JSON.stringify({ href: href, label: label, ts: Date.now() }));
+    } catch (e) { /* privé-modus: dan werkt "ga verder" gewoon niet, de rest van de site wel */ }
+  }
+  function loadLastVisited() {
+    try {
+      return JSON.parse(localStorage.getItem(LAST_VISIT_KEY));
+    } catch (e) { return null; }
+  }
+
+  /* Onthoudt, telkens een leerling een echt onderdeel opent (een kaartblad-
+     onderdeel of een kaartoefening, in het even welke stap), waar hij was
+     — zodat de startpagina daar een knop "Ga verder" voor kan tonen. */
+  function trackVisit(r) {
+    if (r.view === "module" && r.p1) {
+      const mod = getModule(r.p1);
+      if (!mod) return;
+      if (r.p2 === "testen") {
+        saveLastVisited(location.hash, mod.title + " — Test jezelf");
+        return;
+      }
+      if (r.p2) {
+        const topic = getTopic(r.p1, r.p2);
+        if (!topic) return;
+        let modeLabel = null;
+        if (r.p3 === "leren") modeLabel = "Leren";
+        else if (r.p3 === "oefenen") modeLabel = "Oefenen";
+        else if (r.p3 === "fouten") modeLabel = "Mijn fouten";
+        else if (r.p3 === "testen") modeLabel = "Test jezelf";
+        saveLastVisited(location.hash, topic.title + (modeLabel ? " — " + modeLabel : ""));
+      }
+    } else if (r.view === "kaart" && r.p1 && r.p2) {
+      const group = getMapGroup(r.p2);
+      if (!group) return;
+      let modeLabel = null;
+      if (r.p3 === "leer") modeLabel = "Kaart bekijken";
+      else if (r.p3 === "mc") modeLabel = "Oefenen — meerkeuze";
+      else if (r.p3 === "typ") modeLabel = "Oefenen — zelf typen";
+      else if (r.p3 === "fouten") modeLabel = "Mijn fouten";
+      else if (r.p3 === "testen") modeLabel = "Test jezelf";
+      const title = group.title.replace(/^Kaartoefening:\s*/, "");
+      saveLastVisited(location.hash, title + (modeLabel ? " — " + modeLabel : ""));
+    }
+  }
+
   window.addEventListener("hashchange", render);
   window.addEventListener("DOMContentLoaded", render);
 
   function render() {
     if (window.PKMapExercise) window.PKMapExercise.cleanup();
     const r = parseHash();
+    trackVisit(r);
     root.innerHTML = "";
     root.appendChild(el("div", { class: "crumbs" }, breadcrumbs(r)));
 
@@ -262,13 +325,15 @@
     const sum = mapSummary(group);
     wrap.appendChild(progressSummaryBlock(sum));
 
+    const mapRetryCount = sum.total ? Progress.retryList(mapItemIds(group)).length : 0;
+    const mapRec = recommendedStage(sum, mapRetryCount);
     const base = "#/kaart/" + moduleId + "/" + group.id + "/";
-    const stages = el("div", { class: "stage-grid" });
-    stages.appendChild(stageCard(base + "leer", "1", cardsIconSVG(), "Leren", "Kaart met de volledige legende ernaast — rustig instuderen.", null));
-    stages.appendChild(stageCard(base + "mc", "2", checkIconSVG(), "Oefenen — meerkeuze", "Bij elk symbool: kies de juiste naam uit vier opties.", null));
-    stages.appendChild(stageCard(base + "typ", "2", pencilIconSVG(), "Oefenen — zelf typen", "Bij elk symbool: typ zelf de naam" + (group.secondaryLabel ? " en " + group.secondaryLabel.toLowerCase() : "") + ".", null));
-    stages.appendChild(stageCard(base + "fouten", "3", retryIconSVG(), "Mijn fouten", "Herhaal enkel de symbolen die nog niet lukken.", sum.total ? Progress.retryList(mapItemIds(group)).length : 0));
-    stages.appendChild(stageCard(base + "testen", "4", testIconSVG(), "Test jezelf", "Alle symbolen na elkaar, zonder hulp — pas achteraf het resultaat.", null));
+    const stages = el("div", { class: "stage-grid stepper" });
+    stages.appendChild(stageCard(base + "leer", "1", cardsIconSVG(), "Leren", "Kaart met de volledige legende ernaast — rustig instuderen.", null, mapRec === "leren"));
+    stages.appendChild(stageCard(base + "mc", "2", checkIconSVG(), "Oefenen — meerkeuze", "Bij elk symbool: kies de juiste naam uit vier opties.", null, mapRec === "oefenen"));
+    stages.appendChild(stageCard(base + "typ", "2", pencilIconSVG(), "Oefenen — zelf typen", "Bij elk symbool: typ zelf de naam" + (group.secondaryLabel ? " en " + group.secondaryLabel.toLowerCase() : "") + ".", null, false));
+    stages.appendChild(stageCard(base + "fouten", "3", retryIconSVG(), "Mijn fouten", "Herhaal enkel de symbolen die nog niet lukken.", mapRetryCount, mapRec === "fouten"));
+    stages.appendChild(stageCard(base + "testen", "4", testIconSVG(), "Test jezelf", "Alle symbolen na elkaar, zonder hulp — pas achteraf het resultaat.", null, mapRec === "testen"));
     wrap.appendChild(stages);
 
     return wrap;
@@ -466,7 +531,7 @@
         el("div", { class: "hero-content" }, [
           el("h1", null, ["Permanente Kennis"]),
           el("p", { class: "hero-sub" }, [
-            "Wat je hier leert, moet je heel het jaar (en daarna) blijven kennen. Daarom oefen je hier niet één keer, maar volg je telkens hetzelfde pad: leren, oefenen, fouten wegwerken, jezelf testen — en af en toe opnieuw onderhouden, zodat het echt blijft hangen."
+            "Wat je hier leert, moet je heel het jaar blijven kennen. Daarom volg je telkens hetzelfde pad: leren, oefenen, fouten wegwerken, jezelf testen — en af en toe onderhouden."
           ]),
           el("div", { class: "hero-badges" }, [
             el("span", { class: "hero-badge badge-red" }, ["🧭 9 kaartbladen"]),
@@ -477,61 +542,48 @@
       ])
     );
 
-    wrap.appendChild(howItWorksStrip());
-
-    const stats = Progress.loadStats();
-    const streakValueEl = el("span", { class: "stat-value" }, ["0"]);
-    const answeredValueEl = el("span", { class: "stat-value" }, ["0"]);
-    const globalValueEl = el("span", { class: "stat-value" }, ["…"]);
-    wrap.appendChild(
-      el("section", { class: "stats-strip" }, [
-        el("div", { class: "stat-tile stat-streak" }, [
-          el("span", { class: "stat-icon stat-icon-pulse", "aria-hidden": "true" }, ["🔥"]),
-          streakValueEl,
-          el("span", { class: "stat-label" }, [(stats.streakCount === 1 ? "dag" : "dagen") + " op rij geoefend"]),
-          el("span", { class: "stat-milestone" }, [milestoneNote(stats.streakCount || 0, STREAK_GOALS)])
-        ]),
-        el("div", { class: "stat-tile stat-answered" }, [
-          el("span", { class: "stat-icon stat-check-badge", "aria-hidden": "true" }, [checkTickSVG()]),
-          answeredValueEl,
-          el("span", { class: "stat-label" }, ["vragen door jou beantwoord"]),
-          el("span", { class: "stat-milestone" }, [milestoneNote(stats.totalAnswered || 0, ANSWERED_GOALS)])
-        ]),
-        el("div", { class: "stat-tile stat-global" }, [
-          el("span", { class: "stat-icon", "aria-hidden": "true" }, ["🌍"]),
-          globalValueEl,
-          el("span", { class: "stat-label" }, ["keer geopend door iedereen samen"])
+    /* "Ga verder waar je gebleven was" — het handigste knopje op de hele
+       startpagina, dus meteen onder de hero, vóór al de rest. */
+    const lastVisited = loadLastVisited();
+    if (lastVisited && lastVisited.href && lastVisited.href !== "#/home") {
+      wrap.appendChild(
+        el("a", { class: "continue-card", href: lastVisited.href }, [
+          el("span", { class: "continue-icon", "aria-hidden": "true" }, [retryIconSVG()]),
+          el("span", { class: "continue-text" }, [
+            el("span", { class: "continue-kicker" }, ["Ga verder waar je gebleven was"]),
+            el("strong", null, [lastVisited.label])
+          ]),
+          el("span", { class: "continue-arrow", "aria-hidden": "true" }, ["→"])
         ])
-      ])
-    );
-    animateCount(streakValueEl, stats.streakCount || 0);
-    animateCount(answeredValueEl, stats.totalAnswered || 0);
-    fetchGlobalCounter(globalValueEl);
+      );
+    }
 
-    /* Mijn voortgang: fouten + onderhoud vlot bereikbaar */
+    /* Mijn voortgang: fouten + onderhoud vlot bereikbaar. Onderhoud krijgt
+       hier bewust het meeste gewicht (grote kaart, duidelijke uitleg) —
+       pedagogisch het belangrijkste knopje van de site, maar voorheen
+       onderaan een klein pilletje. */
     const allIds = allItemIds();
     const retryCount = Progress.retryList(allIds).length;
     const dueCount = Progress.dueForMaintenance(allIds).length;
-    const globalSum = Progress.summarize(allIds);
 
     wrap.appendChild(
-      el("section", { class: "progress-panel" }, [
-        el("h3", null, ["📈 Mijn voortgang"]),
-        el("div", { class: "progress-panel-bars" }, [
-          labeledBar("Geoefend", globalSum.practicedPct, "bar-practiced"),
-          labeledBar("Beheerst", globalSum.masteredPct, "bar-mastered")
-        ]),
-        el("div", { class: "quick-links" }, [
-          el("a", { class: "quick-link quick-link-fouten" + (retryCount ? "" : " quick-link-empty"), href: "#/fouten" }, [
-            retryIconSVG(),
-            el("span", null, ["Mijn fouten"]),
-            el("span", { class: "quick-link-count" }, [retryCount ? String(retryCount) : "0"])
+      el("section", { class: "action-row" }, [
+        el("a", { class: "maintenance-card" + (dueCount ? " maintenance-card-due" : ""), href: "#/onderhoud" }, [
+          el("div", { class: "maintenance-icon", "aria-hidden": "true" }, [maintenanceIconSVG()]),
+          el("div", { class: "maintenance-text" }, [
+            el("strong", null, ["Onderhoud"]),
+            el("p", null, [
+              dueCount
+                ? "Je kent dit al, maar het is tijd om het weer even op te frissen — zo blijft het echt hangen."
+                : "Wat je beheerst, komt hier vanzelf terug zodat je het nooit meer vergeet."
+            ])
           ]),
-          el("a", { class: "quick-link quick-link-onderhoud" + (dueCount ? "" : " quick-link-empty"), href: "#/onderhoud" }, [
-            maintenanceIconSVG(),
-            el("span", null, ["Onderhoud"]),
-            el("span", { class: "quick-link-count" }, [dueCount ? String(dueCount) : "0"])
-          ])
+          el("span", { class: "maintenance-count" + (dueCount ? " maintenance-count-due" : "") }, [String(dueCount)])
+        ]),
+        el("a", { class: "quick-link quick-link-fouten" + (retryCount ? "" : " quick-link-empty"), href: "#/fouten" }, [
+          retryIconSVG(),
+          el("span", null, ["Mijn fouten"]),
+          el("span", { class: "quick-link-count" }, [retryCount ? String(retryCount) : "0"])
         ])
       ])
     );
@@ -597,21 +649,69 @@
       ])
     );
 
-    wrap.appendChild(
-      el("section", { class: "goals-panel" }, [
-        el("h3", null, ["🎯 Jouw doelen"]),
-        el("div", { class: "goals-grid" }, [
-          el("div", { class: "goals-col" }, [
-            el("h4", null, ["🔥 Reeks volhouden"]),
-            goalsList(stats.streakCount || 0, STREAK_GOALS, "dagen")
-          ]),
-          el("div", { class: "goals-col" }, [
-            el("h4", null, ["✅ Vragen beantwoord"]),
-            goalsList(stats.totalAnswered || 0, ANSWERED_GOALS, "vragen")
-          ])
+    /* De rest (hoe werkt het, cijfers, doelen) is leuk maar niet iets een
+       leerling elke keer opnieuw moet zien — daarom achter een simpele
+       <details>-uitklapper, dicht bij elkaar, zodat de startpagina zelf
+       overzichtelijk blijft. */
+    const stats = Progress.loadStats();
+    const globalSum = Progress.summarize(allIds);
+
+    const moreDetails = el("details", { class: "home-more" });
+    moreDetails.appendChild(el("summary", null, ["📊 Hoe werkt het, en hoe sta ik ervoor?"]));
+
+    const moreInner = el("div", { class: "home-more-inner" });
+    moreInner.appendChild(howItWorksStrip());
+
+    const streakValueEl = el("span", { class: "stat-value" }, ["0"]);
+    const answeredValueEl = el("span", { class: "stat-value" }, ["0"]);
+    const globalValueEl = el("span", { class: "stat-value" }, ["…"]);
+    moreInner.appendChild(
+      el("section", { class: "stats-strip" }, [
+        el("div", { class: "stat-tile stat-streak" }, [
+          el("span", { class: "stat-icon stat-icon-pulse", "aria-hidden": "true" }, ["🔥"]),
+          streakValueEl,
+          el("span", { class: "stat-label" }, [(stats.streakCount === 1 ? "dag" : "dagen") + " op rij geoefend"]),
+          el("span", { class: "stat-milestone" }, [milestoneNote(stats.streakCount || 0, STREAK_GOALS)])
+        ]),
+        el("div", { class: "stat-tile stat-answered" }, [
+          el("span", { class: "stat-icon stat-check-badge", "aria-hidden": "true" }, [checkTickSVG()]),
+          answeredValueEl,
+          el("span", { class: "stat-label" }, ["vragen door jou beantwoord"]),
+          el("span", { class: "stat-milestone" }, [milestoneNote(stats.totalAnswered || 0, ANSWERED_GOALS)])
+        ]),
+        el("div", { class: "stat-tile stat-global" }, [
+          el("span", { class: "stat-icon", "aria-hidden": "true" }, ["🌍"]),
+          globalValueEl,
+          el("span", { class: "stat-label" }, ["keer geopend door iedereen samen"])
         ])
       ])
     );
+    moreInner.appendChild(
+      el("div", { class: "progress-panel-bars" }, [
+        labeledBar("Geoefend (jij, alle kaartbladen)", globalSum.practicedPct, "bar-practiced"),
+        labeledBar("Beheerst (jij, alle kaartbladen)", globalSum.masteredPct, "bar-mastered")
+      ])
+    );
+    moreInner.appendChild(
+      el("div", { class: "goals-grid" }, [
+        el("div", { class: "goals-col" }, [
+          el("h4", null, ["🔥 Reeks volhouden"]),
+          goalsList(stats.streakCount || 0, STREAK_GOALS, "dagen")
+        ]),
+        el("div", { class: "goals-col" }, [
+          el("h4", null, ["✅ Vragen beantwoord"]),
+          goalsList(stats.totalAnswered || 0, ANSWERED_GOALS, "vragen")
+        ])
+      ])
+    );
+    moreDetails.appendChild(moreInner);
+    moreDetails.addEventListener("toggle", function () {
+      if (!moreDetails.open) return;
+      animateCount(streakValueEl, stats.streakCount || 0);
+      animateCount(answeredValueEl, stats.totalAnswered || 0);
+      fetchGlobalCounter(globalValueEl);
+    }, { once: true });
+    wrap.appendChild(moreDetails);
 
     return wrap;
   }
@@ -764,12 +864,13 @@
     wrap.appendChild(progressSummaryBlock(sum));
 
     const retryCount = Progress.retryList(topicItemIds(topic)).length;
+    const rec = recommendedStage(sum, retryCount);
     const base = "#/module/" + moduleId + "/" + topicId + "/";
-    const stages = el("div", { class: "stage-grid" });
-    stages.appendChild(stageCard(base + "leren", "1", cardsIconSVG(), "Leren", "Overzicht van alle antwoorden, rustig instuderen.", null));
-    stages.appendChild(stageCard(base + "oefenen/adaptief", "2", checkIconSVG(), "Oefenen", "Oplopende moeilijkheid, fouten komen vanzelf terug.", null));
-    stages.appendChild(stageCard(base + "fouten", "3", retryIconSVG(), "Mijn fouten", "Herhaal enkel wat nog niet lukt.", retryCount));
-    stages.appendChild(stageCard(base + "testen", "4", testIconSVG(), "Test jezelf", "Zonder hulp — resultaat pas op het einde.", null));
+    const stages = el("div", { class: "stage-grid stepper" });
+    stages.appendChild(stageCard(base + "leren", "1", cardsIconSVG(), "Leren", "Overzicht van alle antwoorden, rustig instuderen.", null, rec === "leren"));
+    stages.appendChild(stageCard(base + "oefenen/adaptief", "2", checkIconSVG(), "Oefenen", "Oplopende moeilijkheid, fouten komen vanzelf terug.", null, rec === "oefenen"));
+    stages.appendChild(stageCard(base + "fouten", "3", retryIconSVG(), "Mijn fouten", "Herhaal enkel wat nog niet lukt.", retryCount, rec === "fouten"));
+    stages.appendChild(stageCard(base + "testen", "4", testIconSVG(), "Test jezelf", "Zonder hulp — resultaat pas op het einde.", null, rec === "testen"));
     wrap.appendChild(stages);
 
     wrap.appendChild(el("h3", { class: "section-heading small-heading" }, ["Andere oefenvormen"]));
@@ -785,17 +886,31 @@
     return wrap;
   }
 
-  function stageCard(href, num, icon, title, text, badge) {
+  function stageCard(href, num, icon, title, text, badge, recommended) {
     const children = [
       el("span", { class: "stage-num", "aria-hidden": "true" }, [num]),
       el("div", { class: "stage-icon" }, [icon]),
       el("h3", null, [title]),
       el("p", null, [text])
     ];
+    if (recommended) {
+      children.unshift(el("span", { class: "stage-recommended" }, ["Begin hier →"]));
+    }
     if (badge != null) {
       children.push(el("span", { class: "stage-badge" + (badge ? "" : " stage-badge-zero") }, [String(badge)]));
     }
-    return el("a", { class: "stage-card", href: href }, children);
+    return el("a", { class: "stage-card" + (recommended ? " stage-card-recommended" : ""), href: href }, children);
+  }
+
+  /* Welke stap (leren/oefenen/fouten/testen) heeft nu het meeste zin om
+     als volgende te doen voor dit onderdeel? Gebruikt om die stap in de
+     stepper visueel te laten opvallen, zodat een leerling niet zelf hoeft
+     te bedenken waar te beginnen. */
+  function recommendedStage(sum, retryCount) {
+    if (retryCount > 0) return "fouten";
+    if (!sum.seen) return "leren";
+    if (sum.masteredPct < 80) return "oefenen";
+    return "testen";
   }
 
   function modeCard(href, icon, title, text) {
@@ -1204,7 +1319,10 @@
       return { isCorrect: isCorrect, justMastered: justMastered, item: updated };
     }
 
-    function applyFeedback(feedbackEl, outcome, correctText, focusEl) {
+    /* correctAnswer/extraNote: bij een fout antwoord tonen we altijd,
+       kort en duidelijk, wat het juiste antwoord wél was (niet enkel
+       "fout"), zodat een leerling meteen het goede antwoord onthoudt. */
+    function applyFeedback(feedbackEl, outcome, correctAnswer, focusEl, extraNote) {
       if (outcome.justMastered) {
         feedbackEl.textContent = "⭐ Beheerst! Dit zit er nu goed in.";
         feedbackEl.className = "quiz-feedback feedback-mastered";
@@ -1215,7 +1333,10 @@
         feedbackEl.className = "quiz-feedback feedback-good";
         celebrate(focusEl);
       } else {
-        feedbackEl.textContent = correctText;
+        feedbackEl.innerHTML = "";
+        feedbackEl.appendChild(document.createTextNode("❌ Fout — het juiste antwoord is "));
+        feedbackEl.appendChild(el("strong", { class: "feedback-answer" }, [correctAnswer]));
+        if (extraNote) feedbackEl.appendChild(document.createTextNode(" " + extraNote));
         feedbackEl.className = "quiz-feedback feedback-bad";
       }
     }
@@ -1265,11 +1386,16 @@
       if (bestLiveStreak >= 5) {
         result.appendChild(el("p", { class: "result-streak-banner" }, ["🔥 Beste reeks deze sessie: " + bestLiveStreak + " op rij juist."]));
       }
-      const missedTitles = [...new Set(missed.map((m) => promptTextOf(m)))];
-      if (missedTitles.length) {
+      const missedInfo = dedupeMissed(missed.map((m) => missedInfoOf(m)));
+      if (missedInfo.length) {
         const list = el("ul", { class: "missed-list" });
-        missedTitles.forEach((t) => list.appendChild(el("li", null, [t])));
-        result.appendChild(el("p", { class: "missed-heading" }, ["Nog eens bekijken:"]));
+        missedInfo.forEach((m) => list.appendChild(
+          el("li", null, [
+            m.prompt,
+            el("span", { class: "missed-correct" }, [" → " + m.correct])
+          ])
+        ));
+        result.appendChild(el("p", { class: "missed-heading" }, ["Nog eens bekijken — dit was het juiste antwoord:"]));
         result.appendChild(list);
       }
       const actions = el("div", { class: "quiz-actions" });
@@ -1290,10 +1416,21 @@
       stage.appendChild(result);
     }
 
-    function promptTextOf(entry) {
+    function missedInfoOf(entry) {
       const k = cfg.kindFor(entry);
       const q = cfg.buildFor(entry, k);
-      return q.prompt || currentEntryTitle(entry);
+      return { prompt: q.prompt || currentEntryTitle(entry), correct: q.correct || "" };
+    }
+    function dedupeMissed(list) {
+      const seen = new Set();
+      const out = [];
+      list.forEach((m) => {
+        const key = m.prompt + "|" + m.correct;
+        if (seen.has(key)) return;
+        seen.add(key);
+        out.push(m);
+      });
+      return out;
     }
 
     function draw() {
@@ -1339,7 +1476,7 @@
           Array.from(tfWrap.children).forEach((b) => (b.disabled = true));
           const outcome = recordAndAdvance(entry, isRight);
           if (reveal === "immediate") {
-            applyFeedback(feedback, outcome, "Niet juist. Correct antwoord: " + q.correct + (q.isTrue ? "" : " (het voorstel klopte niet)"), btnEl);
+            applyFeedback(feedback, outcome, q.correct, btnEl, q.isTrue ? "" : "(het voorstel klopte niet)");
           }
           showNext();
         }
@@ -1358,7 +1495,7 @@
           const outcome = recordAndAdvance(entry, isRight);
           if (reveal === "immediate") {
             input.classList.add(isRight ? "input-correct" : "input-wrong");
-            applyFeedback(feedback, outcome, "Juiste antwoord: " + q.correct, submit);
+            applyFeedback(feedback, outcome, q.correct, submit);
           }
           showNext();
         }
@@ -1381,7 +1518,7 @@
             if (!isRight && reveal === "immediate") btn.classList.add("option-wrong");
             const outcome = recordAndAdvance(entry, isRight);
             if (reveal === "immediate") {
-              applyFeedback(feedback, outcome, "Niet juist. Juiste antwoord: " + q.correct, btn);
+              applyFeedback(feedback, outcome, q.correct, btn);
             }
             showNext();
           } }, [opt]);
@@ -1545,13 +1682,16 @@
 
     const tableWrap = el("div", { class: "table-wrap" });
     const table = el("table", { class: "quiz-table" });
-    table.appendChild(el("thead", null, [el("tr", null, [el("th", null, [frontLabel]), el("th", null, [backLabel])])]));
+    table.appendChild(el("thead", null, [el("tr", null, [el("th", null, [frontLabel]), el("th", null, [backLabel]), el("th", null, ["Bij fout: juist antwoord"])])]));
     const tbody = el("tbody");
     const inputs = [];
+    const correctionCells = [];
     rows.forEach((row, i) => {
       const input = el("input", { class: "quiz-input table-input", type: "text", autocomplete: "off", autocapitalize: "off", spellcheck: "false" });
       inputs.push(input);
-      const tr = el("tr", { id: "row-" + i }, [el("td", { class: "table-term" }, [row.front]), el("td", null, [input])]);
+      const correctionCell = el("td", { class: "table-correction" }, []);
+      correctionCells.push(correctionCell);
+      const tr = el("tr", { id: "row-" + i }, [el("td", { class: "table-term" }, [row.front]), el("td", null, [input]), correctionCell]);
       tbody.appendChild(tr);
     });
     table.appendChild(tbody);
@@ -1577,9 +1717,11 @@
         window.PKAnalytics && window.PKAnalytics.recordAnswer(row.progressId, isRight);
         if (isRight) {
           correctCount++;
+          correctionCells[i].textContent = "✓";
+          correctionCells[i].classList.add("table-correction-ok");
           setTimeout(function () { celebrate(input); }, correctCount * 90);
         } else {
-          tr.appendChild(el("td", { class: "table-correction" }, [row.correct]));
+          correctionCells[i].textContent = row.correct;
         }
       });
       checkBtn.disabled = true;
@@ -1595,7 +1737,11 @@
 
   /* ---------- LEERKRACHTOVERZICHT --------------------------------------------- */
 
-  const TEACHER_PASSWORD = "3500";
+  /* Dit is bewust GEEN echte beveiliging: op een statische site zonder
+     server staat elke waarde hier gewoon leesbaar in de broncode voor wie
+     ernaar zoekt, hoe de variabele ook heet. Het is enkel een drempeltje
+     om nieuwsgierige leerlingen te weren (zie README, "Voor de leerkracht"). */
+  const _pkGateCode = "3500";
   const TEACHER_UNLOCK_KEY = "pk-teacher-unlocked";
 
   function teacherUnlocked() {
@@ -1617,7 +1763,7 @@
     const errorEl = el("p", { class: "quiz-feedback feedback-bad" }, []);
 
     function tryUnlock() {
-      if (input.value === TEACHER_PASSWORD) {
+      if (input.value === _pkGateCode) {
         try { localStorage.setItem(TEACHER_UNLOCK_KEY, "1"); } catch (e) { /* privé-modus: dan telkens opnieuw invoeren */ }
         render();
       } else {
@@ -1633,6 +1779,43 @@
     wrap.appendChild(errorEl);
     setTimeout(() => input.focus(), 0);
     return wrap;
+  }
+
+  /* Groot, opgeruimd overzicht van de "meeste fouten"-lijst, bedoeld om
+     letterlijk op het scherm/bord te projecteren tijdens de les — zonder
+     de rest van het leerkrachtoverzicht erbij. */
+  function openProjectorView(worstList) {
+    const overlay = el("div", { class: "map-lightbox projector-overlay", role: "dialog", "aria-modal": "true", "aria-label": "Meeste fouten — projecteren" });
+    function onKey(e) { if (e.key === "Escape") close(); }
+    function close() {
+      overlay.remove();
+      document.removeEventListener("keydown", onKey);
+      document.body.classList.remove("lightbox-open");
+    }
+    const closeBtn = el("button", { class: "map-lightbox-close", type: "button", onclick: close }, ["✕ Sluiten"]);
+    const inner = el("div", { class: "projector-inner" }, [
+      el("h2", null, ["🔺 Meeste fouten in de klas"])
+    ]);
+    if (!worstList || !worstList.length) {
+      inner.appendChild(el("p", null, ["Nog geen gegevens om te tonen."]));
+    } else {
+      const list = el("ol", { class: "projector-list" });
+      worstList.slice(0, 10).forEach((it) => {
+        list.appendChild(
+          el("li", null, [
+            el("strong", null, [it.itemLabel]),
+            el("span", { class: "projector-meta" }, [it.onderdeelTitle + " · " + (it.errorPct || 0) + "% fout (" + it.attempts + " pogingen)"])
+          ])
+        );
+      });
+      inner.appendChild(list);
+    }
+    overlay.appendChild(closeBtn);
+    overlay.appendChild(inner);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+    document.addEventListener("keydown", onKey);
+    document.body.classList.add("lightbox-open");
+    document.body.appendChild(overlay);
   }
 
   function renderTeacherContent() {
@@ -1654,6 +1837,9 @@
       ])
     );
 
+    const summaryHolder = el("div", { class: "teacher-summary" });
+    wrap.appendChild(summaryHolder);
+
     const btnRow = el("div", { class: "teacher-btn-row" });
     const refreshBtn = el("button", { class: "btn", type: "button" }, ["↻ Vernieuwen"]);
     const resetBtn = el("button", { class: "btn btn-danger", type: "button" }, ["Pogingen resetten"]);
@@ -1661,7 +1847,12 @@
     btnRow.appendChild(resetBtn);
     wrap.appendChild(btnRow);
 
-    wrap.appendChild(el("h2", { class: "section-heading" }, ["Meeste fouten — over alle onderdelen heen"]));
+    const topHeadingRow = el("div", { class: "teacher-section-head" }, [
+      el("h2", { class: "section-heading" }, ["Meeste fouten — over alle onderdelen heen"])
+    ]);
+    const projectBtn = el("button", { class: "btn", type: "button" }, ["🔎 Projecteren"]);
+    topHeadingRow.appendChild(projectBtn);
+    wrap.appendChild(topHeadingRow);
     wrap.appendChild(
       el("p", { class: "graad-note" }, [
         "Los van bij welk kaartblad of onderdeel het hoort: dit specifieke land, hoofdstad, symbool of begrip gaat het vaakst fout. Enkel items met minstens 3 pogingen tellen mee, anders zegt 1 fout op 1 poging te weinig."
@@ -1671,6 +1862,8 @@
     const topHolder = el("div", { class: "table-wrap" });
     wrap.appendChild(topStatus);
     wrap.appendChild(topHolder);
+    let lastWorst = [];
+    projectBtn.addEventListener("click", () => openProjectorView(lastWorst));
 
     function topMistakesTable(list, emptyMsg) {
       if (!list.length) return el("p", { class: "study-hint" }, [emptyMsg]);
@@ -1713,6 +1906,7 @@
           return;
         }
         topStatus.textContent = "";
+        lastWorst = res.worst;
         topHolder.appendChild(el("h3", null, ["🔺 Vaakst fout"]));
         topHolder.appendChild(topMistakesTable(res.worst, "Geen items met fouten gevonden."));
         topHolder.appendChild(el("h3", null, ["✅ Zit goed vast"]));
@@ -1721,10 +1915,22 @@
     }
 
     wrap.appendChild(el("h2", { class: "section-heading" }, ["Per onderdeel"]));
+    wrap.appendChild(el("p", { class: "study-hint" }, ["Klik op een kolomkop om te sorteren."]));
     const status = el("p", { class: "study-hint" }, ["Bezig met ophalen…"]);
     const tableHolder = el("div", { class: "table-wrap" });
     wrap.appendChild(status);
     wrap.appendChild(tableHolder);
+
+    const SORT_COLUMNS = [
+      { key: "title", label: "Onderdeel" },
+      { key: "moduleTitle", label: "Kaartblad" },
+      { key: "attempts", label: "Pogingen" },
+      { key: "errors", label: "Fouten" },
+      { key: "errorPct", label: "Foutenpercentage" },
+      { key: "uniqueDevices", label: "Verschillende leerlingen (toestellen)" }
+    ];
+    let sortState = { key: "errorPct", dir: "desc" };
+    let lastReachableRows = [];
 
     function itemBreakdownRow(r) {
       const holderTr = el("tr", { class: "teacher-detail-row" });
@@ -1776,9 +1982,108 @@
       return holderTr;
     }
 
+    function renderSummary(reachableRows) {
+      summaryHolder.innerHTML = "";
+      if (!reachableRows.length) return;
+      let totalAttempts = 0, totalErrors = 0, redCount = 0;
+      reachableRows.forEach((r) => {
+        totalAttempts += r.attempts || 0;
+        totalErrors += r.errors || 0;
+        if ((r.errorPct || 0) >= 50) redCount++;
+      });
+      const totalPct = totalAttempts ? Math.round((totalErrors / totalAttempts) * 100) : 0;
+      const tiles = [
+        { label: "Onderdelen met data", value: reachableRows.length },
+        { label: "Pogingen (totaal)", value: totalAttempts },
+        { label: "Foutenpercentage (gemiddeld)", value: totalPct + "%" },
+        { label: "Onderdelen ≥ 50% fout", value: redCount }
+      ];
+      tiles.forEach((t) => {
+        summaryHolder.appendChild(
+          el("div", { class: "teacher-summary-tile" + (t.label.indexOf("50%") !== -1 && redCount > 0 ? " teacher-summary-tile-warn" : "") }, [
+            el("span", { class: "teacher-summary-value" }, [String(t.value)]),
+            el("span", { class: "teacher-summary-label" }, [t.label])
+          ])
+        );
+      });
+    }
+
+    function buildTable(reachableRows) {
+      tableHolder.innerHTML = "";
+      const dir = sortState.dir === "asc" ? 1 : -1;
+      const sorted = reachableRows.slice().sort((a, b) => {
+        const av = a[sortState.key], bv = b[sortState.key];
+        if (typeof av === "string" || typeof bv === "string") {
+          return dir * String(av || "").localeCompare(String(bv || ""));
+        }
+        return dir * ((av || 0) - (bv || 0));
+      });
+      const table = el("table", { class: "quiz-table teacher-table" });
+      const headTr = el("tr", null, []);
+      SORT_COLUMNS.forEach((col) => {
+        const active = sortState.key === col.key;
+        const arrow = active ? (sortState.dir === "asc" ? " ▲" : " ▼") : "";
+        headTr.appendChild(
+          el("th", { class: active ? "teacher-th-active" : "" }, [
+            el("button", { class: "teacher-sort-btn", type: "button", onclick: () => {
+              sortState = active
+                ? { key: col.key, dir: sortState.dir === "desc" ? "asc" : "desc" }
+                : { key: col.key, dir: "desc" };
+              buildTable(reachableRows);
+            } }, [col.label + arrow])
+          ])
+        );
+      });
+      table.appendChild(el("thead", null, [headTr]));
+      const tbody = el("tbody");
+      let totalAttempts = 0, totalErrors = 0;
+      sorted.forEach((r) => {
+        totalAttempts += r.attempts || 0;
+        totalErrors += r.errors || 0;
+        const pct = r.errorPct == null ? 0 : r.errorPct;
+        const cls = pct >= 50 ? "row-wrong" : pct >= 25 ? "row-warn" : "";
+        let detailRow = null;
+        const mainRow = el("tr", { class: cls + " teacher-row-clickable" }, [
+          el("td", null, [el("button", { class: "teacher-expand-btn", type: "button", "aria-expanded": "false", onclick: (e) => {
+            if (detailRow) {
+              detailRow.remove();
+              detailRow = null;
+              e.currentTarget.setAttribute("aria-expanded", "false");
+              e.currentTarget.textContent = "▸ " + r.title;
+              return;
+            }
+            detailRow = itemBreakdownRow(r);
+            mainRow.after(detailRow);
+            e.currentTarget.setAttribute("aria-expanded", "true");
+            e.currentTarget.textContent = "▾ " + r.title;
+          } }, ["▸ " + r.title])]),
+          el("td", null, [r.moduleTitle]),
+          el("td", null, [String(r.attempts || 0)]),
+          el("td", null, [String(r.errors || 0)]),
+          el("td", null, [pct + "%"]),
+          el("td", null, [String(r.uniqueDevices || 0)])
+        ]);
+        tbody.appendChild(mainRow);
+      });
+      table.appendChild(tbody);
+      const totalPct = totalAttempts ? Math.round((totalErrors / totalAttempts) * 100) : 0;
+      table.appendChild(
+        el("tfoot", null, [el("tr", null, [
+          el("td", null, ["Totaal"]),
+          el("td", null, [""]),
+          el("td", null, [String(totalAttempts)]),
+          el("td", null, [String(totalErrors)]),
+          el("td", null, [totalPct + "%"]),
+          el("td", null, [""])
+        ])])
+      );
+      tableHolder.appendChild(table);
+    }
+
     function load(force) {
       status.textContent = "Bezig met ophalen…";
       tableHolder.innerHTML = "";
+      summaryHolder.innerHTML = "";
       window.PKAnalytics.fetchOverview(force).then((rows) => {
         const reachableRows = rows.filter((r) => r.reachable && r.attempts > 0);
         if (!reachableRows.length) {
@@ -1787,62 +2092,10 @@
             : "De tellerdienst is nu niet bereikbaar. Probeer het straks opnieuw.";
           return;
         }
-        status.textContent = reachableRows.length + " onderdelen met minstens 1 poging. Klik een rij open voor het detail per item.";
-        const sorted = reachableRows.slice().sort((a, b) => (b.errorPct || 0) - (a.errorPct || 0));
-        const table = el("table", { class: "quiz-table teacher-table" });
-        table.appendChild(
-          el("thead", null, [el("tr", null, [
-            el("th", null, ["Onderdeel"]),
-            el("th", null, ["Kaartblad"]),
-            el("th", null, ["Pogingen"]),
-            el("th", null, ["Fouten"]),
-            el("th", null, ["Foutenpercentage"]),
-            el("th", null, ["Verschillende leerlingen (toestellen)"])
-          ])])
-        );
-        const tbody = el("tbody");
-        let totalAttempts = 0, totalErrors = 0;
-        sorted.forEach((r) => {
-          totalAttempts += r.attempts || 0;
-          totalErrors += r.errors || 0;
-          const pct = r.errorPct == null ? 0 : r.errorPct;
-          const cls = pct >= 50 ? "row-wrong" : pct >= 25 ? "row-warn" : "";
-          let detailRow = null;
-          const mainRow = el("tr", { class: cls + " teacher-row-clickable" }, [
-            el("td", null, [el("button", { class: "teacher-expand-btn", type: "button", "aria-expanded": "false", onclick: (e) => {
-              if (detailRow) {
-                detailRow.remove();
-                detailRow = null;
-                e.currentTarget.setAttribute("aria-expanded", "false");
-                e.currentTarget.textContent = "▸ " + r.title;
-                return;
-              }
-              detailRow = itemBreakdownRow(r);
-              mainRow.after(detailRow);
-              e.currentTarget.setAttribute("aria-expanded", "true");
-              e.currentTarget.textContent = "▾ " + r.title;
-            } }, ["▸ " + r.title])]),
-            el("td", null, [r.moduleTitle]),
-            el("td", null, [String(r.attempts || 0)]),
-            el("td", null, [String(r.errors || 0)]),
-            el("td", null, [pct + "%"]),
-            el("td", null, [String(r.uniqueDevices || 0)])
-          ]);
-          tbody.appendChild(mainRow);
-        });
-        table.appendChild(tbody);
-        const totalPct = totalAttempts ? Math.round((totalErrors / totalAttempts) * 100) : 0;
-        table.appendChild(
-          el("tfoot", null, [el("tr", null, [
-            el("td", null, ["Totaal"]),
-            el("td", null, [""]),
-            el("td", null, [String(totalAttempts)]),
-            el("td", null, [String(totalErrors)]),
-            el("td", null, [totalPct + "%"]),
-            el("td", null, [""])
-          ])])
-        );
-        tableHolder.appendChild(table);
+        status.textContent = reachableRows.length + " onderdelen met minstens 1 poging. Klik een rij open voor het detail per item, of op een kolomkop om te sorteren.";
+        lastReachableRows = reachableRows;
+        renderSummary(reachableRows);
+        buildTable(reachableRows);
       }).catch(() => { status.textContent = "Kon de gegevens niet ophalen."; });
     }
     refreshBtn.addEventListener("click", () => { load(true); loadTop(true); });

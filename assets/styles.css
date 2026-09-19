@@ -1050,6 +1050,7 @@ main {
 .feedback-good { color: var(--correct); animation: pk-feedback-in 0.3s ease; }
 .feedback-bad { color: var(--red); animation: pk-feedback-in 0.3s ease; }
 .feedback-mastered { color: var(--amber-dark); animation: pk-feedback-in 0.3s ease; font-size: 1.02rem; }
+.feedback-answer { text-decoration: underline; text-decoration-color: rgba(229,52,60,0.4); text-underline-offset: 2px; }
 
 .quiz-next-holder { margin-top: 6px; }
 
@@ -1061,7 +1062,8 @@ main {
 .result-big { font-family: "Atkinson Hyperlegible", Verdana, sans-serif; font-size: 2.8rem; font-weight: bold; background: linear-gradient(135deg, var(--red), var(--amber-dark)); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 2px; animation: pk-result-pop 0.5s cubic-bezier(.34,1.56,.64,1); }
 .result-msg { color: var(--ink-soft); }
 .missed-heading { font-weight: bold; margin-top: 14px; margin-bottom: 4px; }
-.missed-list { text-align: left; max-width: 38ch; margin: 0 auto 14px; color: var(--ink-soft); font-size: 0.9rem; }
+.missed-list { text-align: left; max-width: 44ch; margin: 0 auto 14px; color: var(--ink-soft); font-size: 0.9rem; }
+.missed-correct { color: var(--correct); font-weight: bold; }
 .quiz-actions { display: flex; gap: 10px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
 
 /* ---------- juist/fout ------------------------------------------------------------ */
@@ -1110,12 +1112,13 @@ main {
   border-radius: 6px;
   border: 1px solid var(--line-strong);
   font-family: inherit;
-  font-size: 0.94rem;
+  font-size: 1rem; /* 16px: voorkomt dat iOS Safari automatisch inzoomt bij het focussen */
   transition: border-color 0.15s ease;
 }
 tr.row-correct .table-input { border-color: var(--correct); background: #e9f2ec; animation: pk-pop-correct 0.4s ease; }
 tr.row-wrong .table-input { border-color: var(--red); background: #fbeaea; animation: pk-shake 0.45s ease; }
-.table-correction { color: var(--correct); font-weight: bold; font-size: 0.88rem; }
+.table-correction { color: var(--red-dark); font-weight: bold; font-size: 0.88rem; }
+.table-correction-ok { color: var(--correct); text-align: center; }
 
 /* ---------- section headings (module overview) --------------------------------------- */
 
@@ -1394,6 +1397,130 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 }
 .quick-link-empty { opacity: 0.55; }
 
+/* ---------- "Ga verder waar je gebleven was" (startpagina) ---------- */
+.continue-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 20px;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(31,122,108,0.35);
+  background: linear-gradient(135deg, rgba(31,122,108,0.12), rgba(47,134,201,0.1));
+  text-decoration: none;
+  color: var(--ink);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.continue-card:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(31,122,108,0.18); }
+.continue-icon {
+  flex: none;
+  width: 34px; height: 34px;
+  padding: 7px;
+  border-radius: 10px;
+  background: var(--teal);
+  color: #fff;
+}
+.continue-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.continue-kicker { font-size: 0.76rem; font-weight: bold; color: var(--teal-dark); text-transform: uppercase; letter-spacing: 0.02em; }
+.continue-text strong { font-size: 1.02rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.continue-arrow { flex: none; font-size: 1.3rem; color: var(--teal-dark); font-weight: bold; }
+
+/* ---------- actierij: onderhoud (prominent) + mijn fouten ---------- */
+.action-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 14px;
+  margin: 0 0 26px;
+  align-items: stretch;
+}
+.maintenance-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  border: 2px solid var(--line-strong);
+  background: var(--card);
+  text-decoration: none;
+  color: var(--ink);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.maintenance-card:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(2,46,62,0.16); }
+.maintenance-icon {
+  flex: none;
+  width: 46px; height: 46px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(31,122,108,0.12);
+  color: var(--teal);
+}
+.maintenance-text { flex: 1; min-width: 0; }
+.maintenance-text strong { display: block; font-size: 1.1rem; font-family: "Atkinson Hyperlegible", Verdana, sans-serif; }
+.maintenance-text p { margin: 2px 0 0; font-size: 0.84rem; color: var(--ink-soft); }
+.maintenance-count {
+  flex: none;
+  min-width: 2.4em;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--line);
+  color: var(--ink-soft);
+  font-weight: bold;
+  font-size: 1rem;
+}
+.maintenance-card-due {
+  border-color: var(--teal);
+  background: linear-gradient(135deg, rgba(31,122,108,0.1), var(--card) 65%);
+}
+.maintenance-count-due {
+  background: var(--teal);
+  color: #fff;
+  box-shadow: 0 0 0 0 rgba(31,122,108,0.5);
+  animation: pk-maintenance-pulse 2s ease-in-out infinite;
+}
+@keyframes pk-maintenance-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(31,122,108,0.45); }
+  50% { box-shadow: 0 0 0 7px rgba(31,122,108,0); }
+}
+.action-row .quick-link-fouten { justify-content: center; }
+@media (max-width: 640px) {
+  .action-row { grid-template-columns: 1fr; }
+  .action-row .quick-link { justify-content: flex-start; }
+}
+
+/* ---------- uitklapbaar "hoe werkt het / mijn cijfers" (startpagina) ---------- */
+.home-more {
+  margin: 30px 0 0;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+  overflow: hidden;
+}
+.home-more > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 20px;
+  font-weight: bold;
+  font-family: "Atkinson Hyperlegible", Verdana, sans-serif;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.home-more > summary::-webkit-details-marker { display: none; }
+.home-more > summary::after {
+  content: "▾";
+  margin-left: auto;
+  color: var(--ink-soft);
+  transition: transform 0.15s ease;
+}
+.home-more[open] > summary::after { transform: rotate(180deg); }
+.home-more > summary:hover { background: var(--paper); }
+.home-more-inner { padding: 4px 20px 22px; }
+.home-more .howitworks { border: none; padding: 0; margin: 8px 0 24px; background: none; }
+.home-more .stats-strip { margin-bottom: 24px; }
+.home-more .progress-panel-bars { margin-bottom: 24px; }
+
 /* ---------- dubbele voortgangsbalk (geoefend + beheerst) ---------- */
 .sheet-progress-double { position: relative; height: 9px; background: rgba(2,46,62,0.08); }
 .sheet-progress-fill.fill-practiced { position: absolute; left: 0; top: 0; background: var(--amber); opacity: 0.55; }
@@ -1453,7 +1580,48 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 .stage-card:nth-child(2) .stage-icon { color: var(--teal); background: rgba(31,122,108,0.1); }
 .stage-card:nth-child(3) .stage-icon { color: var(--red); background: rgba(229,52,60,0.1); }
 .stage-card:nth-child(4) .stage-icon { color: var(--amber-dark); background: rgba(201,147,46,0.12); }
+.stage-card:nth-child(5) .stage-icon { color: var(--violet); background: rgba(132,82,173,0.12); }
 .stage-card p { font-size: 0.86rem; color: var(--ink-soft); margin: 0; }
+
+/* ---------- stepper: leren → oefenen → fouten → testen (onderdeel-hub) ---------- */
+.stepper {
+  position: relative;
+}
+@media (min-width: 640px) {
+  .stepper {
+    padding-top: 6px;
+  }
+  .stepper::before {
+    content: "";
+    position: absolute;
+    top: 26px;
+    left: 8%;
+    right: 8%;
+    height: 3px;
+    background: repeating-linear-gradient(90deg, var(--line-strong) 0 8px, transparent 8px 14px);
+    z-index: 0;
+  }
+  .stepper .stage-card { z-index: 1; }
+}
+.stage-card-recommended {
+  border-color: var(--red);
+  border-width: 2px;
+  box-shadow: 0 10px 24px rgba(229,52,60,0.16);
+  transform: translateY(-2px);
+}
+.stage-card-recommended .stage-icon { color: var(--red) !important; background: rgba(229,52,60,0.12) !important; }
+.stage-recommended {
+  position: absolute;
+  top: -12px;
+  left: 14px;
+  background: var(--red);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 3px 10px;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(229,52,60,0.35);
+}
 .stage-badge {
   display: inline-block;
   margin-top: 10px;
@@ -1569,6 +1737,62 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 }
 
 /* ---------- leerkrachtoverzicht ---------- */
+.teacher-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 6px 0 20px;
+}
+.teacher-summary-tile {
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+  text-align: center;
+}
+.teacher-summary-value { display: block; font-family: "Atkinson Hyperlegible", Verdana, sans-serif; font-size: 1.5rem; font-weight: bold; color: var(--ink); }
+.teacher-summary-label { display: block; font-size: 0.76rem; color: var(--ink-soft); margin-top: 2px; }
+.teacher-summary-tile-warn { border-color: rgba(229,52,60,0.4); background: rgba(229,52,60,0.06); }
+.teacher-summary-tile-warn .teacher-summary-value { color: var(--red-dark); }
+
+.teacher-section-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+.teacher-section-head .section-heading { margin: 0; padding-top: 0; border-top: none; flex: 1; min-width: 200px; }
+
+.teacher-sort-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.teacher-th-active .teacher-sort-btn { color: var(--ink); }
+.teacher-sort-btn:hover { color: var(--red); }
+
+.projector-overlay { padding: 30px 20px; }
+.projector-inner {
+  background: #fff;
+  color: var(--ink);
+  border-radius: 16px;
+  padding: 30px 36px;
+  max-width: 760px;
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+}
+.projector-inner h2 { font-size: 1.8rem; margin-bottom: 18px; }
+.projector-list { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 14px; }
+.projector-list li { font-size: 1.3rem; font-weight: bold; }
+.projector-meta { display: block; font-size: 0.9rem; font-weight: normal; color: var(--ink-soft); margin-top: 2px; }
+@media (max-width: 600px) {
+  .projector-inner { padding: 22px 20px; }
+  .projector-inner h2 { font-size: 1.4rem; }
+  .projector-list li { font-size: 1.05rem; }
+}
+
 .teacher-btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
 .btn-danger {
   background: #fff;
@@ -1607,4 +1831,32 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   .quiz-card, .flashcard { padding: 16px; }
   .flashcard { height: 200px; }
   .stage-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- mobiele optimalisaties (leerlingen gebruiken dit vooral op de smartphone) ---------- */
+@media (max-width: 640px) {
+  main { padding: 18px 16px 70px; }
+  .site-header-inner { padding: 10px 16px; gap: 8px; }
+  .brand-mark { width: 32px; height: 32px; }
+  .brand-text strong { font-size: 0.92rem; }
+  .brand-text span { font-size: 0.7rem; }
+  .hero-content { padding: 18px 18px 20px; }
+  .hero-content h1 { font-size: 1.45rem; }
+  .hero-sub { font-size: 0.92rem; }
+
+  /* grotere tapdoelen: minstens ~44px hoog, zoals aanbevolen voor touch */
+  .btn { padding: 12px 16px; min-height: 44px; }
+  .option-btn { padding: 14px 14px; min-height: 46px; }
+  .tf-btn { padding: 14px; min-height: 46px; }
+  .quiz-input, .table-input { padding: 12px 14px; }
+  .mode-card, .stage-card { padding: 16px; }
+  .quick-link, .maintenance-card, .continue-card { min-height: 44px; }
+  .mapimg-zoom-btn { padding: 10px 16px; }
+  .map-lightbox-close { padding: 12px 18px; }
+  .teacher-expand-btn { padding: 6px 0; display: inline-block; }
+
+  /* stepper-verbindingslijn heeft geen zin als de kaartjes toch onder
+     elkaar staan op een smal scherm */
+  .stepper::before { display: none; }
+  .action-row { gap: 10px; }
 }
