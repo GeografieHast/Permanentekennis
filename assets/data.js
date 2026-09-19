@@ -183,51 +183,8 @@ window.PK_DATA = {
       label: "Kaartblad 4",
       title: "Europa",
       subtitle: "alle landen en hoofdsteden",
-      intro: "Naast de EU: de kandidaat-lidstaten en de andere landen van Europa — en alle 50 landen samen.",
+      intro: "Alle landen van Europa en hun hoofdsteden, in één geheel (geen onderverdeling in EU, kandidaat-lidstaten, ...).",
       topics: [
-        {
-          id: "kandidaat-lidstaten",
-          title: "Kandidaat-lidstaten en hoofdsteden",
-          kind: "pair",
-          promptLabel: "Kandidaat-lidstaat",
-          answerLabel: "Hoofdstad",
-          allowTyping: true,
-          items: [
-            { term: "Turkije", answer: "Ankara" },
-            { term: "Noord-Macedonië", answer: "Skopje" },
-            { term: "Albanië", answer: "Tirana" },
-            { term: "Bosnië en Herzegovina", answer: "Sarajevo" },
-            { term: "Georgië", answer: "Tbilisi" },
-            { term: "Moldavië", answer: "Chisinau" },
-            { term: "Montenegro", answer: "Podgorica" },
-            { term: "Oekraïne", answer: "Kiev" },
-            { term: "Servië", answer: "Belgrado" }
-          ]
-        },
-        {
-          id: "andere-landen-europa",
-          title: "Andere landen in Europa en hoofdsteden",
-          kind: "pair",
-          promptLabel: "Land",
-          answerLabel: "Hoofdstad",
-          allowTyping: true,
-          items: [
-            { term: "Verenigd Koninkrijk", answer: "Londen" },
-            { term: "IJsland", answer: "Reykjavik" },
-            { term: "Andorra", answer: "Andorra la Vella" },
-            { term: "Armenië", answer: "Jerevan" },
-            { term: "Azerbeidzjan", answer: "Bakoe" },
-            { term: "Kosovo", answer: "Pristina" },
-            { term: "Liechtenstein", answer: "Vaduz" },
-            { term: "Monaco", answer: "Monaco" },
-            { term: "Noorwegen", answer: "Oslo" },
-            { term: "Rusland", answer: "Moskou" },
-            { term: "San Marino", answer: "San Marino" },
-            { term: "Staat Vaticaanstad", answer: "Vaticaanstad" },
-            { term: "Wit-Rusland (Belarus)", answer: "Minsk" },
-            { term: "Zwitserland", answer: "Bern" }
-          ]
-        },
         {
           id: "europa-alle-hoofdsteden",
           title: "Europa en hoofdsteden (alle 50 landen)",
