@@ -472,9 +472,6 @@
             el("span", { class: "hero-badge badge-red" }, ["🧭 9 kaartbladen"]),
             el("span", { class: "hero-badge badge-teal" }, ["🗺️ echte bundelkaarten"]),
             el("span", { class: "hero-badge badge-amber" }, ["📶 werkt offline"])
-          ]),
-          el("div", { class: "hero-cta-row" }, [
-            el("a", { class: "btn btn-primary btn-hero", href: nextStepHref() }, ["Start met oefenen →"])
           ])
         ])
       ])
@@ -609,12 +606,6 @@
     );
 
     return wrap;
-  }
-
-  function nextStepHref() {
-    // eerste kaartblad dat nog niet 100% beheerst is, anders het eerste kaartblad
-    const target = PK_DATA.modules.find((m) => moduleSummary(m).masteredPct < 100);
-    return "#/module/" + (target || PK_DATA.modules[0]).id;
   }
 
   function labeledBar(label, pct, cls) {
@@ -1105,7 +1096,9 @@
         statement: shown,
         isTrue: isTrue,
         correct: entry.term,
-        image: group.image
+        image: group.image,
+        mapGroup: group,
+        mapEntry: entry
       };
     }
     const distractors = sample(allTerms, 3, entry.term);
@@ -1114,7 +1107,9 @@
       promptLabel: "Kaartoefening: " + group.title.replace(/^Kaartoefening:\s*/, ""),
       correct: entry.term,
       options: shuffle([entry.term, ...distractors]),
-      image: group.image
+      image: group.image,
+      mapGroup: group,
+      mapEntry: entry
     };
   }
 
@@ -1177,7 +1172,7 @@
     function recordAndAdvance(entry, isCorrect) {
       const beforeStage = Progress.stageOf(entry.progressId);
       const updated = Progress.recordAnswer(entry.progressId, isCorrect);
-      window.PKAnalytics && window.PKAnalytics.recordAnswer(cfg.onderdeelScope, isCorrect);
+      window.PKAnalytics && window.PKAnalytics.recordAnswer(entry.progressId, isCorrect);
       doneCount++;
       if (isCorrect) {
         correctCount++;
@@ -1305,8 +1300,13 @@
       const q = cfg.buildFor(entry, kind);
       const reveal = cfg.mode === "test" ? "end" : "immediate";
 
-      const card = el("div", { class: "quiz-card" }, []);
-      if (q.image) card.appendChild(el("img", { src: q.image, alt: "", class: "quiz-card-thumb" }));
+      const isMapQuestion = !!(q.mapGroup && q.mapEntry && window.PKMapExercise);
+      const card = el("div", { class: "quiz-card" + (isMapQuestion ? " quiz-card-map" : "") }, []);
+      if (isMapQuestion) {
+        card.appendChild(window.PKMapExercise.buildMapDisplay(q.mapGroup, q.mapEntry, true));
+      } else if (q.image) {
+        card.appendChild(el("img", { src: q.image, alt: "", class: "quiz-card-thumb" }));
+      }
       if (cfg.mode === "practice") card.appendChild(levelChip(kind));
       card.appendChild(el("span", { class: "flashcard-label" }, [q.promptLabel]));
       card.appendChild(el("p", { class: "quiz-prompt" }, [q.prompt]));
@@ -1566,7 +1566,7 @@
         input.disabled = true;
         tr.classList.add(isRight ? "row-correct" : "row-wrong");
         Progress.recordAnswer(row.progressId, isRight);
-        window.PKAnalytics && window.PKAnalytics.recordAnswer("t:" + topic.id, isRight);
+        window.PKAnalytics && window.PKAnalytics.recordAnswer(row.progressId, isRight);
         if (isRight) {
           correctCount++;
           setTimeout(function () { celebrate(input); }, correctCount * 90);
@@ -1632,12 +1632,17 @@
     wrap.appendChild(el("h1", null, ["Leerkrachtoverzicht"]));
     wrap.appendChild(
       el("p", { class: "module-intro" }, [
-        "Anoniem, samengeteld over alle leerlingen en toestellen: hoeveel keer er per onderdeel geoefend is, en hoeveel procent daarvan fout ging. Zo zie je snel waar de klas nog moeite mee heeft."
+        "Anoniem, samengeteld over alle leerlingen en toestellen: hoeveel keer er per onderdeel geoefend is, en hoeveel procent daarvan fout ging. Klik een rij open voor het detail per land/symbool/begrip. Zo zie je snel waar de klas nog moeite mee heeft."
       ])
     );
     wrap.appendChild(
       el("p", { class: "topic-note" }, [
-        "Dit is geen volledig leerlingvolgsysteem: er wordt nergens bijgehouden wélke leerling iets fout had, enkel een geteld totaal per onderdeel. Dit wachtwoord is enkel een drempeltje — geen echte beveiliging (dit is een statische site zonder server), maar het houdt nieuwsgierige leerlingen buiten."
+        "Dit is geen volledig leerlingvolgsysteem: er wordt nergens bijgehouden wélke leerling iets fout had, enkel geteld hoe vaak elk item juist/fout beantwoord werd. Dit wachtwoord is enkel een drempeltje — geen echte beveiliging (dit is een statische site zonder server), maar het houdt nieuwsgierige leerlingen buiten."
+      ])
+    );
+    wrap.appendChild(
+      el("p", { class: "topic-note" }, [
+        "⚠️ “Verschillende leerlingen” hieronder is een schatting per toestel (een willekeurig, anoniem kenmerk dat lokaal in de browser bewaard wordt), geen geverifieerde identiteit: eenzelfde leerling op twee toestellen telt als 2, een gedeeld klastoestel voor meerdere leerlingen telt maar als 1."
       ])
     );
 
@@ -1648,6 +1653,56 @@
     const tableHolder = el("div", { class: "table-wrap" });
     wrap.appendChild(status);
     wrap.appendChild(tableHolder);
+
+    function itemBreakdownRow(r) {
+      const holderTr = el("tr", { class: "teacher-detail-row" });
+      const holderTd = el("td", { colspan: "6" });
+      const holder = el("div", { class: "teacher-detail" }, ["Bezig met ophalen van het detail…"]);
+      holderTd.appendChild(holder);
+      holderTr.appendChild(holderTd);
+
+      window.PKAnalytics.fetchItemBreakdown(r.id, r.kind).then((items) => {
+        const withData = items.filter((it) => it.reachable && it.attempts > 0);
+        holder.innerHTML = "";
+        if (!withData.length) {
+          holder.appendChild(el("p", { class: "study-hint" }, ["Nog geen pogingen per item geteld voor dit onderdeel."]));
+          return;
+        }
+        const sortedItems = withData.slice().sort((a, b) => (b.errorPct || 0) - (a.errorPct || 0));
+        const t = el("table", { class: "quiz-table teacher-table teacher-table-detail" });
+        t.appendChild(
+          el("thead", null, [el("tr", null, [
+            el("th", null, [r.kind === "map" ? "Symbool" : "Begrip"]),
+            el("th", null, ["Pogingen"]),
+            el("th", null, ["Fouten"]),
+            el("th", null, ["Foutenpercentage"]),
+            el("th", null, ["Verschillende leerlingen (toestellen)"])
+          ])])
+        );
+        const tb = el("tbody");
+        sortedItems.forEach((it) => {
+          const pct = it.errorPct == null ? 0 : it.errorPct;
+          const cls = pct >= 50 ? "row-wrong" : pct >= 25 ? "row-warn" : pct === 0 ? "row-good" : "";
+          const label = it.secondary ? it.label + " (" + it.secondary + ")" : it.label;
+          tb.appendChild(
+            el("tr", { class: cls }, [
+              el("td", null, [label]),
+              el("td", null, [String(it.attempts || 0)]),
+              el("td", null, [String(it.errors || 0)]),
+              el("td", null, [pct + "%"]),
+              el("td", null, [String(it.uniqueDevices || 0)])
+            ])
+          );
+        });
+        t.appendChild(tb);
+        holder.appendChild(t);
+      }).catch(() => {
+        holder.innerHTML = "";
+        holder.appendChild(el("p", { class: "study-hint" }, ["Kon het detail niet ophalen."]));
+      });
+
+      return holderTr;
+    }
 
     function load(force) {
       status.textContent = "Bezig met ophalen…";
@@ -1660,7 +1715,7 @@
             : "De tellerdienst is nu niet bereikbaar. Probeer het straks opnieuw.";
           return;
         }
-        status.textContent = reachableRows.length + " onderdelen met minstens 1 poging.";
+        status.textContent = reachableRows.length + " onderdelen met minstens 1 poging. Klik een rij open voor het detail per item.";
         const sorted = reachableRows.slice().sort((a, b) => (b.errorPct || 0) - (a.errorPct || 0));
         const table = el("table", { class: "quiz-table teacher-table" });
         table.appendChild(
@@ -1669,7 +1724,8 @@
             el("th", null, ["Kaartblad"]),
             el("th", null, ["Pogingen"]),
             el("th", null, ["Fouten"]),
-            el("th", null, ["Foutenpercentage"])
+            el("th", null, ["Foutenpercentage"]),
+            el("th", null, ["Verschillende leerlingen (toestellen)"])
           ])])
         );
         const tbody = el("tbody");
@@ -1679,15 +1735,28 @@
           totalErrors += r.errors || 0;
           const pct = r.errorPct == null ? 0 : r.errorPct;
           const cls = pct >= 50 ? "row-wrong" : pct >= 25 ? "row-warn" : "";
-          tbody.appendChild(
-            el("tr", { class: cls }, [
-              el("td", null, [r.title]),
-              el("td", null, [r.moduleTitle]),
-              el("td", null, [String(r.attempts || 0)]),
-              el("td", null, [String(r.errors || 0)]),
-              el("td", null, [pct + "%"])
-            ])
-          );
+          let detailRow = null;
+          const mainRow = el("tr", { class: cls + " teacher-row-clickable" }, [
+            el("td", null, [el("button", { class: "teacher-expand-btn", type: "button", "aria-expanded": "false", onclick: (e) => {
+              if (detailRow) {
+                detailRow.remove();
+                detailRow = null;
+                e.currentTarget.setAttribute("aria-expanded", "false");
+                e.currentTarget.textContent = "▸ " + r.title;
+                return;
+              }
+              detailRow = itemBreakdownRow(r);
+              mainRow.after(detailRow);
+              e.currentTarget.setAttribute("aria-expanded", "true");
+              e.currentTarget.textContent = "▾ " + r.title;
+            } }, ["▸ " + r.title])]),
+            el("td", null, [r.moduleTitle]),
+            el("td", null, [String(r.attempts || 0)]),
+            el("td", null, [String(r.errors || 0)]),
+            el("td", null, [pct + "%"]),
+            el("td", null, [String(r.uniqueDevices || 0)])
+          ]);
+          tbody.appendChild(mainRow);
         });
         table.appendChild(tbody);
         const totalPct = totalAttempts ? Math.round((totalErrors / totalAttempts) * 100) : 0;
@@ -1697,7 +1766,8 @@
             el("td", null, [""]),
             el("td", null, [String(totalAttempts)]),
             el("td", null, [String(totalErrors)]),
-            el("td", null, [totalPct + "%"])
+            el("td", null, [totalPct + "%"]),
+            el("td", null, [""])
           ])])
         );
         tableHolder.appendChild(table);

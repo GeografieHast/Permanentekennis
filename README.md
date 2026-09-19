@@ -43,18 +43,33 @@ aparte percentages: **% geoefend** (al minstens één keer geprobeerd) en
 **% beheerst** (drie keer na elkaar juist, zonder hulp) — dat is bewust
 niet hetzelfde.
 
-## Voor de leerkracht: welke onderdelen gaan vaak fout?
+## Voor de leerkracht: welke onderdelen — en welke items — gaan vaak fout?
 
 Onderaan elke pagina staat een kleine link **"Voor leerkrachten"**
 (`#/leerkracht`). Die pagina toont, samengeteld over alle leerlingen en
 toestellen, per onderdeel hoeveel keer er geoefend is en welk percentage
 daarvan fout ging — gesorteerd van "gaat het meest fout" naar "zit goed
-vast". Zo zie je in één oogopslag waar je in de les nog even bij moet
-stilstaan.
+vast". Klik een rij open en je krijgt het **detail per item**: bij een
+kaartblad per land/symbool ("Kosovo — 70% fout" naast "België — 5% fout"),
+bij een tekst-onderdeel per begrip. Zo zie je niet enkel dát een kaartblad
+moeilijk is, maar precies **welk land, welke hoofdstad of welk symbool**
+de klas nog niet kent.
+
+Naast "pogingen" en "fouten" toont elke rij ook **"verschillende
+leerlingen (toestellen)"**: een schatting van hoeveel afzonderlijke
+toestellen dat onderdeel/item al minstens één keer probeerden, niet enkel
+hoeveel pogingen er in totaal waren. Dat voorkomt een vertekend beeld
+(20 pogingen kan 1 leerling zijn die 20 keer herkanst, of 20 verschillende
+leerlingen). Dit gebeurt via een willekeurig, anoniem kenmerk dat één keer
+per toestel in de browser wordt aangemaakt (geen naam, geen account) — dus
+een **schatting per toestel**, geen geverifieerde identiteit: dezelfde
+leerling op twee toestellen telt als 2, en een gedeeld klastoestel voor
+meerdere leerlingen telt maar als 1. Dat staat ook als korte melding
+bovenaan de leerkrachtpagina zelf.
 
 Dit is bewust **geen volledig leerlingvolgsysteem**: er wordt nergens
-bijgehouden wélke leerling iets fout had, enkel een geteld totaal "pogingen"
-en "fouten" per onderdeel — via dezelfde gratis, accountloze tellerdienst
+bijgehouden wélke leerling iets fout had, enkel geteld hoe vaak elk item
+juist/fout beantwoord werd — via dezelfde gratis, accountloze tellerdienst
 die de site al gebruikt voor de bezoekersteller en de teller per
 kaartblad (`countapi.mileshilliard.com`). De pagina vraagt een wachtwoord
 (standaard **3500**, aan te passen in `assets/app.js` bij `TEACHER_PASSWORD`)
@@ -65,6 +80,14 @@ houdt nieuwsgierige leerlingen buiten. Eén keer invullen op een toestel
 volstaat: daarna onthoudt de browser dat dit toestel ontgrendeld is. Is de
 tellerdienst even niet bereikbaar, dan toont de pagina dat gewoon en kan
 je later opnieuw vernieuwen — de rest van de site blijft normaal werken.
+
+**Let op bij een update vanaf een oudere versie:** de tellers zijn
+overgeschakeld van "één teller per heel kaartblad/onderdeel" naar "één
+teller per item", zodat het detail per land/symbool/begrip mogelijk werd.
+Daardoor beginnen de pogingen/fouten-aantallen opnieuw bij 0 — de oude,
+opgebouwde totalen per kaartblad gaan niet verloren in de zin dat er iets
+stukgaat, maar ze tellen gewoon niet meer mee, want het zijn nu andere
+tellersleutels. Dit is eenmalig bij deze update.
 
 ## Bekijken zonder installatie
 
@@ -123,6 +146,11 @@ papier, met dezelfde cijfers, letters en Romeinse cijfers:
 
 De legende komt rechtstreeks uit de antwoordtabellen van de bundel
 zelf, dus die klopt gegarandeerd met de kaart.
+
+Ook in **"Mijn fouten"** (en bij "Test jezelf"/"Onderhoud") wordt een
+kaartvraag met dezelfde grote kaart en hetzelfde rondje getoond in plaats
+van een klein plaatje — net omdat je daar net moet kunnen zien wáár het
+juiste symbool staat om jezelf te kunnen verbeteren.
 
 ## Gratis hosten op GitHub Pages — stap voor stap
 
@@ -236,13 +264,15 @@ zelf-typen het gevraagde symbool aanduidt op de kaart (zie hierboven):
 percentages (0-100) vanaf respectievelijk de linker- en bovenrand van
 de afbeelding. Die zijn **met het oog geschat** door de kaartafbeelding
 te bekijken en de positie van elk cijfer/letter/Romeins cijfer in te
-schatten — niet pixel-perfect, vooral niet op de drukste kaarten
-(Europa met 50 landen, vooral de Balkan/Kaukasus-cluster, en de
-wereldkaart met 42 landen/steden). Staat een rondje net naast in plaats
-van op het symbool? Zoek het bijhorende `legend`-blokje op `key` op en
-schuif `x`/`y` een klein beetje bij (hoger % = verder naar
-rechts/onder). Ontbreken `x`/`y` bij een entry, dan wordt er gewoon geen
-rondje getoond voor dat symbool — de rest van de oefening blijft werken.
+schatten (en herzien met een automatische controle die elk rondje
+vergelijkt met de dichtstbijzijnde bedrukte tekst op de kaart) — dus
+zorgvuldig nagekeken, maar nog steeds geen pixel-perfecte meting, vooral
+niet op de drukste kaarten (Europa met 50 landen, en de wereldkaart met
+42 landen/steden). Staat een rondje net naast in plaats van op het
+symbool? Zoek het bijhorende `legend`-blokje op `key` op en schuif `x`/`y`
+een klein beetje bij (hoger % = verder naar rechts/onder). Ontbreken
+`x`/`y` bij een entry, dan wordt er gewoon geen rondje getoond voor dat
+symbool — de rest van de oefening blijft werken.
 
 Wil je een nieuwe kaart toevoegen (bv. een pagina uit een volgende
 bundel)? Zet een afbeelding van die kaart — mét de nummers/letters
@@ -277,7 +307,8 @@ Code-indeling in `assets/`:
 - `progress.js` — de "leermotor": per vraagje nieuw/leren/beheerst,
   wanneer iets aan onderhoud toe is, en de foutenbank.
 - `analytics.js` — de anonieme, samengetelde teller voor het
-  leerkrachtoverzicht.
+  leerkrachtoverzicht: per item én per onderdeel, plus de schatting van
+  het aantal verschillende toestellen (zie hierboven).
 - `mapquiz.js` — de kaartoefeningen (kaart bekijken, meerkeuze, zelf
   typen), inclusief het rondje dat het gevraagde symbool aanduidt op
   de kaart tijdens meerkeuze/zelf-typen.

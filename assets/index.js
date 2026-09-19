@@ -29,6 +29,14 @@
   function mapItemId(groupId, legendKey) {
     return "m:" + groupId + "::" + legendKey;
   }
+  /* Uit een item-id ("t:topicId::term" of "m:groupId::key") het onderdeel-
+     niveau scope-id afleiden ("t:topicId" / "m:groupId"), zodat analytics.js
+     naast een teller per item ook automatisch een teller per onderdeel kan
+     bijhouden zonder dat elke aanroeper dat zelf moet berekenen. */
+  function onderdeelScopeOf(itemId) {
+    const i = String(itemId || "").indexOf("::");
+    return i === -1 ? itemId : itemId.slice(0, i);
+  }
 
   function build() {
     const topics = [];
@@ -37,7 +45,7 @@
     (window.PK_DATA ? window.PK_DATA.modules : []).forEach((mod) => {
       mod.topics.forEach((topic) => {
         const scope = "t:" + topic.id;
-        const itemIds = topic.items.map((it) => topicItemId(topic.id, it));
+        const items = topic.items.map((it) => ({ id: topicItemId(topic.id, it), label: it.term, secondary: null }));
         topics.push({
           id: topic.id,
           scope: scope,
@@ -45,14 +53,15 @@
           moduleTitle: mod.title,
           title: topic.title,
           kind: "topic",
-          itemIds: itemIds
+          itemIds: items.map((it) => it.id),
+          items: items
         });
       });
     });
 
     (window.PK_MAPS ? window.PK_MAPS.groups : []).forEach((group) => {
       const scope = "m:" + group.id;
-      const itemIds = group.legend.map((e) => mapItemId(group.id, e.key));
+      const items = group.legend.map((e) => ({ id: mapItemId(group.id, e.key), label: e.term, secondary: e.capital || null }));
       mapGroups.push({
         id: group.id,
         scope: scope,
@@ -60,7 +69,8 @@
         moduleTitle: (window.PK_DATA.modules.find((m) => m.id === group.moduleId) || {}).title || "",
         title: group.title.replace(/^Kaartoefening:\s*/, ""),
         kind: "map",
-        itemIds: itemIds
+        itemIds: items.map((it) => it.id),
+        items: items
       });
     });
 
@@ -93,6 +103,7 @@
     topicItemKey: topicItemKey,
     topicItemId: topicItemId,
     mapItemId: mapItemId,
+    onderdeelScopeOf: onderdeelScopeOf,
     norm: norm,
     all: all,
     get: get,

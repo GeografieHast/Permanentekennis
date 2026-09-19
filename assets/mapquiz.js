@@ -93,6 +93,16 @@
     }
   }
 
+  /* Bouwt de grote kaartweergave (zelfde als tijdens oefenen) voor één
+     symbool, met of zonder pulserende marker. Herbruikt door app.js voor
+     "Mijn fouten" en "Test jezelf" op kaartonderdelen, zodat de kaart daar
+     ook groot en bruikbaar getoond wordt in plaats van als klein plaatje. */
+  function buildMapDisplay(group, entry, showMarker) {
+    const wrap = mapImage(group, "mapimg-wrap-quiz");
+    if (showMarker) setMapMarker(wrap, entry);
+    return wrap;
+  }
+
   /* ---------- bekijk-modus: kaart + volledige legende ---------------------- */
   function renderStudy(root, group) {
     root.innerHTML = "";
@@ -172,7 +182,7 @@
       const id = progressIdFor(entry);
       const beforeStage = window.PKProgress.stageOf(id);
       const updated = window.PKProgress.recordAnswer(id, isRight);
-      if (window.PKAnalytics) window.PKAnalytics.recordAnswer("m:" + group.id, isRight);
+      if (window.PKAnalytics) window.PKAnalytics.recordAnswer(id, isRight);
       if (isRight) { liveStreak++; bestLiveStreak = Math.max(bestLiveStreak, liveStreak); }
       else liveStreak = 0;
       const justMastered = beforeStage !== "mastered" && updated.stage === "mastered";
@@ -349,6 +359,7 @@
     render: function (root, group, mode) {
       if (mode === "leer") renderStudy(root, group);
       else runQuiz(root, group, mode === "typ" ? "typ" : "mc");
-    }
+    },
+    buildMapDisplay: buildMapDisplay
   };
 })();
