@@ -756,6 +756,15 @@
     wrap.appendChild(el("h1", null, [mod.title]));
     wrap.appendChild(el("p", { class: "module-intro" }, [mod.intro]));
 
+    if (mod.headerImage) {
+      wrap.appendChild(
+        el("figure", { class: "module-header-img" }, [
+          el("img", { src: mod.headerImage.src, alt: mod.headerImage.alt || "", loading: "lazy" }),
+          mod.headerImage.caption ? el("figcaption", null, [mod.headerImage.caption]) : null
+        ])
+      );
+    }
+
     if (window.PKCounter) {
       wrap.appendChild(
         el("p", { class: "module-counter" }, [
@@ -2226,6 +2235,7 @@
       '<linearGradient id="oceanGrad" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0" stop-color="#0C4A63"/><stop offset="1" stop-color="#022E3E"/>' +
       '</linearGradient>' +
+      '<clipPath id="heroEarthClip"><circle cx="852" cy="222" r="30"/></clipPath>' +
       '</defs>' +
       '<rect width="900" height="280" fill="url(#oceanGrad)"/>' +
       '<g stroke="#ffffff" stroke-opacity="0.07" stroke-width="1">' +
@@ -2238,6 +2248,10 @@
       '</g>' +
       '<path d="M-20 210 Q60 160 140 195 T300 190 Q360 175 420 205 L420 300 L-20 300 Z" fill="#F0A63B" opacity="0.92"/>' +
       '<path d="M520 230 Q600 190 700 215 T900 205 L900 300 L520 300 Z" fill="#1F7A6C" opacity="0.92"/>' +
+      '<g class="hero-earth" opacity="0.98">' +
+      '<circle cx="852" cy="222" r="33" fill="none" stroke="#fff" stroke-width="1.6" opacity="0.55"/>' +
+      '<image href="assets/img/earth.jpg" x="822" y="192" width="60" height="60" clip-path="url(#heroEarthClip)" preserveAspectRatio="xMidYMid slice"/>' +
+      '</g>' +
       '<ellipse class="hero-cloud" style="--d:0s" cx="170" cy="70" rx="60" ry="26" fill="#E5343C" opacity="0.85"/>' +
       '<ellipse class="hero-cloud" style="--d:1.2s" cx="640" cy="55" rx="80" ry="30" fill="#2F86C9" opacity="0.85"/>' +
       '<g class="hero-route" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="1 9" stroke-linecap="round" opacity="0.85">' +

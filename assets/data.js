@@ -337,6 +337,11 @@ window.PK_DATA = {
       title: "Continenten & werelddelen",
       subtitle: "en de oceanen en zeeën van de wereld",
       intro: "Kernbegrippen en de indeling van de wereld in continenten, werelddelen, oceanen en zeeën.",
+      headerImage: {
+        src: "assets/img/aarde-vanuit-de-ruimte.jpg",
+        alt: "De aarde vanuit de ruimte, met Noord- en Midden-Amerika in beeld",
+        caption: "De aarde vanuit de ruimte"
+      },
       topics: [
         {
           id: "wereld-definities",

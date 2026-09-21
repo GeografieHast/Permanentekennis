@@ -244,6 +244,13 @@ main {
   animation: pk-cloud-drift 6s ease-in-out infinite;
   animation-delay: var(--d, 0s);
 }
+@keyframes pk-earth-glow {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.9; }
+}
+.hero-earth circle {
+  animation: pk-earth-glow 4.5s ease-in-out infinite;
+}
 @keyframes pk-mascot-bob {
   0%, 100% { transform: translate(58px, 168px) rotate(0deg); }
   50% { transform: translate(58px, 164px) rotate(-2deg); }
@@ -604,6 +611,33 @@ main {
 .module-intro { color: var(--ink-soft); max-width: 60ch; }
 .module-counter { margin-top: -8px; }
 .module-counter img { height: 20px; display: block; border-radius: 4px; }
+
+/* optionele sfeerfoto boven een kaartblad (bv. de aarde vanuit de ruimte) —
+   bewust klein en rustig gehouden: illustratief, geen blikvanger die de
+   knoppen/onderdelen eronder overschreeuwt. */
+.module-header-img {
+  margin: 4px 0 18px;
+  max-width: 360px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 4px 14px rgba(2,46,62,0.08);
+}
+.module-header-img img {
+  display: block;
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+.module-header-img figcaption {
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  background: #eef1ee;
+}
+@media (max-width: 700px) {
+  .module-header-img { max-width: 100%; }
+}
 .sheet-counter { display: block; height: 18px; margin-top: 6px; border-radius: 3px; }
 
 .topic-list {
@@ -945,6 +979,7 @@ main {
   .hero-compass-needle,
   .hero-cloud,
   .hero-mascot,
+  .hero-earth circle,
   .stat-icon-pulse,
   .stat-check-badge,
   .goal-item.goal-next .goal-check,
