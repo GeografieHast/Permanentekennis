@@ -1414,6 +1414,9 @@
       actions.appendChild(
         el("button", { class: "btn", type: "button", onclick: () => {
           queue.length = 0;
+          // Bij een steekproef (kaartbladtest) telkens een NIEUWE selectie trekken,
+          // anders krijgt de leerling bij "Nog een keer" steeds dezelfde vragen.
+          if (typeof cfg.pickEntries === "function") cfg.entries = cfg.pickEntries();
           Array.prototype.push.apply(queue, shuffle(cfg.entries));
           pos = 0; correctCount = 0; doneCount = 0; missed.length = 0; answered = false;
           liveStreak = 0; bestLiveStreak = 0; newlyMasteredCount = 0;
@@ -1558,6 +1561,46 @@
 
   /* ---------- MODULE TEST (hele kaartblad, gemengd) --------------------------- */
 
+  /* Eerlijke steekproef voor "Test jezelf" op kaartbladniveau.
+     Vroeger: willekeurig 24 uit alle vragen (bij kaartblad 4 = 24 uit 100),
+     waardoor sommige symbolen na 5 testen nog nooit gevraagd waren en
+     "Nog een keer" steeds dezelfde 24 herhaalde.
+     Nu: (1) de plaatsen worden eerlijk verdeeld over de onderdelen
+     (bv. helft hoofdsteden, helft kaartsymbolen), en (2) binnen elk
+     onderdeel gaan eerst de vragen die het langst niet (of nog nooit)
+     gevraagd zijn. Zo komt elk symbool op dit toestel om de paar testen
+     gegarandeerd terug. Bij gelijke stand beslist het toeval. */
+  function pickFairTestEntries(all, max) {
+    const n = Math.min(max, all.length);
+    const buckets = new Map();
+    all.forEach((e) => {
+      const key = e.kind === "topic" ? "t:" + e.topic.id : "m:" + e.group.id;
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key).push(e);
+    });
+    const lists = Array.from(buckets.values()).map((list) =>
+      shuffle(list)
+        .map((e) => ({ e: e, last: Progress.getItem(e.progressId).lastAt || 0 }))
+        .sort((a, b) => a.last - b.last) // stabiel: gelijke tijden blijven in toevalsvolgorde
+        .map((x) => x.e)
+    );
+    // plaatsen proportioneel verdelen, restplaatsen naar de grootste resten
+    const quotas = lists.map((l) => (l.length / all.length) * n);
+    const alloc = quotas.map((q, i) => Math.min(lists[i].length, Math.floor(q)));
+    let left = n - alloc.reduce((s, x) => s + x, 0);
+    const order = quotas.map((q, i) => i).sort((a, b) => (quotas[b] - Math.floor(quotas[b])) - (quotas[a] - Math.floor(quotas[a])));
+    while (left > 0) {
+      let progressed = false;
+      for (const i of order) {
+        if (left > 0 && alloc[i] < lists[i].length) { alloc[i]++; left--; progressed = true; }
+      }
+      if (!progressed) break;
+    }
+    let picked = [];
+    lists.forEach((l, i) => { picked = picked.concat(l.slice(0, alloc[i])); });
+    return shuffle(picked);
+  }
+
   function renderModuleTest(moduleId) {
     const mod = getModule(moduleId);
     const wrap = el("div", { class: "view view-quiz" });
@@ -1568,12 +1611,15 @@
     mapGroupsFor(moduleId).forEach((group) => {
       mapEntries(group).forEach((e) => entries.push({ kind: "map", group: group, item: e.item, progressId: e.progressId }));
     });
-    entries = shuffle(entries).slice(0, Math.min(24, entries.length));
+    const allEntries = entries;
+    const pick = () => pickFairTestEntries(allEntries, 24);
+    entries = pick();
 
     const sessionNode = runSession({
       title: "Test jezelf — " + mod.title,
       backHref: "#/module/" + moduleId,
       entries: entries,
+      pickEntries: pick,
       mode: "test",
       onderdeelScope: "module:" + moduleId,
       kindFor: () => "mc",
