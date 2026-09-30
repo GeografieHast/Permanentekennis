@@ -1904,16 +1904,6 @@
         "Anoniem, samengeteld over alle leerlingen en toestellen: hoeveel keer er per onderdeel geoefend is, en hoeveel procent daarvan fout ging. Klik een rij open voor het detail per land/symbool/begrip. Zo zie je snel waar de klas nog moeite mee heeft."
       ])
     );
-    wrap.appendChild(
-      el("p", { class: "topic-note" }, [
-        "Dit is geen volledig leerlingvolgsysteem: er wordt nergens bijgehouden wélke leerling iets fout had, enkel geteld hoe vaak elk item juist/fout beantwoord werd. Dit wachtwoord is enkel een drempeltje — geen echte beveiliging (dit is een statische site zonder server), maar het houdt nieuwsgierige leerlingen buiten."
-      ])
-    );
-    wrap.appendChild(
-      el("p", { class: "topic-note" }, [
-        "⚠️ “Verschillende leerlingen” hieronder is een schatting per toestel (een willekeurig, anoniem kenmerk dat lokaal in de browser bewaard wordt), geen geverifieerde identiteit: eenzelfde leerling op twee toestellen telt als 2, een gedeeld klastoestel voor meerdere leerlingen telt maar als 1."
-      ])
-    );
 
     const summaryHolder = el("div", { class: "teacher-summary" });
     wrap.appendChild(summaryHolder);

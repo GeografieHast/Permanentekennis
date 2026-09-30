@@ -106,8 +106,7 @@ leerlingen). Dit gebeurt via een willekeurig, anoniem kenmerk dat één keer
 per toestel in de browser wordt aangemaakt (geen naam, geen account) — dus
 een **schatting per toestel**, geen geverifieerde identiteit: dezelfde
 leerling op twee toestellen telt als 2, en een gedeeld klastoestel voor
-meerdere leerlingen telt maar als 1. Dat staat ook als korte melding
-bovenaan de leerkrachtpagina zelf.
+meerdere leerlingen telt maar als 1.
 
 Dit is bewust **geen volledig leerlingvolgsysteem**: er wordt nergens
 bijgehouden wélke leerling iets fout had, enkel geteld hoe vaak elk item
