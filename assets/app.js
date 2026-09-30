@@ -268,6 +268,7 @@
 
   function render() {
     if (window.PKMapExercise) window.PKMapExercise.cleanup();
+    if (window.PKGames) window.PKGames.cleanup();
     const r = parseHash();
     trackVisit(r);
     root.innerHTML = "";
@@ -287,6 +288,8 @@
       else if (r.view === "fouten") root.appendChild(renderGlobalFouten());
       else if (r.view === "onderhoud") root.appendChild(renderOnderhoud());
       else if (r.view === "leerkracht") root.appendChild(renderTeacher());
+      else if (r.view === "snel" && window.PKGames) root.appendChild(r.p1 ? window.PKGames.renderSpeed(r.p1) : window.PKGames.renderSpeedPicker());
+      else if (r.view === "memory" && window.PKGames) root.appendChild(r.p1 ? window.PKGames.renderMemory(r.p1) : window.PKGames.renderMemoryPicker());
       else root.appendChild(renderHome());
     } catch (err) {
       console.error(err);
@@ -294,6 +297,7 @@
     }
 
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+    if (window.PKGames) window.PKGames.checkNewMedals();
   }
 
   function renderMapView(moduleId, groupId, mode) {
@@ -345,6 +349,18 @@
     if (r.view === "fouten") { parts.push(sep(), el("span", { class: "current" }, ["Mijn fouten"])); return parts; }
     if (r.view === "onderhoud") { parts.push(sep(), el("span", { class: "current" }, ["Onderhoud"])); return parts; }
     if (r.view === "leerkracht") { parts.push(sep(), el("span", { class: "current" }, ["Leerkrachtoverzicht"])); return parts; }
+    if (r.view === "snel") {
+      const sm = r.p1 ? getModule(r.p1) : null;
+      if (sm) parts.push(sep(), el("a", { href: "#/module/" + sm.id }, [sm.title]), sep(), el("span", { class: "current" }, ["Snelheidsronde"]));
+      else parts.push(sep(), el("span", { class: "current" }, ["Snelheidsronde"]));
+      return parts;
+    }
+    if (r.view === "memory") {
+      const title = r.p1 && window.PKGames ? window.PKGames.memorySetTitle(r.p1) : null;
+      if (title) parts.push(sep(), el("a", { href: "#/memory" }, ["Memory"]), sep(), el("span", { class: "current" }, [title]));
+      else parts.push(sep(), el("span", { class: "current" }, ["Memory"]));
+      return parts;
+    }
     const mod = r.p1 ? getModule(r.p1) : null;
     if (r.view === "module" && mod) {
       parts.push(sep(), el("a", { href: "#/module/" + mod.id }, [mod.title]));
@@ -606,6 +622,7 @@
           el("span", { class: "sheet-meta" }, [onderdelen + " onderdelen · openen →"]),
           el("div", { class: "sheet-progress sheet-progress-double" }, [practFill, masterFill]),
           el("span", { class: "sheet-progress-label" }, [sum.masteredPct + "% beheerst · " + sum.practicedPct + "% geoefend"]),
+          window.PKGames ? window.PKGames.medalRow(mod.id) : null,
           window.PKCounter
             ? el("img", {
                 class: "sheet-counter",
@@ -648,6 +665,8 @@
         gridTweede
       ])
     );
+
+    if (window.PKGames) wrap.appendChild(window.PKGames.homeGamesSection());
 
     /* De rest (hoe werkt het, cijfers, doelen) is leuk maar niet iets een
        leerling elke keer opnieuw moet zien — daarom achter een simpele
@@ -784,6 +803,10 @@
         labeledBar("Beheerst", modSum.masteredPct, "bar-mastered")
       ])
     );
+    if (window.PKGames) {
+      wrap.appendChild(window.PKGames.medalPanel(moduleId));
+      wrap.appendChild(window.PKGames.moduleGameButtons(moduleId));
+    }
 
     const mapGroups = mapGroupsFor(moduleId);
     if (mapGroups.length) {

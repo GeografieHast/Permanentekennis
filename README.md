@@ -162,6 +162,38 @@ opgebouwde totalen per kaartblad gaan niet verloren in de zin dat er iets
 stukgaat, maar ze tellen gewoon niet meer mee, want het zijn nu andere
 tellersleutels. Dit is eenmalig bij deze update.
 
+## Spelletjes: snelheidsronde, medailles en memory
+
+Naast het vaste leerpad staan er drie speelse extra's op de site. Ze staan
+allemaal in `assets/spelletjes.js` (met de opmaak onderaan `assets/styles.css`).
+
+- **Snelheidsronde** (`#/snel`, en een knop op elk kaartblad): 60 seconden
+  lang zoveel mogelijk meerkeuzevragen juist beantwoorden, per kaartblad.
+  De vragen komen uit de tekst-onderdelen én uit de kaartoefeningen (met
+  het rode rondje op de echte bundelkaart). Bij een fout ziet de leerling
+  meteen het juiste antwoord, en op het einde een lijstje van alles wat
+  fout was. Het persoonlijke record per kaartblad wordt op het toestel
+  bewaard. Op een computer kan je ook antwoorden met de toetsen 1 tot 4.
+- **Medailles**: per kaartblad brons (25% beheerst), zilver (60%) en goud
+  (90%). Je ziet ze klein op de kaartblad-tegels van de startpagina en
+  groot bovenaan elk kaartblad, met hoeveel items er nog nodig zijn voor
+  de volgende medaille. Wie een nieuwe medaille haalt, krijgt een korte
+  felicitatie onderaan het scherm. Omdat "beheerst" ook weer kan zakken
+  (bij fouten in onderhoud), kan een medaille ook weer verdwijnen: zo
+  blijft onderhouden de moeite waard. De drempels pas je aan bij `MEDALS`.
+- **Memory** (`#/memory`, enkel eerste graad): paren zoeken in vier
+  varianten: provincies en hun hoofdstad, provincies op de kaart,
+  rivieren en autowegen op de kaart (telkens 8 willekeurige) en de
+  buurlanden. De kaartkaartjes tonen een uitsnede van de bundelkaart met
+  een rood rondje op de plek. Het record (minste beurten) wordt per
+  toestel bewaard. Varianten toevoegen of aanpassen kan bij `MEMORY_SETS`.
+  Kaartblad 1 (Hasselt) heeft geen memory: dat onderdeel bestaat uit
+  "welke soort is dit?"-vragen, geen vaste paren.
+
+De snelheidsronde en memory tellen **bewust niet mee** voor "beheerst",
+"Mijn fouten", "Onderhoud" of het leerkrachtoverzicht: onder tijdsdruk
+gokken leerlingen sneller, en dat mag hun echte voortgang niet vertekenen.
+
 ## Bekijken zonder installatie
 
 Dubbelklik gewoon op `index.html`. De site werkt volledig offline (de
@@ -387,6 +419,7 @@ Code-indeling in `assets/`:
   de kaart tijdens meerkeuze/zelf-typen.
 - `kaartblad-teller.js` — de bestaande "aantal leerlingen"-badge per
   kaartblad.
+- `spelletjes.js`: snelheidsronde, medailles en memory (zie "Spelletjes").
 - `app.js` — de rest van de site: routering, startpagina, leren/oefenen/
   fouten/testen/onderhoud, het leerkrachtoverzicht.
 
