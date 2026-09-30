@@ -2146,3 +2146,105 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   .speed-card.quiz-card-map > .mapimg-wrap { grid-row: 1 / span 4; margin: 0; align-self: start; }
   .speed-card.quiz-card-map .mapimg-plain { max-height: 62vh; }
 }
+
+/* ==========================================================================
+   Leerkrachtoverzicht (tv-): top 10 en inklapbare kaartbladen met balkjes
+   ========================================================================== */
+.tv-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin: 8px 0 18px; }
+.tv-toolbar-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.tv-filter { display: inline-flex; background: var(--card); border: 2px solid var(--line-strong); border-radius: 999px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.tv-filter-btn {
+  border: 0; background: none; padding: 7px 14px; border-radius: 999px; cursor: pointer;
+  font-size: 0.9rem; color: var(--ink-soft);
+}
+.tv-filter-btn:hover { color: var(--ink); }
+.tv-filter-active { background: var(--ink); color: #fff; }
+.tv-filter-active:hover { color: #fff; }
+
+.tv-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 8px; }
+.tv-tile { background: var(--card); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 14px 16px; }
+.tv-tile-value { display: block; font-family: "Atkinson Hyperlegible", Verdana, sans-serif; font-size: 1.7rem; font-weight: bold; line-height: 1.15; }
+.tv-tile-value-sm { font-size: 1.15rem; }
+.tv-tile-label { display: block; font-size: 0.82rem; color: var(--ink-soft); margin-top: 2px; }
+@media (max-width: 640px) { .tv-tiles { grid-template-columns: 1fr; } }
+
+.tv-h2 { font-size: 1.2rem; margin: 30px 0 2px; }
+.tv-note { font-size: 0.86rem; color: var(--ink-soft); margin: 0 0 10px; }
+.tv-empty { padding: 20px; background: var(--card); border-radius: var(--radius); border: 1px dashed var(--line-strong); }
+.tv-sub { display: block; font-size: 0.8rem; color: var(--ink-soft); font-weight: normal; }
+
+/* balkje met % fout */
+.tv-bar-wrap { display: grid; grid-template-columns: 110px auto; column-gap: 10px; align-items: center; justify-self: end; }
+.tv-bar { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.tv-bar-fill { display: block; height: 100%; border-radius: 5px; }
+.tv-bad { background: var(--red); }
+.tv-mid { background: var(--amber); }
+.tv-good { background: var(--teal); }
+.tv-text-bad { color: var(--red-dark); }
+.tv-text-mid { color: var(--amber-dark); }
+.tv-text-good { color: var(--teal-dark); }
+.tv-bar-pct { font-weight: bold; font-size: 0.9rem; white-space: nowrap; min-width: 70px; }
+.tv-bar-extra { grid-column: 1 / -1; font-size: 0.76rem; color: var(--ink-soft); text-align: right; margin-top: 2px; }
+
+/* top 10 */
+.tv-top { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--line-strong); border-radius: var(--radius); overflow: hidden; }
+.tv-top-row { display: grid; grid-template-columns: 32px 1fr auto; gap: 12px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.tv-top-row:last-child { border-bottom: 0; }
+.tv-rank {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line-strong);
+  display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem;
+}
+.tv-top-row:nth-child(-n+3) .tv-rank { background: var(--red); border-color: var(--red); color: #fff; }
+
+/* per kaartblad */
+.tv-module { background: var(--card); border: 1px solid var(--line-strong); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+.tv-module-head {
+  display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;
+  padding: 14px 16px 14px 40px; cursor: pointer; list-style: none; position: relative;
+}
+.tv-module-head::-webkit-details-marker { display: none; }
+.tv-module-head::before { content: "▸"; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--ink-soft); }
+.tv-module[open] > .tv-module-head::before { content: "▾"; }
+.tv-module-head:hover { background: var(--paper); }
+.tv-module[open] > .tv-module-head { border-bottom: 1px solid var(--line); }
+.tv-module-label { display: inline-block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); margin-right: 8px; }
+.tv-module-title strong { font-size: 1.05rem; }
+.tv-onderdelen { list-style: none; margin: 0; padding: 4px 0; }
+.tv-onderdeel { border-bottom: 1px solid var(--line); }
+.tv-onderdeel:last-child { border-bottom: 0; }
+.tv-onderdeel-btn {
+  width: 100%; display: grid; grid-template-columns: 18px 1fr auto; gap: 10px; align-items: center;
+  padding: 10px 16px 10px 22px; border: 0; background: none; text-align: left; cursor: pointer; color: var(--ink); font-size: 0.95rem;
+}
+.tv-onderdeel-btn:hover { background: var(--paper); }
+.tv-chevron { color: var(--ink-soft); }
+.tv-detail { padding: 4px 16px 14px 50px; background: #fafbfa; }
+.tv-items { list-style: none; margin: 0; padding: 0; }
+.tv-item { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 0.92rem; }
+.tv-item:last-child { border-bottom: 0; }
+.tv-hidden { display: none; }
+.tv-more { margin-top: 8px; background: none; border: 0; color: var(--red); cursor: pointer; font-size: 0.88rem; text-decoration: underline; padding: 4px 0; }
+.tv-untouched { margin-top: 16px; }
+
+.tv-footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--line); }
+.tv-reset { background: none; border: 0; padding: 4px 0; color: var(--ink-soft); font-size: 0.85rem; text-decoration: underline; cursor: pointer; }
+.tv-reset:hover { color: var(--red-dark); }
+
+@media (max-width: 600px) {
+  .tv-toolbar { flex-direction: column; align-items: stretch; }
+  .tv-filter { justify-content: center; }
+  .tv-top-row { grid-template-columns: 28px 1fr; }
+  .tv-top-row .tv-bar-wrap, .tv-module-head .tv-bar-wrap, .tv-onderdeel-btn .tv-bar-wrap, .tv-item .tv-bar-wrap { grid-column: 2 / -1; justify-self: stretch; grid-template-columns: 1fr auto; }
+  .tv-module-head { grid-template-columns: 1fr; }
+  .tv-module-head .tv-bar-wrap { grid-column: 1; }
+  .tv-onderdeel-btn { grid-template-columns: 18px 1fr; }
+  .tv-item { grid-template-columns: 1fr; gap: 4px; }
+  .tv-item .tv-bar-wrap { grid-column: 1; }
+  .tv-detail { padding-left: 22px; }
+}
+@media (max-width: 600px) {
+  .tv-filter { border-radius: 14px; }
+  .tv-tiles { grid-template-columns: 1fr 1fr; }
+  .tv-tiles .tv-tile:last-child { grid-column: 1 / -1; }
+  .tv-tile-value { font-size: 1.4rem; }
+}

@@ -1901,272 +1901,254 @@
     wrap.appendChild(el("h1", null, ["Leerkrachtoverzicht"]));
     wrap.appendChild(
       el("p", { class: "module-intro" }, [
-        "Anoniem, samengeteld over alle leerlingen en toestellen: hoeveel keer er per onderdeel geoefend is, en hoeveel procent daarvan fout ging. Klik een rij open voor het detail per land/symbool/begrip. Zo zie je snel waar de klas nog moeite mee heeft."
+        "Anoniem en samengeteld over alle leerlingen: wat gaat het vaakst fout, en waar zit de klas al goed?"
       ])
     );
 
-    const summaryHolder = el("div", { class: "teacher-summary" });
-    wrap.appendChild(summaryHolder);
-
-    const btnRow = el("div", { class: "teacher-btn-row" });
+    /* ---- bovenbalk: filter per graad + knoppen ---- */
+    const EERSTE = ["hasselt", "belgie"];
+    const FILTERS = [
+      { id: "alles", label: "Alles" },
+      { id: "eerste", label: "Eerste graad" },
+      { id: "tweede", label: "Tweede en derde graad" }
+    ];
+    let filter = "alles";
+    function inFilter(moduleId) {
+      if (filter === "eerste") return EERSTE.indexOf(moduleId) !== -1;
+      if (filter === "tweede") return EERSTE.indexOf(moduleId) === -1;
+      return true;
+    }
+    const filterBar = el("div", { class: "tv-filter", role: "tablist", "aria-label": "Toon" });
+    FILTERS.forEach((f) => {
+      filterBar.appendChild(
+        el("button", {
+          class: "tv-filter-btn" + (f.id === filter ? " tv-filter-active" : ""),
+          type: "button", role: "tab", "aria-selected": f.id === filter ? "true" : "false",
+          onclick: () => {
+            filter = f.id;
+            Array.from(filterBar.children).forEach((b, i) => {
+              const on = FILTERS[i].id === filter;
+              b.classList.toggle("tv-filter-active", on);
+              b.setAttribute("aria-selected", on ? "true" : "false");
+            });
+            draw();
+          }
+        }, [f.label])
+      );
+    });
     const refreshBtn = el("button", { class: "btn", type: "button" }, ["↻ Vernieuwen"]);
-    const resetBtn = el("button", { class: "btn btn-danger", type: "button" }, ["Pogingen resetten"]);
-    btnRow.appendChild(refreshBtn);
-    btnRow.appendChild(resetBtn);
-    wrap.appendChild(btnRow);
+    const projectBtn = el("button", { class: "btn", type: "button" }, ["🔎 Top 10 projecteren"]);
+    wrap.appendChild(el("div", { class: "tv-toolbar" }, [filterBar, el("div", { class: "tv-toolbar-btns" }, [projectBtn, refreshBtn])]));
 
-    const topHeadingRow = el("div", { class: "teacher-section-head" }, [
-      el("h2", { class: "section-heading" }, ["Meeste fouten — over alle onderdelen heen"])
-    ]);
-    const projectBtn = el("button", { class: "btn", type: "button" }, ["🔎 Projecteren"]);
-    topHeadingRow.appendChild(projectBtn);
-    wrap.appendChild(topHeadingRow);
-    wrap.appendChild(
-      el("p", { class: "graad-note" }, [
-        "Los van bij welk kaartblad of onderdeel het hoort: dit specifieke land, hoofdstad, symbool of begrip gaat het vaakst fout. Enkel items met minstens 3 pogingen tellen mee, anders zegt 1 fout op 1 poging te weinig."
-      ])
-    );
-    const topStatus = el("p", { class: "study-hint" }, ["Bezig met ophalen…"]);
-    const topHolder = el("div", { class: "table-wrap" });
-    wrap.appendChild(topStatus);
-    wrap.appendChild(topHolder);
+    const status = el("p", { class: "study-hint tv-status" }, ["Bezig met ophalen…"]);
+    const body = el("div", { class: "tv-body" });
+    wrap.appendChild(status);
+    wrap.appendChild(body);
+
+    const resetBtn = el("button", { class: "tv-reset", type: "button" }, ["Alle tellers op nul zetten…"]);
+    wrap.appendChild(el("div", { class: "tv-footer" }, [resetBtn]));
+
+    let overview = [];
+    let topAll = [];
     let lastWorst = [];
     projectBtn.addEventListener("click", () => openProjectorView(lastWorst));
 
-    function topMistakesTable(list, emptyMsg) {
-      if (!list.length) return el("p", { class: "study-hint" }, [emptyMsg]);
-      const t = el("table", { class: "quiz-table teacher-table teacher-table-detail" });
-      t.appendChild(
-        el("thead", null, [el("tr", null, [
-          el("th", null, ["Item"]),
-          el("th", null, ["Onderdeel"]),
-          el("th", null, ["Pogingen"]),
-          el("th", null, ["Fouten"]),
-          el("th", null, ["Foutenpercentage"]),
-          el("th", null, ["Verschillende leerlingen"])
-        ])])
-      );
-      const tb = el("tbody");
-      list.forEach((it) => {
-        const pct = it.errorPct == null ? 0 : it.errorPct;
-        const cls = pct >= 50 ? "row-wrong" : pct >= 25 ? "row-warn" : pct === 0 ? "row-good" : "";
-        tb.appendChild(
-          el("tr", { class: cls }, [
-            el("td", null, [it.itemLabel]),
-            el("td", null, [it.onderdeelTitle]),
-            el("td", null, [String(it.attempts || 0)]),
-            el("td", null, [String(it.errors || 0)]),
-            el("td", null, [pct + "%"]),
-            el("td", null, [String(it.uniqueDevices || 0)])
-          ])
-        );
-      });
-      t.appendChild(tb);
-      return t;
+    /* ---- kleine bouwstenen ---- */
+    function levelOf(pct) {
+      if (pct >= 50) return "bad";
+      if (pct >= 25) return "mid";
+      return "good";
+    }
+    function pctBar(pct, extraText) {
+      const p = pct == null ? 0 : pct;
+      return el("span", { class: "tv-bar-wrap" }, [
+        el("span", { class: "tv-bar" }, [el("span", { class: "tv-bar-fill tv-" + levelOf(p), style: "width:" + Math.min(100, Math.max(p, 2)) + "%" })]),
+        el("span", { class: "tv-bar-pct tv-text-" + levelOf(p) }, [p + "% fout"]),
+        extraText ? el("span", { class: "tv-bar-extra" }, [extraText]) : null
+      ]);
+    }
+    function foutVan(errors, attempts) {
+      return (errors || 0) + " van " + (attempts || 0) + " fout";
+    }
+    function moduleLabel(moduleId) {
+      const m = getModule(moduleId);
+      return m ? m.label : "";
     }
 
-    function loadTop(force) {
-      topStatus.textContent = "Bezig met ophalen…";
-      topHolder.innerHTML = "";
-      window.PKAnalytics.fetchTopMistakes({ limit: 15, minAttempts: 3 }).then((res) => {
-        if (!res.consideredCount) {
-          topStatus.textContent = "Nog niet genoeg pogingen per item (minstens 3 per item nodig) om een top te tonen.";
-          return;
-        }
-        topStatus.textContent = "";
-        lastWorst = res.worst;
-        topHolder.appendChild(el("h3", null, ["🔺 Vaakst fout"]));
-        topHolder.appendChild(topMistakesTable(res.worst, "Geen items met fouten gevonden."));
-        topHolder.appendChild(el("h3", null, ["✅ Zit goed vast"]));
-        topHolder.appendChild(topMistakesTable(res.best, "Geen items gevonden."));
-      }).catch(() => { topStatus.textContent = "Kon de top niet ophalen."; });
-    }
-
-    wrap.appendChild(el("h2", { class: "section-heading" }, ["Per onderdeel"]));
-    wrap.appendChild(el("p", { class: "study-hint" }, ["Klik op een kolomkop om te sorteren."]));
-    const status = el("p", { class: "study-hint" }, ["Bezig met ophalen…"]);
-    const tableHolder = el("div", { class: "table-wrap" });
-    wrap.appendChild(status);
-    wrap.appendChild(tableHolder);
-
-    const SORT_COLUMNS = [
-      { key: "title", label: "Onderdeel" },
-      { key: "moduleTitle", label: "Kaartblad" },
-      { key: "attempts", label: "Pogingen" },
-      { key: "errors", label: "Fouten" },
-      { key: "errorPct", label: "Foutenpercentage" },
-      { key: "uniqueDevices", label: "Verschillende leerlingen (toestellen)" }
-    ];
-    let sortState = { key: "errorPct", dir: "desc" };
-    let lastReachableRows = [];
-
-    function itemBreakdownRow(r) {
-      const holderTr = el("tr", { class: "teacher-detail-row" });
-      const holderTd = el("td", { colspan: "6" });
-      const holder = el("div", { class: "teacher-detail" }, ["Bezig met ophalen van het detail…"]);
-      holderTd.appendChild(holder);
-      holderTr.appendChild(holderTd);
-
+    /* ---- detail per onderdeel (lui geladen bij openklikken) ---- */
+    function itemList(r, holder) {
+      holder.innerHTML = "";
+      holder.appendChild(el("p", { class: "study-hint" }, ["Bezig met ophalen…"]));
       window.PKAnalytics.fetchItemBreakdown(r.id, r.kind).then((items) => {
-        const withData = items.filter((it) => it.reachable && it.attempts > 0);
         holder.innerHTML = "";
+        const withData = items.filter((it) => it.reachable && it.attempts > 0)
+          .sort((a, b) => (b.errorPct || 0) - (a.errorPct || 0) || (b.attempts || 0) - (a.attempts || 0));
         if (!withData.length) {
-          holder.appendChild(el("p", { class: "study-hint" }, ["Nog geen pogingen per item geteld voor dit onderdeel."]));
+          holder.appendChild(el("p", { class: "study-hint" }, ["Nog geen pogingen per item geteld."]));
           return;
         }
-        const sortedItems = withData.slice().sort((a, b) => (b.errorPct || 0) - (a.errorPct || 0));
-        const t = el("table", { class: "quiz-table teacher-table teacher-table-detail" });
-        t.appendChild(
-          el("thead", null, [el("tr", null, [
-            el("th", null, [r.kind === "map" ? "Symbool" : "Begrip"]),
-            el("th", null, ["Pogingen"]),
-            el("th", null, ["Fouten"]),
-            el("th", null, ["Foutenpercentage"]),
-            el("th", null, ["Verschillende leerlingen (toestellen)"])
-          ])])
-        );
-        const tb = el("tbody");
-        sortedItems.forEach((it) => {
-          const pct = it.errorPct == null ? 0 : it.errorPct;
-          const cls = pct >= 50 ? "row-wrong" : pct >= 25 ? "row-warn" : pct === 0 ? "row-good" : "";
+        const list = el("ul", { class: "tv-items" });
+        const SHOW = 8;
+        withData.forEach((it, i) => {
           const label = it.secondary ? it.label + " (" + it.secondary + ")" : it.label;
-          tb.appendChild(
-            el("tr", { class: cls }, [
-              el("td", null, [label]),
-              el("td", null, [String(it.attempts || 0)]),
-              el("td", null, [String(it.errors || 0)]),
-              el("td", null, [pct + "%"]),
-              el("td", null, [String(it.uniqueDevices || 0)])
-            ])
-          );
+          const li = el("li", { class: "tv-item" + (i >= SHOW ? " tv-hidden" : "") }, [
+            el("span", { class: "tv-item-name" }, [label]),
+            pctBar(it.errorPct, foutVan(it.errors, it.attempts))
+          ]);
+          list.appendChild(li);
         });
-        t.appendChild(tb);
-        holder.appendChild(t);
+        holder.appendChild(list);
+        const notTried = items.length - withData.length;
+        if (withData.length > SHOW) {
+          const more = el("button", { class: "tv-more", type: "button", onclick: () => {
+            list.querySelectorAll(".tv-hidden").forEach((n) => n.classList.remove("tv-hidden"));
+            more.remove();
+          } }, ["Toon alle " + withData.length]);
+          holder.appendChild(more);
+        }
+        if (notTried > 0) {
+          holder.appendChild(el("p", { class: "tv-note" }, [notTried + (notTried === 1 ? " item is" : " items zijn") + " nog door niemand geoefend."]));
+        }
       }).catch(() => {
         holder.innerHTML = "";
         holder.appendChild(el("p", { class: "study-hint" }, ["Kon het detail niet ophalen."]));
       });
-
-      return holderTr;
     }
 
-    function renderSummary(reachableRows) {
-      summaryHolder.innerHTML = "";
-      if (!reachableRows.length) return;
-      let totalAttempts = 0, totalErrors = 0, redCount = 0;
-      reachableRows.forEach((r) => {
-        totalAttempts += r.attempts || 0;
-        totalErrors += r.errors || 0;
-        if ((r.errorPct || 0) >= 50) redCount++;
+    function onderdeelRow(r) {
+      const detail = el("div", { class: "tv-detail", hidden: "hidden" });
+      let loaded = false;
+      const btn = el("button", { class: "tv-onderdeel-btn", type: "button", "aria-expanded": "false" }, [
+        el("span", { class: "tv-chevron", "aria-hidden": "true" }, ["▸"]),
+        el("span", { class: "tv-onderdeel-name" }, [
+          el("strong", null, [r.title]),
+          el("span", { class: "tv-sub" }, [(r.kind === "map" ? "Kaartoefening" : "Woordjes en feiten") + " · " + (r.attempts || 0) + " pogingen"])
+        ]),
+        pctBar(r.errorPct)
+      ]);
+      btn.addEventListener("click", () => {
+        const open = btn.getAttribute("aria-expanded") === "true";
+        btn.setAttribute("aria-expanded", open ? "false" : "true");
+        btn.querySelector(".tv-chevron").textContent = open ? "▸" : "▾";
+        if (open) { detail.hidden = true; return; }
+        detail.hidden = false;
+        if (!loaded) { loaded = true; itemList(r, detail); }
       });
-      const totalPct = totalAttempts ? Math.round((totalErrors / totalAttempts) * 100) : 0;
-      const tiles = [
-        { label: "Onderdelen met data", value: reachableRows.length },
-        { label: "Pogingen (totaal)", value: totalAttempts },
-        { label: "Foutenpercentage (gemiddeld)", value: totalPct + "%" },
-        { label: "Onderdelen ≥ 50% fout", value: redCount }
-      ];
-      tiles.forEach((t) => {
-        summaryHolder.appendChild(
-          el("div", { class: "teacher-summary-tile" + (t.label.indexOf("50%") !== -1 && redCount > 0 ? " teacher-summary-tile-warn" : "") }, [
-            el("span", { class: "teacher-summary-value" }, [String(t.value)]),
-            el("span", { class: "teacher-summary-label" }, [t.label])
-          ])
-        );
-      });
+      return el("li", { class: "tv-onderdeel" }, [btn, detail]);
     }
 
-    function buildTable(reachableRows) {
-      tableHolder.innerHTML = "";
-      const dir = sortState.dir === "asc" ? 1 : -1;
-      const sorted = reachableRows.slice().sort((a, b) => {
-        const av = a[sortState.key], bv = b[sortState.key];
-        if (typeof av === "string" || typeof bv === "string") {
-          return dir * String(av || "").localeCompare(String(bv || ""));
-        }
-        return dir * ((av || 0) - (bv || 0));
+    /* ---- alles tekenen (ook opnieuw bij wisselen van filter) ---- */
+    function draw() {
+      body.innerHTML = "";
+      const rows = overview.filter((r) => r.reachable && r.attempts > 0 && inFilter(r.moduleId));
+
+      // samenvatting
+      let att = 0, err = 0, devices = 0;
+      rows.forEach((r) => { att += r.attempts || 0; err += r.errors || 0; devices = Math.max(devices, r.uniqueDevices || 0); });
+      const byModule = {};
+      rows.forEach((r) => {
+        const m = byModule[r.moduleId] || (byModule[r.moduleId] = { moduleId: r.moduleId, title: r.moduleTitle, attempts: 0, errors: 0, devices: 0, rows: [] });
+        m.attempts += r.attempts || 0;
+        m.errors += r.errors || 0;
+        m.devices = Math.max(m.devices, r.uniqueDevices || 0);
+        m.rows.push(r);
       });
-      const table = el("table", { class: "quiz-table teacher-table" });
-      const headTr = el("tr", null, []);
-      SORT_COLUMNS.forEach((col) => {
-        const active = sortState.key === col.key;
-        const arrow = active ? (sortState.dir === "asc" ? " ▲" : " ▼") : "";
-        headTr.appendChild(
-          el("th", { class: active ? "teacher-th-active" : "" }, [
-            el("button", { class: "teacher-sort-btn", type: "button", onclick: () => {
-              sortState = active
-                ? { key: col.key, dir: sortState.dir === "desc" ? "asc" : "desc" }
-                : { key: col.key, dir: "desc" };
-              buildTable(reachableRows);
-            } }, [col.label + arrow])
-          ])
-        );
-      });
-      table.appendChild(el("thead", null, [headTr]));
-      const tbody = el("tbody");
-      let totalAttempts = 0, totalErrors = 0;
-      sorted.forEach((r) => {
-        totalAttempts += r.attempts || 0;
-        totalErrors += r.errors || 0;
-        const pct = r.errorPct == null ? 0 : r.errorPct;
-        const cls = pct >= 50 ? "row-wrong" : pct >= 25 ? "row-warn" : "";
-        let detailRow = null;
-        const mainRow = el("tr", { class: cls + " teacher-row-clickable" }, [
-          el("td", null, [el("button", { class: "teacher-expand-btn", type: "button", "aria-expanded": "false", onclick: (e) => {
-            if (detailRow) {
-              detailRow.remove();
-              detailRow = null;
-              e.currentTarget.setAttribute("aria-expanded", "false");
-              e.currentTarget.textContent = "▸ " + r.title;
-              return;
-            }
-            detailRow = itemBreakdownRow(r);
-            mainRow.after(detailRow);
-            e.currentTarget.setAttribute("aria-expanded", "true");
-            e.currentTarget.textContent = "▾ " + r.title;
-          } }, ["▸ " + r.title])]),
-          el("td", null, [r.moduleTitle]),
-          el("td", null, [String(r.attempts || 0)]),
-          el("td", null, [String(r.errors || 0)]),
-          el("td", null, [pct + "%"]),
-          el("td", null, [String(r.uniqueDevices || 0)])
-        ]);
-        tbody.appendChild(mainRow);
-      });
-      table.appendChild(tbody);
-      const totalPct = totalAttempts ? Math.round((totalErrors / totalAttempts) * 100) : 0;
-      table.appendChild(
-        el("tfoot", null, [el("tr", null, [
-          el("td", null, ["Totaal"]),
-          el("td", null, [""]),
-          el("td", null, [String(totalAttempts)]),
-          el("td", null, [String(totalErrors)]),
-          el("td", null, [totalPct + "%"]),
-          el("td", null, [""])
-        ])])
+      const modules = PK_DATA.modules.map((m) => byModule[m.id]).filter(Boolean);
+      modules.forEach((m) => { m.errorPct = m.attempts ? Math.round((m.errors / m.attempts) * 100) : 0; });
+      const hardest = modules.slice().sort((a, b) => b.errorPct - a.errorPct)[0];
+
+      if (!rows.length) {
+        body.appendChild(el("p", { class: "tv-empty" }, ["Voor deze selectie is er nog niets geoefend."]));
+        lastWorst = [];
+        return;
+      }
+
+      const avg = att ? Math.round((err / att) * 100) : 0;
+      body.appendChild(
+        el("div", { class: "tv-tiles" }, [
+          el("div", { class: "tv-tile" }, [el("span", { class: "tv-tile-value" }, [att.toLocaleString("nl-BE")]), el("span", { class: "tv-tile-label" }, ["antwoorden gegeven"])]),
+          el("div", { class: "tv-tile" }, [el("span", { class: "tv-tile-value tv-text-" + levelOf(avg) }, [avg + "%"]), el("span", { class: "tv-tile-label" }, ["daarvan fout"])]),
+          hardest
+            ? el("div", { class: "tv-tile" }, [el("span", { class: "tv-tile-value tv-tile-value-sm" }, [hardest.title]), el("span", { class: "tv-tile-label" }, ["moeilijkste kaartblad (" + hardest.errorPct + "% fout)"])])
+            : null
+        ])
       );
-      tableHolder.appendChild(table);
+
+      // top 10
+      const top = topAll.filter((it) => inFilter(it.moduleId)).slice(0, 10);
+      lastWorst = top;
+      body.appendChild(el("h2", { class: "tv-h2" }, ["🔺 Top 10 werkpunten"]));
+      body.appendChild(el("p", { class: "tv-note" }, ["De items die het vaakst fout gaan (enkel items met minstens 3 pogingen)."]));
+      if (!top.length) {
+        body.appendChild(el("p", { class: "study-hint" }, ["Nog niet genoeg pogingen per item om een top te tonen."]));
+      } else {
+        const ol = el("ol", { class: "tv-top" });
+        top.forEach((it, i) => {
+          ol.appendChild(
+            el("li", { class: "tv-top-row" }, [
+              el("span", { class: "tv-rank" }, [String(i + 1)]),
+              el("span", { class: "tv-top-name" }, [
+                el("strong", null, [it.itemLabel]),
+                el("span", { class: "tv-sub" }, [moduleLabel(it.moduleId) + " · " + it.onderdeelTitle])
+              ]),
+              pctBar(it.errorPct, foutVan(it.errors, it.attempts))
+            ])
+          );
+        });
+        body.appendChild(ol);
+      }
+
+      // per kaartblad
+      body.appendChild(el("h2", { class: "tv-h2" }, ["Per kaartblad"]));
+      body.appendChild(el("p", { class: "tv-note" }, ["Klik een kaartblad open, en daarna een onderdeel voor het detail per land, symbool of begrip."]));
+      modules.forEach((m) => {
+        const list = el("ul", { class: "tv-onderdelen" });
+        m.rows.slice().sort((a, b) => (b.errorPct || 0) - (a.errorPct || 0)).forEach((r) => list.appendChild(onderdeelRow(r)));
+        body.appendChild(
+          el("details", { class: "tv-module" }, [
+            el("summary", { class: "tv-module-head" }, [
+              el("span", { class: "tv-module-title" }, [
+                el("span", { class: "tv-module-label" }, [moduleLabel(m.moduleId)]),
+                el("strong", null, [m.title]),
+                el("span", { class: "tv-sub" }, [m.attempts + " antwoorden · ongeveer " + m.devices + " " + (m.devices === 1 ? "leerling" : "leerlingen")])
+              ]),
+              pctBar(m.errorPct)
+            ]),
+            list
+          ])
+        );
+      });
+
+      const untouched = PK_DATA.modules.filter((m) => inFilter(m.id) && !byModule[m.id]);
+      if (untouched.length) {
+        body.appendChild(el("p", { class: "tv-note tv-untouched" }, ["Nog niet geoefend: " + untouched.map((m) => m.label + " (" + m.title + ")").join(", ") + "."]));
+      }
     }
 
     function load(force) {
+      status.hidden = false;
       status.textContent = "Bezig met ophalen…";
-      tableHolder.innerHTML = "";
-      summaryHolder.innerHTML = "";
+      body.innerHTML = "";
       window.PKAnalytics.fetchOverview(force).then((rows) => {
-        const reachableRows = rows.filter((r) => r.reachable && r.attempts > 0);
-        if (!reachableRows.length) {
-          status.textContent = rows.some((r) => r.reachable)
-            ? "Nog geen enkele oefening geteld — kom later terug."
-            : "De tellerdienst is nu niet bereikbaar. Probeer het straks opnieuw.";
+        overview = rows;
+        if (!rows.some((r) => r.reachable)) {
+          status.textContent = "De tellerdienst is nu niet bereikbaar. Probeer het straks opnieuw.";
           return;
         }
-        status.textContent = reachableRows.length + " onderdelen met minstens 1 poging. Klik een rij open voor het detail per item, of op een kolomkop om te sorteren.";
-        lastReachableRows = reachableRows;
-        renderSummary(reachableRows);
-        buildTable(reachableRows);
+        if (!rows.some((r) => r.reachable && r.attempts > 0)) {
+          status.textContent = "Er is nog niets geoefend. Kom later terug.";
+          return;
+        }
+        return window.PKAnalytics.fetchTopMistakes({ limit: 1000, minAttempts: 3 }).then((res) => {
+          topAll = res.worst;
+        }).catch(() => { topAll = []; }).then(() => {
+          status.hidden = true;
+          draw();
+        });
       }).catch(() => { status.textContent = "Kon de gegevens niet ophalen."; });
     }
-    refreshBtn.addEventListener("click", () => { load(true); loadTop(true); });
+
+    refreshBtn.addEventListener("click", () => load(true));
     resetBtn.addEventListener("click", () => {
       const sure = window.confirm(
         "Alle pogingen en fouten voor de hele klas/school op nul zetten? Dit kan niet ongedaan gemaakt worden."
@@ -2174,23 +2156,18 @@
       if (!sure) return;
       resetBtn.disabled = true;
       resetBtn.textContent = "Bezig met resetten…";
-      status.textContent = "Bezig met resetten…";
-      topStatus.textContent = "Bezig met resetten…";
-      topHolder.innerHTML = "";
       window.PKAnalytics.resetAll().then(() => {
         resetBtn.disabled = false;
-        resetBtn.textContent = "Pogingen resetten";
+        resetBtn.textContent = "Alle tellers op nul zetten…";
         load(true);
-        loadTop(true);
       }).catch(() => {
         resetBtn.disabled = false;
-        resetBtn.textContent = "Pogingen resetten";
+        resetBtn.textContent = "Alle tellers op nul zetten…";
+        status.hidden = false;
         status.textContent = "Resetten is niet gelukt. Probeer het straks opnieuw.";
-        topStatus.textContent = "";
       });
     });
     load(false);
-    loadTop(false);
 
     return wrap;
   }

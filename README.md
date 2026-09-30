@@ -87,6 +87,16 @@ niet opnieuw te zoeken naar waar je gebleven was.
 
 ## Voor de leerkracht: welke onderdelen — en welke items — gaan vaak fout?
 
+**Opbouw van de leerkrachtpagina (vernieuwd):** bovenaan kies je wat je wil
+zien (alles, eerste graad, of tweede en derde graad). Daaronder drie
+kerncijfers (aantal antwoorden, percentage fout, moeilijkste kaartblad),
+een **Top 10 werkpunten** met een gekleurd balkje per item (rood vanaf 50%
+fout, oker vanaf 25%, groen daaronder), en **per kaartblad** een
+inklapbare kaart. Klik een kaartblad open voor de onderdelen, en een
+onderdeel voor het detail per land, symbool of begrip. De knop "Alle
+tellers op nul zetten" staat bewust klein onderaan de pagina. De uitleg
+hieronder beschrijft wat er achter de cijfers zit.
+
 Onderaan elke pagina staat een kleine link **"Voor leerkrachten"**
 (`#/leerkracht`). Die pagina toont, samengeteld over alle leerlingen en
 toestellen, per onderdeel hoeveel keer er geoefend is en welk percentage

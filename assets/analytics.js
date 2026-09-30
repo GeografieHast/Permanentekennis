@@ -254,6 +254,7 @@
                 itemLabel: it.secondary ? it.label + " (" + it.secondary + ")" : it.label,
                 onderdeelTitle: r.title,
                 moduleTitle: r.moduleTitle,
+                moduleId: r.moduleId,
                 attempts: it.attempts,
                 errors: it.errors,
                 errorPct: it.errorPct,
